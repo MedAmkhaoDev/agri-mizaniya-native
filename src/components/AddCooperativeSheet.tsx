@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { View, Text, TextInput, TouchableOpacity, FlatList, ActivityIndicator, ScrollView } from 'react-native'
 import { useAuth } from '@/lib/auth-context'
+import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
 import { createCooperativeSupport, getParcels } from '@/lib/api'
 import { getLastParcelId, setLastParcelId } from '@/hooks/useDraft'
@@ -22,6 +23,7 @@ interface AddCooperativeSheetProps {
 
 export default function AddCooperativeSheet({ visible, onClose }: AddCooperativeSheetProps) {
   const { user } = useAuth()
+  const { currentFarmId } = useFarm()
   const { t } = useI18n()
   const [parcels, setParcels] = useState<Parcel[]>([])
   const [supportType, setSupportType] = useState<CooperativeSupportType>('other')
@@ -32,8 +34,8 @@ export default function AddCooperativeSheet({ visible, onClose }: AddCooperative
   const [saving, setSaving] = useState(false)
 
   const loadParcels = useCallback(async () => {
-    if (!user) return
-    const { data } = await getParcels(user.uid)
+    if (!user || !currentFarmId) return
+    const { data } = await getParcels(currentFarmId!)
     const active = data.filter((p) => p.status === 'active')
     const lastId = await getLastParcelId()
     const sorted = [...active].sort((a, b) => {
@@ -45,7 +47,7 @@ export default function AddCooperativeSheet({ visible, onClose }: AddCooperative
     if (!parcelId && sorted.length > 0) {
       setParcelId(sorted[0].id)
     }
-  }, [parcelId, user])
+  }, [parcelId, user, currentFarmId])
 
   useEffect(() => {
     if (visible) {
@@ -64,7 +66,7 @@ export default function AddCooperativeSheet({ visible, onClose }: AddCooperative
     setSaving(true)
     try {
       if (parcelId) await setLastParcelId(parcelId)
-      await createCooperativeSupport(user.uid, {
+      await createCooperativeSupport(currentFarmId!, user.uid, {
         parcelId: parcelId || null,
         invoiceNumber: invoiceNumber.trim() || null,
         supportType,

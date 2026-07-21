@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth-context'
 import { useI18n } from '@/lib/i18n-context'
 import { getExpenses, deleteExpense, getParcels } from '@/lib/api'
 import { formatMAD } from '@/lib/format'
+import { useFarm } from '@/lib/farm-context'
 import { useUndoDelete } from '@/hooks/useUndoDelete'
 import AddExpenseSheet from '@/components/AddExpenseSheet'
 import { HeaderBar } from '@/components/HeaderBar'
@@ -15,6 +16,7 @@ import { TrendingDown, Plus, Trash2, MapPin } from 'lucide-react-native'
 export default function ExpensesScreen() {
   const { user } = useAuth()
   const { t } = useI18n()
+  const { currentFarmId, canWrite, canDeleteAnyEntries, isWorker } = useFarm()
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [parcels, setParcels] = useState<Parcel[]>([])
   const [loading, setLoading] = useState(true)
@@ -23,16 +25,16 @@ export default function ExpensesScreen() {
   const [displayExpenses, setDisplayExpenses] = useState<Expense[]>([])
 
   const loadData = useCallback(async () => {
-    if (!user) return
+    if (!user || !currentFarmId) return
     setLoading(true)
     const [e, p] = await Promise.all([
-      getExpenses(user.uid, selectedParcel !== 'all' ? { parcelId: selectedParcel } : undefined),
-      getParcels(user.uid),
+      getExpenses(currentFarmId!, selectedParcel !== 'all' ? { parcelId: selectedParcel } : undefined),
+      getParcels(currentFarmId!),
     ])
     setExpenses(e.data)
     setParcels(p.data)
     setLoading(false)
-  }, [user, selectedParcel])
+  }, [user, selectedParcel, currentFarmId])
 
   useEffect(() => { loadData() }, [loadData])
 
@@ -42,9 +44,9 @@ export default function ExpensesScreen() {
   }, [expenses])
 
   const handleRestore = async (item: Expense) => {
-    if (!user) return
+    if (!user || !currentFarmId) return
     const { createExpense } = await import('@/lib/api')
-    await createExpense(user.uid, {
+    await createExpense(currentFarmId!, user.uid, {
       parcelId: item.parcelId, typeId: item.typeId, description: item.description,
       amount: item.amount, quantity: item.quantity, unit: item.unit,
       date: item.date, notes: item.notes,
@@ -53,7 +55,7 @@ export default function ExpensesScreen() {
   }
 
   const { deleteWithUndo } = useUndoDelete(
-    (id) => deleteExpense(user!.uid, id),
+    (id) => deleteExpense(currentFarmId!, id),
     handleRestore,
     loadData,
     { deleted: t.deleted, undo: t.undo, error: t.error },
@@ -62,15 +64,19 @@ export default function ExpensesScreen() {
   const total = displayExpenses.reduce((sum, e) => sum + e.amount, 0)
   const activeParcels = parcels.filter(p => p.status === 'active')
 
+  if (!currentFarmId) return null
+
   return (
     <SafeAreaView style={{ flex: 1 }} edges={['top']}>
       <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
         <HeaderBar
           title={t.expenses}
           right={
-            <TouchableOpacity onPress={() => setSheetOpen(true)} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#16A34A', alignItems: 'center', justifyContent: 'center' }}>
-              <Plus size={20} color="#FFFFFF" />
-            </TouchableOpacity>
+            canWrite ? (
+              <TouchableOpacity onPress={() => setSheetOpen(true)} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#16A34A', alignItems: 'center', justifyContent: 'center' }}>
+                <Plus size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            ) : undefined
           }
         />
 

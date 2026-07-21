@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { View, Text, TextInput, TouchableOpacity, ScrollView, FlatList, ActivityIndicator } from 'react-native'
 import { useAuth } from '@/lib/auth-context'
+import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
 import { createIncome, getParcels } from '@/lib/api'
 import { BottomSheet } from '@/components/BottomSheet'
@@ -20,6 +21,7 @@ const UNITS = ['kg', 'quintal', 'tonne', 'litre', 'caisse', 'sac', 'unité']
 
 export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: AddIncomeSheetProps) {
   const { user } = useAuth()
+  const { currentFarmId } = useFarm()
   const { t } = useI18n()
   const { draft, setDraft, clearDraft } = useDraft('income')
   const [parcels, setParcels] = useState<Parcel[]>([])
@@ -33,8 +35,8 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
   }, [visible])
 
   const loadParcels = useCallback(async () => {
-    if (!user) return
-    const { data } = await getParcels(user.uid)
+    if (!user || !currentFarmId) return
+    const { data } = await getParcels(currentFarmId!)
     const active = data.filter((p) => p.status === 'active')
     const lastId = defaultParcelId || (await getLastParcelId())
     const sorted = [...active].sort((a, b) => {
@@ -47,7 +49,7 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
       const prefill = sorted.find((p) => p.id === lastId) || sorted[0]
       setDraft({ ...draft, parcel_id: prefill.id })
     }
-  }, [defaultParcelId, draft, setDraft, user])
+  }, [defaultParcelId, draft, setDraft, user, currentFarmId])
 
   useEffect(() => {
     if (visible) loadParcels()
@@ -69,7 +71,7 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
     try {
       await setLastParcelId(draft.parcel_id)
       await addRecentProduct(draft.product_name)
-      await createIncome(user.uid, {
+      await createIncome(currentFarmId!, user.uid, {
         parcelId: draft.parcel_id,
         productName: draft.product_name,
         quantity: draft.quantity ? parseFloat(draft.quantity) : null,

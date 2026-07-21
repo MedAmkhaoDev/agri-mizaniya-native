@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/lib/auth-context'
+import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
 import { getParcels, createParcel, updateParcel, deleteParcel, getFinancialSummary } from '@/lib/api'
 import { getLastParcelId } from '@/hooks/useDraft'
@@ -16,6 +17,7 @@ import {
 
 export default function ParcelsScreen() {
   const { user } = useAuth()
+  const { currentFarmId, canManageParcels, isWorker } = useFarm()
   const { t } = useI18n()
   const [parcels, setParcels] = useState<Parcel[]>([])
   const [loading, setLoading] = useState(true)
@@ -27,9 +29,9 @@ export default function ParcelsScreen() {
   const [form, setForm] = useState({ name: '', area_hectares: '', location: '', notes: '' })
 
   const load = useCallback(async () => {
-    if (!user) return
+    if (!user || !currentFarmId) return
     setLoading(true)
-    const { data } = await getParcels(user.uid)
+    const { data } = await getParcels(currentFarmId)
     const lastId = await getLastParcelId()
     const sorted = [...data].sort((a, b) => {
       if (a.id === lastId) return -1
@@ -38,10 +40,10 @@ export default function ParcelsScreen() {
     })
     setParcels(sorted)
     const finMap: Record<string, FinancialSummary> = {}
-    await Promise.all(data.map(async (p) => { finMap[p.id] = await getFinancialSummary(user.uid, p.id) }))
+    await Promise.all(data.map(async (p) => { finMap[p.id] = await getFinancialSummary(currentFarmId!, p.id) }))
     setFinancials(finMap)
     setLoading(false)
-  }, [user])
+  }, [user, currentFarmId])
 
   useEffect(() => { load() }, [load])
 
@@ -49,22 +51,22 @@ export default function ParcelsScreen() {
   const openEdit = (p: Parcel) => { setEditingParcel(p); setForm({ name: p.name, area_hectares: p.areaHectares?.toString() || '', location: p.location || '', notes: p.notes || '' }); setSelectedParcel(null); setSheetOpen(true) }
 
   const handleSave = async () => {
-    if (!user || !form.name.trim()) return
+    if (!user || !currentFarmId || !form.name.trim()) return
     setSaving(true)
-    const payload = { name: form.name.trim(), areaHectares: form.area_hectares ? parseFloat(form.area_hectares) : null, location: form.location.trim() || null, status: (editingParcel?.status || 'active') as 'active' | 'archived', notes: form.notes.trim() || null }
-    if (editingParcel) { await updateParcel(user.uid, editingParcel.id, payload) } else { await createParcel(user.uid, payload) }
+    const payload = { name: form.name.trim(), areaHectares: form.area_hectares ? parseFloat(form.area_hectares) : null, location: form.location.trim() || null, status: (editingParcel?.status || 'active') as 'active' | 'archived', notes: form.notes.trim() || null, assignedTo: null }
+    if (editingParcel) { await updateParcel(currentFarmId, editingParcel.id, payload) } else { await createParcel(currentFarmId, user.uid, payload) }
     setSheetOpen(false); setSaving(false); load()
   }
 
   const handleArchive = async (p: Parcel) => {
-    if (!user) return
-    await updateParcel(user.uid, p.id, { status: p.status === 'active' ? 'archived' : 'active' })
+    if (!user || !currentFarmId) return
+    await updateParcel(currentFarmId, p.id, { status: p.status === 'active' ? 'archived' : 'active' })
     setSelectedParcel(null); load()
   }
 
   const handleDelete = async (p: Parcel) => {
-    if (!user) return
-    await deleteParcel(user.uid, p.id)
+    if (!user || !currentFarmId) return
+    await deleteParcel(currentFarmId, p.id)
     setSelectedParcel(null); load()
   }
 
@@ -108,6 +110,8 @@ export default function ParcelsScreen() {
     )
   }
 
+  if (!currentFarmId) return null
+
   return (
     <SafeAreaView style={{ flex: 1 }} edges={['top']}>
       <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
@@ -115,9 +119,11 @@ export default function ParcelsScreen() {
         <HeaderBar
           title={t.parcels}
           right={
-            <TouchableOpacity onPress={openAdd} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#16A34A', alignItems: 'center', justifyContent: 'center' }}>
-              <Plus size={20} color="#FFFFFF" />
-            </TouchableOpacity>
+            canManageParcels ? (
+              <TouchableOpacity onPress={openAdd} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#16A34A', alignItems: 'center', justifyContent: 'center' }}>
+                <Plus size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            ) : undefined
           }
         />
 
@@ -210,14 +216,16 @@ export default function ParcelsScreen() {
                       </View>
                     ) : null}
 
-                    <View style={{ gap: 8 }}>
-                      <TouchableOpacity onPress={() => openEdit(selectedParcel)} style={{ height: 44, borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' }}>
-                        <Text style={{ fontWeight: '600', color: '#374151' }}>{t.edit}</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => handleArchive(selectedParcel)} style={{ height: 44, borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' }}>
-                        <Text style={{ fontWeight: '600', color: '#F97316' }}>{t.archiveParcel}</Text>
-                      </TouchableOpacity>
-                    </View>
+                    {canManageParcels && (
+                      <View style={{ gap: 8 }}>
+                        <TouchableOpacity onPress={() => openEdit(selectedParcel)} style={{ height: 44, borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' }}>
+                          <Text style={{ fontWeight: '600', color: '#374151' }}>{t.edit}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => handleArchive(selectedParcel)} style={{ height: 44, borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' }}>
+                          <Text style={{ fontWeight: '600', color: '#F97316' }}>{t.archiveParcel}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
                   </>
                 )
               })()}

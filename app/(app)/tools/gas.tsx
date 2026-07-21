@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { View, Text, FlatList, TouchableOpacity, TextInput, Modal, ActivityIndicator, Alert } from 'react-native'
 import { useAuth } from '@/lib/auth-context'
+import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
 import { getGasUsages, createGasUsage, deleteGasUsage, getParcels } from '@/lib/api'
 import { formatMAD } from '@/lib/format'
@@ -10,6 +11,7 @@ import { Plus, Trash2, Flame, X, Check } from 'lucide-react-native'
 
 export default function GasScreen() {
   const { user } = useAuth()
+  const { currentFarmId, canWrite } = useFarm()
   const { t } = useI18n()
   const [gasUsages, setGasUsages] = useState<GasUsage[]>([])
   const [parcels, setParcels] = useState<Parcel[]>([])
@@ -22,26 +24,28 @@ export default function GasScreen() {
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
 
+  if (!currentFarmId) return null
+
   const loadData = useCallback(async () => {
-    if (!user) return
+    if (!user || !currentFarmId) return
     setLoading(true)
     const [g, p] = await Promise.all([
-      getGasUsages(user.uid, selectedParcel !== 'all' ? { parcelId: selectedParcel } : undefined),
-      getParcels(user.uid),
+      getGasUsages(currentFarmId!, selectedParcel !== 'all' ? { parcelId: selectedParcel } : undefined),
+      getParcels(currentFarmId!),
     ])
     setGasUsages(g.data)
     setParcels(p.data)
     setLoading(false)
-  }, [user, selectedParcel])
+  }, [user, currentFarmId, selectedParcel])
 
   useEffect(() => { loadData() }, [loadData])
 
   const resetForm = () => { setFormParcelId(''); setQuantityBottles(''); setTotalAmount(''); setNotes(''); setSheetOpen(false) }
 
   const handleSave = async () => {
-    if (!user || !formParcelId || !quantityBottles || !totalAmount) return
+    if (!user || !currentFarmId || !formParcelId || !quantityBottles || !totalAmount) return
     setSaving(true)
-    await createGasUsage(user.uid, {
+    await createGasUsage(currentFarmId!, user.uid, {
       parcelId: formParcelId, quantityBottles: parseFloat(quantityBottles),
       totalAmount: parseFloat(totalAmount), date: new Date().toISOString().split('T')[0], notes: notes.trim() || null,
     })
@@ -51,7 +55,7 @@ export default function GasScreen() {
   const handleDelete = (gas: GasUsage) => {
     Alert.alert(t.delete, `${t.delete}?`, [
       { text: t.cancel, style: 'cancel' },
-      { text: t.delete, style: 'destructive', onPress: async () => { if (!user) return; await deleteGasUsage(user.uid, gas.id); loadData() } },
+      { text: t.delete, style: 'destructive', onPress: async () => { if (!user || !currentFarmId) return; await deleteGasUsage(currentFarmId!, gas.id); loadData() } },
     ])
   }
 
@@ -63,9 +67,11 @@ export default function GasScreen() {
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
         <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>{t.gasUsage}</Text>
-        <TouchableOpacity onPress={() => setSheetOpen(true)} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F97316', alignItems: 'center', justifyContent: 'center' }}>
-          <Plus size={20} color="#FFFFFF" />
-        </TouchableOpacity>
+        {canWrite && (
+          <TouchableOpacity onPress={() => setSheetOpen(true)} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F97316', alignItems: 'center', justifyContent: 'center' }}>
+            <Plus size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Total */}

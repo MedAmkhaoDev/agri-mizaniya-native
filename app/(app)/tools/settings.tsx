@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/lib/auth-context'
 import { useI18n } from '@/lib/i18n-context'
@@ -8,16 +8,22 @@ import { updateProfile } from 'firebase/auth'
 import type { Language } from '@/lib/i18n'
 import Constants from 'expo-constants'
 import {
-  User, Globe, Sun, Moon, Monitor, LogOut, CheckCircle, Wifi, Wheat,
+  User, Globe, Sun, Moon, Monitor, LogOut, CheckCircle, Wifi, Wheat, ArrowRightLeft, Database,
 } from 'lucide-react-native'
+import { useFarm } from '@/lib/farm-context'
+import { useRouter } from 'expo-router'
 
 export default function SettingsScreen() {
   const { t, language, setLanguage } = useI18n()
-  const { user, profile, signOut, refreshProfile } = useAuth()
+  const { user, profile, signOut, refreshProfile, migrating, runMigration } = useAuth()
   const { theme, setTheme } = useTheme()
+  const { currentFarm, canManageFarmSettings, canManageMembers } = useFarm()
+  const router = useRouter()
   const [name, setName] = useState(profile?.fullName || '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+
+  const needsMigration = !profile?.farmIds || profile.farmIds.length === 0
 
   useEffect(() => { setName(profile?.fullName || '') }, [profile?.fullName])
 
@@ -54,6 +60,49 @@ export default function SettingsScreen() {
       <ScrollView style={{ flex: 1, backgroundColor: '#FFFFFF' }} contentContainerStyle={{ padding: 16, maxWidth: 480, alignSelf: 'center', width: '100%' }}>
         <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 16 }}>{t.settings}</Text>
 
+        {/* Farm Card */}
+{currentFarm && (
+  <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 16, overflow: 'hidden' }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 8 }}>
+      <Wheat size={16} color="#9CA3AF" />
+      <Text style={{ fontSize: 15, fontWeight: '600', color: '#374151' }}>{t.currentFarm}</Text>
+    </View>
+    <View style={{ paddingHorizontal: 20, paddingBottom: 16 }}>
+      <Text style={{ fontSize: 17, fontWeight: '700', color: '#111827', marginBottom: 4 }}>{currentFarm.name}</Text>
+      {currentFarm.description ? <Text style={{ fontSize: 13, color: '#9CA3AF' }}>{currentFarm.description}</Text> : null}
+      <TouchableOpacity
+        onPress={() => router.push('/(farm-select)')}
+        style={{ marginTop: 12, height: 40, borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}
+      >
+        <ArrowRightLeft size={14} color="#6B7280" />
+        <Text style={{ fontSize: 13, fontWeight: '500', color: '#6B7280' }}>{t.switchFarm}</Text>
+      </TouchableOpacity>
+    </View>
+        </View>
+)}
+
+        {/* Migration Card */}
+        {needsMigration && (
+          <View style={{ backgroundColor: '#FFFBEB', borderRadius: 16, borderWidth: 1, borderColor: '#FDE68A', marginBottom: 16, padding: 20 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <Database size={16} color="#D97706" />
+              <Text style={{ fontSize: 15, fontWeight: '600', color: '#92400E' }}>{t.dataMigration}</Text>
+            </View>
+            <Text style={{ fontSize: 13, color: '#A16207', marginBottom: 12 }}>{t.migrationDescription}</Text>
+            <TouchableOpacity
+              onPress={async () => {
+                await runMigration()
+                Alert.alert(t.success, t.migrationComplete)
+              }}
+              disabled={migrating}
+              style={{ height: 44, borderRadius: 10, backgroundColor: migrating ? '#D97706' : '#F59E0B', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6, opacity: migrating ? 0.6 : 1 }}
+            >
+              {migrating ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Database size={16} color="#FFFFFF" />}
+              <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '600' }}>{migrating ? t.migrating : t.startMigration}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Profile Card */}
         <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 16, overflow: 'hidden' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 8 }}>
@@ -70,9 +119,6 @@ export default function SettingsScreen() {
               <View>
                 <Text style={{ fontSize: 15, fontWeight: '500', color: '#111827' }}>{profile?.fullName || 'Agriculteur'}</Text>
                 <Text style={{ fontSize: 13, color: '#9CA3AF' }}>{user?.email}</Text>
-                <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, backgroundColor: '#F3F4F6', alignSelf: 'flex-start', marginTop: 4 }}>
-                  <Text style={{ fontSize: 11, fontWeight: '500', color: '#6B7280' }}>{profile?.role || 'farmer'}</Text>
-                </View>
               </View>
             </View>
             <View>

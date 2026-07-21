@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native'
 import { useAuth } from '@/lib/auth-context'
+import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
 import { getExpenses, getIncomes, getGasUsages, getCooperativeSupports, getParcels } from '@/lib/api'
 import { formatMAD } from '@/lib/format'
@@ -16,6 +17,7 @@ type Period = 'monthly' | 'yearly' | 'custom' | 'all'
 
 export default function ReportsScreen() {
   const { user } = useAuth()
+  const { currentFarmId, canExportReports } = useFarm()
   const { t } = useI18n()
   const [parcels, setParcels] = useState<Parcel[]>([])
   const [selectedParcel, setSelectedParcel] = useState<string>('all')
@@ -25,6 +27,8 @@ export default function ReportsScreen() {
   const [loading, setLoading] = useState(false)
   const [summary, setSummary] = useState<any>(null)
   const [generated, setGenerated] = useState(false)
+
+  if (!currentFarmId) return null
 
   const getDateFilters = () => {
     const now = new Date()
@@ -47,7 +51,7 @@ export default function ReportsScreen() {
   }
 
   const generate = useCallback(async () => {
-    if (!user) return
+    if (!user || !currentFarmId) return
     setLoading(true)
     setGenerated(false)
     try {
@@ -55,11 +59,11 @@ export default function ReportsScreen() {
       const filter = selectedParcel !== 'all' ? { parcelId: selectedParcel, ...dateFilters } : dateFilters
 
       const [{ data: parcelsList }, { data: expenses }, { data: incomes }, { data: gas }, { data: coop }] = await Promise.all([
-        getParcels(user.uid),
-        getExpenses(user.uid, filter as any),
-        getIncomes(user.uid, filter as any),
-        getGasUsages(user.uid, filter as any),
-        getCooperativeSupports(user.uid, filter as any),
+        getParcels(currentFarmId!),
+        getExpenses(currentFarmId!, filter as any),
+        getIncomes(currentFarmId!, filter as any),
+        getGasUsages(currentFarmId!, filter as any),
+        getCooperativeSupports(currentFarmId!, filter as any),
       ])
       setParcels(parcelsList)
 
@@ -73,10 +77,10 @@ export default function ReportsScreen() {
     const parcelBreakdown = await Promise.all(
       parcelsList.filter(p => p.status === 'active').map(async (p) => {
         const [e, i, g, c] = await Promise.all([
-          getExpenses(user.uid, { ...filter, parcelId: p.id } as any),
-          getIncomes(user.uid, { ...filter, parcelId: p.id } as any),
-          getGasUsages(user.uid, { ...filter, parcelId: p.id } as any),
-          getCooperativeSupports(user.uid, { ...filter, parcelId: p.id } as any),
+          getExpenses(currentFarmId!, { ...filter, parcelId: p.id } as any),
+          getIncomes(currentFarmId!, { ...filter, parcelId: p.id } as any),
+          getGasUsages(currentFarmId!, { ...filter, parcelId: p.id } as any),
+          getCooperativeSupports(currentFarmId!, { ...filter, parcelId: p.id } as any),
         ])
         const ti = i.data.reduce((s, r) => s + r.totalAmount, 0)
         const te = e.data.reduce((s, r) => s + r.amount, 0)
@@ -98,7 +102,7 @@ export default function ReportsScreen() {
     } finally {
       setLoading(false)
     }
-  }, [user, selectedParcel, period, customFrom, customTo, parcels, t.allParcels])
+  }, [user, currentFarmId, selectedParcel, period, customFrom, customTo, parcels, t.allParcels])
 
   const handleShare = () => {
     if (!summary) return
@@ -196,16 +200,18 @@ export default function ReportsScreen() {
       {generated && summary && (
         <>
           {/* Share + PDF buttons */}
-          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
-            <TouchableOpacity onPress={handleShare} style={{ flex: 1, height: 40, borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}>
-              <Share2 size={14} color="#374151" />
-              <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151' }}>WhatsApp</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleDownloadPDF} style={{ flex: 1, height: 40, borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}>
-              <Download size={14} color="#374151" />
-              <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151' }}>PDF</Text>
-            </TouchableOpacity>
-          </View>
+          {canExportReports && (
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+              <TouchableOpacity onPress={handleShare} style={{ flex: 1, height: 40, borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}>
+                <Share2 size={14} color="#374151" />
+                <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151' }}>WhatsApp</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleDownloadPDF} style={{ flex: 1, height: 40, borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}>
+                <Download size={14} color="#374151" />
+                <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151' }}>PDF</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* Net profit hero */}
           <View style={{ padding: 20, borderRadius: 16, borderWidth: 2, borderColor: summary.netProfit >= 0 ? '#A7F3D0' : '#FECACA', marginBottom: 12 }}>

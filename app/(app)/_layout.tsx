@@ -1,5 +1,6 @@
 import { Redirect, Tabs } from 'expo-router'
 import { useAuth } from '@/lib/auth-context'
+import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
 import { View, ActivityIndicator } from 'react-native'
 import { LayoutDashboard, MapPin, TrendingDown, TrendingUp, MoreHorizontal } from 'lucide-react-native'
@@ -17,6 +18,16 @@ export default function AppLayout() {
   }
 
   if (!user) return <Redirect href="/(auth)" />
+
+  const { currentFarmId, loading: farmLoading } = useFarm()
+  if (farmLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#16A34A" />
+      </View>
+    )
+  }
+  if (!currentFarmId) return <Redirect href="/(farm-select)" />
 
   return (
     <Tabs

@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth-context'
 import { useI18n } from '@/lib/i18n-context'
 import { getIncomes, deleteIncome, getParcels } from '@/lib/api'
 import { formatMAD, formatMADDecimal } from '@/lib/format'
+import { useFarm } from '@/lib/farm-context'
 import { useUndoDelete } from '@/hooks/useUndoDelete'
 import AddIncomeSheet from '@/components/AddIncomeSheet'
 import { HeaderBar } from '@/components/HeaderBar'
@@ -15,6 +16,7 @@ import { TrendingUp, Plus, Trash2 } from 'lucide-react-native'
 export default function IncomesScreen() {
   const { user } = useAuth()
   const { t } = useI18n()
+  const { currentFarmId, canWrite, canDeleteAnyEntries, isWorker } = useFarm()
   const [incomes, setIncomes] = useState<Income[]>([])
   const [parcels, setParcels] = useState<Parcel[]>([])
   const [loading, setLoading] = useState(true)
@@ -22,23 +24,23 @@ export default function IncomesScreen() {
   const [sheetOpen, setSheetOpen] = useState(false)
 
   const loadData = useCallback(async () => {
-    if (!user) return
+    if (!user || !currentFarmId) return
     setLoading(true)
     const [i, p] = await Promise.all([
-      getIncomes(user.uid, selectedParcel !== 'all' ? { parcelId: selectedParcel } : undefined),
-      getParcels(user.uid),
+      getIncomes(currentFarmId!, selectedParcel !== 'all' ? { parcelId: selectedParcel } : undefined),
+      getParcels(currentFarmId!),
     ])
     setIncomes(i.data)
     setParcels(p.data)
     setLoading(false)
-  }, [user, selectedParcel])
+  }, [user, selectedParcel, currentFarmId])
 
   useEffect(() => { loadData() }, [loadData])
 
   const handleRestore = async (item: Income) => {
-    if (!user) return
+    if (!user || !currentFarmId) return
     const { createIncome } = await import('@/lib/api')
-    await createIncome(user.uid, {
+    await createIncome(currentFarmId!, user.uid, {
       parcelId: item.parcelId, productName: item.productName,
       quantity: item.quantity, unit: item.unit, totalAmount: item.totalAmount,
       date: item.date, notes: item.notes,
@@ -47,7 +49,7 @@ export default function IncomesScreen() {
   }
 
   const { deleteWithUndo } = useUndoDelete(
-    (id) => deleteIncome(user!.uid, id),
+    (id) => deleteIncome(currentFarmId!, id),
     handleRestore,
     loadData,
     { deleted: t.deleted, undo: t.undo, error: t.error },
@@ -56,15 +58,19 @@ export default function IncomesScreen() {
   const total = incomes.reduce((sum, i) => sum + i.totalAmount, 0)
   const activeParcels = parcels.filter(p => p.status === 'active')
 
+  if (!currentFarmId) return null
+
   return (
     <SafeAreaView style={{ flex: 1 }} edges={['top']}>
       <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
         <HeaderBar
           title={t.incomes}
           right={
-            <TouchableOpacity onPress={() => setSheetOpen(true)} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#16A34A', alignItems: 'center', justifyContent: 'center' }}>
-              <Plus size={20} color="#FFFFFF" />
-            </TouchableOpacity>
+            canWrite ? (
+              <TouchableOpacity onPress={() => setSheetOpen(true)} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#16A34A', alignItems: 'center', justifyContent: 'center' }}>
+                <Plus size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            ) : undefined
           }
         />
 

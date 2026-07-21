@@ -1,29 +1,170 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read, update: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null && request.auth.uid == userId;
-      
+
+    // Helper: check if caller is authenticated
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // Helper: check if caller is a member of the given farm
+    function isMember(farmId) {
+      return isAuth() &&
+        exists(/databases/$(database)/documents/farms/$(farmId)/members/$(request.auth.uid));
+    }
+
+    // Helper: get the caller's role in a farm (returns empty string if not a member)
+    function getRole(farmId) {
+      return isMember(farmId) ?
+        get(/databases/$(database)/documents/farms/$(farmId)/members/$(request.auth.uid)).data.role :
+        '';
+    }
+
+    // Helper: check if caller is owner or manager of a farm
+    function isOwnerOrManager(farmId) {
+      return getRole(farmId) in ['owner', 'manager'];
+    }
+
+    // ──────────────────────────────────────────────
+    // users/{uid} — user profile doc
+    // ──────────────────────────────────────────────
+    match /users/{uid} {
+      allow read, update: if isAuth() && request.auth.uid == uid;
+      allow create: if isAuth() && request.auth.uid == uid;
+      allow delete: if false;
+    }
+
+    // ──────────────────────────────────────────────
+    // farms/{farmId} — farm doc
+    // ──────────────────────────────────────────────
+    match /farms/{farmId} {
+      // Anyone authenticated can create a new farm
+      allow create: if isAuth();
+
+      // Only members can read the farm doc
+      allow read: if isMember(farmId);
+
+      // Only owners/managers can update the farm doc (e.g. settings)
+      allow update: if isOwnerOrManager(farmId);
+
+      allow delete: if false;
+
+      // ──────────────────────────────────────────────
+      // farms/{farmId}/members/{uid} — membership
+      // ──────────────────────────────────────────────
+      match /members/{uid} {
+        // Any member can read the members list
+        allow read: if isMember(farmId);
+
+        // Only owners/managers can add or remove members
+        // EXCEPT: a user can create their own membership doc (for farm creation / joining via invite)
+        allow create: if isOwnerOrManager(farmId) || (isAuth() && request.auth.uid == uid);
+        allow update: if isOwnerOrManager(farmId);
+        allow delete: if isOwnerOrManager(farmId);
+      }
+
+      // ──────────────────────────────────────────────
+      // farms/{farmId}/invitations/{invitationId} — pending invitations
+      // ──────────────────────────────────────────────
+      match /invitations/{invitationId} {
+        // Only owners/managers can create and list invitations
+        allow read, create: if isOwnerOrManager(farmId);
+
+        // The invited user (matching the email in the invitation) can update
+        // the invitation status (e.g. accept/decline).
+        // At API level, validate that only status field is changed and
+        // that the caller's email matches the invitation email.
+        allow update: if isAuth() &&
+          request.resource.data.email == request.auth.token.email;
+
+        // Only owners/managers can delete (revoke) invitations
+        allow delete: if isOwnerOrManager(farmId);
+      }
+
+      // ──────────────────────────────────────────────
+      // farms/{farmId}/parcels/{parcelId} — parcels
+      // ──────────────────────────────────────────────
       match /parcels/{parcelId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        // Only members can read/write parcels
+        // (role-based write restrictions enforced at API/app level)
+        allow read, write: if isMember(farmId);
+
+        // ──────────────────────────────────────────────
+        // farms/{farmId}/parcels/{parcelId}/expenses/{expenseId}
+        // ──────────────────────────────────────────────
+        match /expenses/{expenseId} {
+          allow read, write: if isMember(farmId);
+        }
+
+        // ──────────────────────────────────────────────
+        // farms/{farmId}/parcels/{parcelId}/incomes/{incomeId}
+        // ──────────────────────────────────────────────
+        match /incomes/{incomeId} {
+          allow read, write: if isMember(farmId);
+        }
       }
+
+      // ──────────────────────────────────────────────
+      // farms/{farmId}/expenses/{expenseId} — farm-level expenses
+      // ──────────────────────────────────────────────
       match /expenses/{expenseId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if isMember(farmId);
       }
+
+      // ──────────────────────────────────────────────
+      // farms/{farmId}/incomes/{incomeId} — farm-level incomes
+      // ──────────────────────────────────────────────
       match /incomes/{incomeId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if isMember(farmId);
       }
+
+      // ──────────────────────────────────────────────
+      // farms/{farmId}/gasUsages/{gasUsageId} — gas usages
+      // ──────────────────────────────────────────────
       match /gasUsages/{gasUsageId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if isMember(farmId);
       }
+
+      // ──────────────────────────────────────────────
+      // farms/{farmId}/cooperativeSupports/{supportId} — cooperative supports
+      // ──────────────────────────────────────────────
       match /cooperativeSupports/{supportId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if isMember(farmId);
+      }
+
+      // ──────────────────────────────────────────────
+      // farms/{farmId}/activityLog/{logId} — activity log
+      // ──────────────────────────────────────────────
+      match /activityLog/{logId} {
+        // Any member can read the activity log
+        allow read: if isMember(farmId);
+
+        // Any member can create log entries
+        // (owner/manager/worker distinctions enforced at API level)
+        allow create: if isMember(farmId);
+
+        // No one can update or delete activity log entries
+        allow update, delete: if false;
       }
     }
-    
-    match /expense_types/{typeId} {
-      allow read, write: if request.auth != null;
+
+    // ──────────────────────────────────────────────
+    // farm_invite_codes/{code} — share/invite codes
+    // ──────────────────────────────────────────────
+    match /farm_invite_codes/{code} {
+      // Anyone can read invite codes (used to look up farm info before joining)
+      allow read: if true;
+
+      // Any authenticated user can create a new invite code
+      // (they will set createdBy to their own uid)
+      allow create: if isAuth();
+
+      // Only the creator can update or delete the code
+      allow update: if isAuth() &&
+        resource.data.createdBy == request.auth.uid;
+
+      allow delete: if isAuth() &&
+        resource.data.createdBy == request.auth.uid;
     }
   }
 }

@@ -5,7 +5,7 @@ export default function AuthLayout() {
   const { user, loading } = useAuth()
 
   if (loading) return null
-  if (user) return <Redirect href="/(app)" />
+  if (user) return <Redirect href="/(farm-select)" />
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

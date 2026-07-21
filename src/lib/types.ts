@@ -1,25 +1,91 @@
-export type UserRole = 'admin' | 'farmer' | 'viewer'
+export type FarmRole = 'owner' | 'manager' | 'worker' | 'viewer'
 export type ParcelStatus = 'active' | 'archived'
 export type CooperativeSupportType = 'gas' | 'seeds' | 'tools' | 'fertilizer' | 'equipment' | 'other'
 
 export interface Profile {
   id: string
   fullName: string
-  role: UserRole
+  email: string
   preferredLanguage: string
   avatarUrl: string | null
+  currentFarmId: string | null
+  farmIds: string[]
   createdAt: string
   updatedAt: string
 }
 
+export interface Farm {
+  id: string
+  name: string
+  description: string | null
+  location: string | null
+  ownerId: string
+  memberCount: number
+  parcelCount: number
+  currency: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface FarmMember {
+  userId: string
+  email: string
+  fullName: string
+  avatarUrl: string | null
+  role: FarmRole
+  joinedAt: string
+  invitedBy: string | null
+}
+
+export interface FarmInvitation {
+  id: string
+  farmId: string
+  farmName: string
+  email: string
+  role: FarmRole
+  invitedBy: string
+  invitedByName: string
+  status: 'pending' | 'accepted' | 'expired' | 'revoked'
+  createdAt: string
+  expiresAt: string
+}
+
+export interface FarmInviteCode {
+  code: string
+  farmId: string
+  farmName: string
+  role: FarmRole
+  createdBy: string
+  maxUses: number | null
+  useCount: number
+  expiresAt: string
+  isActive: boolean
+  createdAt: string
+}
+
+export interface ActivityLogEntry {
+  id: string
+  farmId: string
+  userId: string
+  userName: string
+  action: 'create' | 'update' | 'delete' | 'invite' | 'join' | 'leave' | 'role_change'
+  entityType: 'expense' | 'income' | 'gas' | 'cooperative' | 'parcel' | 'member' | 'farm'
+  entityId: string
+  entityName: string
+  details: Record<string, any> | null
+  createdAt: string
+}
+
 export interface Parcel {
   id: string
-  userId: string
+  farmId: string
   name: string
   areaHectares: number | null
   location: string | null
   status: ParcelStatus
   notes: string | null
+  assignedTo: string | null
+  createdBy: string
   createdAt: string
   updatedAt: string
 }
@@ -38,7 +104,7 @@ export interface ExpenseType {
 
 export interface Expense {
   id: string
-  userId: string
+  farmId: string
   parcelId: string
   typeId: string | null
   description: string | null
@@ -47,16 +113,17 @@ export interface Expense {
   unit: string | null
   date: string
   notes: string | null
+  createdBy: string
   createdAt: string
   updatedAt: string
-  // Joined fields
   expenseType?: ExpenseType | null
   parcelName?: string | null
+  createdByName?: string | null
 }
 
 export interface Income {
   id: string
-  userId: string
+  farmId: string
   parcelId: string
   productName: string
   quantity: number | null
@@ -64,29 +131,31 @@ export interface Income {
   totalAmount: number
   date: string
   notes: string | null
+  createdBy: string
   createdAt: string
   updatedAt: string
-  // Joined fields
   parcelName?: string | null
+  createdByName?: string | null
 }
 
 export interface GasUsage {
   id: string
-  userId: string
+  farmId: string
   parcelId: string
   quantityBottles: number
   totalAmount: number
   date: string
   notes: string | null
+  createdBy: string
   createdAt: string
   updatedAt: string
-  // Joined fields
   parcelName?: string | null
+  createdByName?: string | null
 }
 
 export interface CooperativeSupport {
   id: string
-  userId: string
+  farmId: string
   parcelId: string | null
   invoiceNumber: string | null
   supportType: CooperativeSupportType
@@ -94,10 +163,11 @@ export interface CooperativeSupport {
   amount: number
   date: string
   notes: string | null
+  createdBy: string
   createdAt: string
   updatedAt: string
-  // Joined fields
   parcelName?: string | null
+  createdByName?: string | null
 }
 
 export interface ActivityItem {
@@ -107,6 +177,8 @@ export interface ActivityItem {
   amount?: number
   date: string
   parcelName?: string
+  userName?: string
+  createdBy?: string
 }
 
 export interface FinancialSummary {

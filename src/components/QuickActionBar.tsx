@@ -8,9 +8,11 @@ interface QuickActionBarProps {
   onAddIncome: () => void
   onAddGas: () => void
   onAddCooperative: () => void
+  canWrite?: boolean
 }
 
-export function QuickActionBar({ onAddExpense, onAddIncome, onAddGas, onAddCooperative }: QuickActionBarProps) {
+export function QuickActionBar({ onAddExpense, onAddIncome, onAddGas, onAddCooperative, canWrite = true }: QuickActionBarProps) {
+  if (!canWrite) return null
   const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const anim = useRef(new Animated.Value(0)).current

@@ -2,10 +2,12 @@ import { useState, useEffect, useCallback } from 'react'
 import { View, Text, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/lib/auth-context'
+import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
 import { getFinancialSummary, getRecentActivity, getParcels } from '@/lib/api'
 import { formatMAD } from '@/lib/format'
 import { QuickActionBar } from '@/components/QuickActionBar'
+import FarmSwitcherModal from '@/components/FarmSwitcherModal'
 import AddExpenseSheet from '@/components/AddExpenseSheet'
 import AddIncomeSheet from '@/components/AddIncomeSheet'
 import AddGasSheet from '@/components/AddGasSheet'
@@ -14,7 +16,7 @@ import { useRouter } from 'expo-router'
 import type { FinancialSummary, ActivityItem, Parcel } from '@/lib/types'
 import {
   TrendingUp, TrendingDown, Flame, HandCoins, MapPin,
-  ArrowUpRight, ArrowDownRight, RefreshCcw, Settings,
+  ArrowUpRight, ArrowDownRight, RefreshCcw, Settings, ChevronDown,
 } from 'lucide-react-native'
 
 interface ParcelWithFin extends Parcel {
@@ -23,6 +25,7 @@ interface ParcelWithFin extends Parcel {
 
 export default function DashboardScreen() {
   const { user } = useAuth()
+  const { currentFarmId, currentFarm, canWrite } = useFarm()
   const { t } = useI18n()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -36,14 +39,15 @@ export default function DashboardScreen() {
   const [incomeSheetOpen, setIncomeSheetOpen] = useState(false)
   const [gasSheetOpen, setGasSheetOpen] = useState(false)
   const [coopSheetOpen, setCoopSheetOpen] = useState(false)
+  const [farmSwitcherVisible, setFarmSwitcherVisible] = useState(false)
 
   const loadData = useCallback(async () => {
-    if (!user) return
+    if (!user || !currentFarmId) return
     try {
       const [sum, act, { data: parcelData }] = await Promise.all([
-        getFinancialSummary(user.uid),
-        getRecentActivity(user.uid, 6),
-        getParcels(user.uid),
+        getFinancialSummary(currentFarmId),
+        getRecentActivity(currentFarmId, 6),
+        getParcels(currentFarmId),
       ])
       setSummary(sum)
       setActivity(act)
@@ -52,7 +56,7 @@ export default function DashboardScreen() {
       const parcelsWithFin: ParcelWithFin[] = await Promise.all(
         activeParcels.map(async (p) => ({
           ...p,
-          fin: await getFinancialSummary(user.uid, p.id),
+          fin: await getFinancialSummary(currentFarmId!, p.id),
         }))
       )
       parcelsWithFin.sort((a, b) => (b.fin?.netProfit ?? 0) - (a.fin?.netProfit ?? 0))
@@ -62,7 +66,7 @@ export default function DashboardScreen() {
     } finally {
       setLoading(false)
     }
-  }, [user])
+  }, [user, currentFarmId])
 
   useEffect(() => { loadData() }, [loadData])
 
@@ -102,6 +106,8 @@ export default function DashboardScreen() {
     { label: t.totalCooperative, value: summary.totalCooperative, icon: <HandCoins size={20} color="#8B5CF6" />, bg: '#F5F3FF', page: 'cooperative' },
   ]
 
+  if (!currentFarmId) return null
+
   return (
     <SafeAreaView style={{ flex: 1 }} edges={['top']}>
       <ScrollView
@@ -114,11 +120,13 @@ export default function DashboardScreen() {
             <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#16A34A', alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFFFFF' }}>🌾</Text>
             </View>
-            <View>
-              <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>{t.appName}</Text>
+            <TouchableOpacity onPress={() => setFarmSwitcherVisible(true)} style={{ flex: 1 }} activeOpacity={0.7}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>{currentFarm?.name || t.appName}</Text>
+                <ChevronDown size={16} color="#9CA3AF" />
+              </View>
               <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t.appTagline}</Text>
-            </View>
-            <View style={{ flex: 1 }} />
+            </TouchableOpacity>
             <TouchableOpacity onPress={() => router.push('/(app)/tools/settings')} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}>
               <Settings size={18} color="#6B7280" />
             </TouchableOpacity>
@@ -291,11 +299,13 @@ export default function DashboardScreen() {
         onAddIncome={() => setIncomeSheetOpen(true)}
         onAddGas={() => setGasSheetOpen(true)}
         onAddCooperative={() => setCoopSheetOpen(true)}
+        canWrite={canWrite}
       />
       <AddExpenseSheet visible={expenseSheetOpen} onClose={() => { setExpenseSheetOpen(false); loadData() }} />
       <AddIncomeSheet visible={incomeSheetOpen} onClose={() => { setIncomeSheetOpen(false); loadData() }} />
       <AddGasSheet visible={gasSheetOpen} onClose={() => { setGasSheetOpen(false); loadData() }} />
       <AddCooperativeSheet visible={coopSheetOpen} onClose={() => { setCoopSheetOpen(false); loadData() }} />
+      <FarmSwitcherModal visible={farmSwitcherVisible} onClose={() => setFarmSwitcherVisible(false)} onCreateNew={() => router.push('/(farm-select)/create')} />
     </SafeAreaView>
   )
 }

@@ -1,56 +1,62 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useFarm } from '@/lib/farm-context'
 
-const DRAFT_KEY = 'agri-mizane-drafts'
+function draftKey(farmId: string) {
+  return `agri-mizane-drafts:${farmId}`
+}
 
 interface Drafts {
   expense: Record<string, any>
   income: Record<string, any>
 }
 
-async function readDrafts(): Promise<Drafts> {
+async function readDrafts(key: string): Promise<Drafts> {
   try {
-    const raw = await AsyncStorage.getItem(DRAFT_KEY)
+    const raw = await AsyncStorage.getItem(key)
     return raw ? JSON.parse(raw) : { expense: {}, income: {} }
   } catch {
     return { expense: {}, income: {} }
   }
 }
 
-async function writeDrafts(drafts: Drafts) {
+async function writeDrafts(key: string, drafts: Drafts) {
   try {
-    await AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(drafts))
+    await AsyncStorage.setItem(key, JSON.stringify(drafts))
   } catch {}
 }
 
 export function useDraft(kind: 'expense' | 'income') {
   const [draft, setDraftState] = useState<Record<string, any>>({})
   const loadedRef = useRef(false)
+  const { currentFarmId } = useFarm()
+
+  const key = draftKey(currentFarmId ?? 'default')
 
   useEffect(() => {
-    readDrafts().then((all) => {
+    readDrafts(key).then((all) => {
       setDraftState(all[kind] || {})
       loadedRef.current = true
     })
-  }, [kind])
+  }, [kind, key])
 
   const setDraft = useCallback(
     (values: Record<string, any>) => {
       setDraftState(values)
-      readDrafts().then((all) => {
+      readDrafts(key).then((all) => {
         all[kind] = values
-        writeDrafts(all)
+        writeDrafts(key, all)
       })
     },
-    [kind],
+    [kind, key],
   )
 
   const clearDraft = useCallback(async () => {
     setDraftState({})
-    const all = await readDrafts()
+    const all = await readDrafts(key)
     all[kind] = {}
-    await writeDrafts(all)
-  }, [kind])
+    await writeDrafts(key, all)
+  }, [kind, key])
 
   return { draft, setDraft, clearDraft }
 }

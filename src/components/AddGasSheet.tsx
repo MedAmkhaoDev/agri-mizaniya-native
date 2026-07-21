@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { View, Text, TextInput, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native'
 import { useAuth } from '@/lib/auth-context'
+import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
 import { createGasUsage, getParcels } from '@/lib/api'
 import { getLastParcelId, setLastParcelId } from '@/hooks/useDraft'
@@ -17,6 +18,7 @@ interface AddGasSheetProps {
 
 export default function AddGasSheet({ visible, onClose, defaultParcelId }: AddGasSheetProps) {
   const { user } = useAuth()
+  const { currentFarmId } = useFarm()
   const { t } = useI18n()
   const [parcels, setParcels] = useState<Parcel[]>([])
   const [parcelId, setParcelId] = useState('')
@@ -26,8 +28,8 @@ export default function AddGasSheet({ visible, onClose, defaultParcelId }: AddGa
   const [saving, setSaving] = useState(false)
 
   const loadParcels = useCallback(async () => {
-    if (!user) return
-    const { data } = await getParcels(user.uid)
+    if (!user || !currentFarmId) return
+    const { data } = await getParcels(currentFarmId!)
     const active = data.filter((p) => p.status === 'active')
     const lastId = defaultParcelId || (await getLastParcelId())
     const sorted = [...active].sort((a, b) => {
@@ -40,7 +42,7 @@ export default function AddGasSheet({ visible, onClose, defaultParcelId }: AddGa
       const prefill = sorted.find((p) => p.id === lastId) || sorted[0]
       setParcelId(prefill.id)
     }
-  }, [defaultParcelId, parcelId, user])
+  }, [defaultParcelId, parcelId, user, currentFarmId])
 
   useEffect(() => {
     if (visible) {
@@ -60,7 +62,7 @@ export default function AddGasSheet({ visible, onClose, defaultParcelId }: AddGa
     setSaving(true)
     try {
       await setLastParcelId(parcelId)
-      await createGasUsage(user.uid, {
+      await createGasUsage(currentFarmId!, user.uid, {
         parcelId,
         quantityBottles: parseFloat(quantityBottles),
         totalAmount: parseFloat(totalAmount),

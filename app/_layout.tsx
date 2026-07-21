@@ -2,6 +2,7 @@ import '../global.css'
 import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { AuthProvider, useAuth } from '@/lib/auth-context'
+import { FarmProvider } from '@/lib/farm-context'
 import { I18nProvider } from '@/lib/i18n-context'
 import { ThemeProvider } from '@/lib/theme-context'
 import { View, ActivityIndicator } from 'react-native'
@@ -21,6 +22,7 @@ function RootLayoutNav() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(auth)" />
+      <Stack.Screen name="(farm-select)" />
       <Stack.Screen name="(app)" />
     </Stack>
   )
@@ -31,9 +33,11 @@ export default function RootLayout() {
     <I18nProvider>
       <ThemeProvider>
         <AuthProvider>
-          <RootLayoutNav />
-          <Toast />
-          <StatusBar style="auto" />
+          <FarmProvider>
+            <RootLayoutNav />
+            <Toast />
+            <StatusBar style="auto" />
+          </FarmProvider>
         </AuthProvider>
       </ThemeProvider>
     </I18nProvider>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { View, Text, FlatList, TouchableOpacity, TextInput, Modal, ActivityIndicator, Alert } from 'react-native'
 import { useAuth } from '@/lib/auth-context'
+import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
 import { getCooperativeSupports, createCooperativeSupport, deleteCooperativeSupport, getParcels } from '@/lib/api'
 import { formatMAD } from '@/lib/format'
@@ -13,6 +14,7 @@ const SUPPORT_TYPES: CooperativeSupportType[] = ['gas', 'seeds', 'tools', 'ferti
 export default function CooperativeScreen() {
   const { t } = useI18n()
   const { user } = useAuth()
+  const { currentFarmId, canWrite } = useFarm()
   const [supports, setSupports] = useState<CooperativeSupport[]>([])
   const [parcels, setParcels] = useState<Parcel[]>([])
   const [loading, setLoading] = useState(true)
@@ -25,26 +27,28 @@ export default function CooperativeScreen() {
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
 
+  if (!currentFarmId) return null
+
   const loadData = useCallback(async () => {
-    if (!user) return
+    if (!user || !currentFarmId) return
     setLoading(true)
     const [s, p] = await Promise.all([
-      getCooperativeSupports(user.uid, selectedParcel !== 'all' ? { parcelId: selectedParcel } : undefined),
-      getParcels(user.uid),
+      getCooperativeSupports(currentFarmId!, selectedParcel !== 'all' ? { parcelId: selectedParcel } : undefined),
+      getParcels(currentFarmId!),
     ])
     setSupports(s.data)
     setParcels(p.data)
     setLoading(false)
-  }, [user, selectedParcel])
+  }, [user, currentFarmId, selectedParcel])
 
   useEffect(() => { loadData() }, [loadData])
 
   const resetForm = () => { setFormParcelId(''); setSupportType('other'); setAmount(''); setInvoiceNumber(''); setNotes(''); setSheetOpen(false) }
 
   const handleSave = async () => {
-    if (!user || !amount) return
+    if (!user || !currentFarmId || !amount) return
     setSaving(true)
-    await createCooperativeSupport(user.uid, {
+    await createCooperativeSupport(currentFarmId!, user.uid, {
       parcelId: formParcelId || null, supportType, amount: parseFloat(amount),
       invoiceNumber: invoiceNumber.trim() || null, description: null,
       date: new Date().toISOString().split('T')[0], notes: notes.trim() || null,
@@ -55,7 +59,7 @@ export default function CooperativeScreen() {
   const handleDelete = (support: CooperativeSupport) => {
     Alert.alert(t.delete, `${t.delete}?`, [
       { text: t.cancel, style: 'cancel' },
-      { text: t.delete, style: 'destructive', onPress: async () => { if (!user) return; await deleteCooperativeSupport(user.uid, support.id); loadData() } },
+      { text: t.delete, style: 'destructive', onPress: async () => { if (!user || !currentFarmId) return; await deleteCooperativeSupport(currentFarmId!, support.id); loadData() } },
     ])
   }
 
@@ -67,9 +71,11 @@ export default function CooperativeScreen() {
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
         <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>{t.cooperative}</Text>
-        <TouchableOpacity onPress={() => setSheetOpen(true)} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#8B5CF6', alignItems: 'center', justifyContent: 'center' }}>
-          <Plus size={20} color="#FFFFFF" />
-        </TouchableOpacity>
+        {canWrite && (
+          <TouchableOpacity onPress={() => setSheetOpen(true)} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#8B5CF6', alignItems: 'center', justifyContent: 'center' }}>
+            <Plus size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Total */}
