@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Dimensions } from 'react-native'
 import { useAuth } from '@/lib/auth-context'
 import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
@@ -8,6 +8,7 @@ import { formatMAD } from '@/lib/format'
 import type { Parcel } from '@/lib/types'
 import * as Print from 'expo-print'
 import * as Sharing from 'expo-sharing'
+import { BarChart } from 'react-native-gifted-charts'
 import {
   FileBarChart2, Download, TrendingUp, TrendingDown, Flame, HandCoins,
   ArrowUpRight, ArrowDownRight, Share2,
@@ -228,6 +229,90 @@ export default function ReportsScreen() {
             </View>
           </View>
 
+          {/* Bar Chart */}
+          {summary.parcelBreakdown && summary.parcelBreakdown.length > 0 && (() => {
+            const barWidth = summary.parcelBreakdown.length > 4 ? 16 : 24
+            const chartData = summary.parcelBreakdown.map((p: any) => ({
+              label: p.name.length > 8 ? p.name.substring(0, 7) + '..' : p.name,
+              value: Math.round(p.totalIncome),
+              frontColor: '#10B981',
+              topLabelComponent: () => (
+                <Text style={{ color: '#10B981', fontSize: 9, fontWeight: '600', marginBottom: 2 }}>
+                  +{formatMAD(p.totalIncome)}
+                </Text>
+              ),
+            }))
+            const expenseData = summary.parcelBreakdown.map((p: any) => ({
+              label: '',
+              value: Math.round(p.totalExpenses + p.totalGas + p.totalCooperative),
+              frontColor: '#EF4444',
+              topLabelComponent: () => (
+                <Text style={{ color: '#EF4444', fontSize: 9, fontWeight: '600', marginBottom: 2 }}>
+                  -{formatMAD(p.totalExpenses + p.totalGas + p.totalCooperative)}
+                </Text>
+              ),
+            }))
+            const screenWidth = Dimensions.get('window').width - 64
+            const totalBars = summary.parcelBreakdown.length * 2
+            const chartWidth = Math.max(screenWidth, totalBars * (barWidth + 4) + 60)
+            const maxValue = Math.max(
+              ...summary.parcelBreakdown.map((p: any) => Math.max(p.totalIncome, p.totalExpenses + p.totalGas + p.totalCooperative))
+            )
+
+            return (
+              <View style={{ padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 12 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151' }}>{t.parcelComparison}</Text>
+                  <View style={{ flexDirection: 'row', gap: 12 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: '#10B981' }} />
+                      <Text style={{ fontSize: 10, color: '#6B7280' }}>{t.income}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: '#EF4444' }} />
+                      <Text style={{ fontSize: 10, color: '#6B7280' }}>{t.expenses}</Text>
+                    </View>
+                  </View>
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <View style={{ minWidth: screenWidth }}>
+                    <BarChart
+                      data={chartData}
+                      barWidth={barWidth}
+                      spacing={barWidth + 6}
+                      roundedTop
+                      noOfSections={4}
+                      maxValue={maxValue * 1.15}
+                      barInnerComponent={() => null}
+                      yAxisTextStyle={{ color: '#9CA3AF', fontSize: 9 }}
+                      xAxisLabelTextStyle={{ color: '#6B7280', fontSize: 9, textAlign: 'center' }}
+                      hideRules
+                      yAxisColor="#F3F4F6"
+                      xAxisColor="#F3F4F6"
+                    />
+                    <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 30, justifyContent: 'flex-end' }}>
+                      <BarChart
+                        data={expenseData}
+                        barWidth={barWidth}
+                        spacing={barWidth + 6}
+                        roundedTop
+                        noOfSections={0}
+                        maxValue={maxValue * 1.15}
+                        barInnerComponent={() => null}
+                        hideYAxisText
+                        hideRules
+                        yAxisColor="transparent"
+                        xAxisColor="transparent"
+                        xAxisLabelTextStyle={{ color: 'transparent' }}
+                        yAxisTextStyle={{ color: 'transparent' }}
+                      />
+                    </View>
+                  </View>
+                </ScrollView>
+              </View>
+            )
+          })()}
+
           {/* Detail cards */}
           <View style={{ padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 12 }}>
             {[
@@ -247,7 +332,7 @@ export default function ReportsScreen() {
               </View>
             ))}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#E5E7EB', marginTop: 4 }}>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151' }}>Coût total</Text>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151' }}>{t.totalCost}</Text>
               <Text style={{ fontSize: 14, fontWeight: '700', color: '#EF4444', fontVariant: ['tabular-nums'] }}>
                 -{formatMAD(summary.totalExpenses + summary.totalGas + summary.totalCooperative)} MAD
               </Text>
