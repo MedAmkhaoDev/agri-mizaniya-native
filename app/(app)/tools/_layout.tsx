@@ -13,7 +13,7 @@ export default function MoreLayout() {
     const unsubscribe = parent.addListener('focus', () => {
       const state = navigation.getState()
       if (state && state.index > 0) {
-        navigation.dispatch({ type: 'POP_TO_TOP' })
+        navigation.navigate('index')
       }
     })
 
