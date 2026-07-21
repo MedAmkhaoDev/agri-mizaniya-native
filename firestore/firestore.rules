@@ -166,5 +166,14 @@ service cloud.firestore {
       allow delete: if isAuth() &&
         resource.data.createdBy == request.auth.uid;
     }
+
+    // ──────────────────────────────────────────────
+    // expense_types/{typeId} — global expense types
+    // ──────────────────────────────────────────────
+    match /expense_types/{typeId} {
+      allow read: if isAuth();
+      allow create: if isAuth();
+      allow update, delete: if isAuth();
+    }
   }
 }
