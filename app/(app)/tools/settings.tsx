@@ -4,20 +4,17 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/lib/auth-context'
 import { useI18n } from '@/lib/i18n-context'
 import { useTheme } from '@/lib/theme-context'
-import { useRouter } from 'expo-router'
 import { updateProfile } from 'firebase/auth'
 import type { Language } from '@/lib/i18n'
 import Constants from 'expo-constants'
 import {
   User, Globe, Sun, Moon, Monitor, LogOut, CheckCircle, Wifi, Wheat,
-  Flame, HandCoins, BarChart3, ChevronRight,
 } from 'lucide-react-native'
 
 export default function SettingsScreen() {
   const { t, language, setLanguage } = useI18n()
   const { user, profile, signOut, refreshProfile } = useAuth()
   const { theme, setTheme } = useTheme()
-  const router = useRouter()
   const [name, setName] = useState(profile?.fullName || '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -56,31 +53,6 @@ export default function SettingsScreen() {
     <SafeAreaView style={{ flex: 1 }} edges={['top']}>
       <ScrollView style={{ flex: 1, backgroundColor: '#FFFFFF' }} contentContainerStyle={{ padding: 16, maxWidth: 480, alignSelf: 'center', width: '100%' }}>
         <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 16 }}>{t.settings}</Text>
-
-        {/* Navigation menu */}
-        <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 16, overflow: 'hidden' }}>
-          {[
-            { icon: <Flame size={18} color="#F97316" />, label: t.gasUsage, route: '/(app)/more/gas' },
-            { icon: <HandCoins size={18} color="#8B5CF6" />, label: t.cooperative, route: '/(app)/more/cooperative' },
-            { icon: <BarChart3 size={18} color="#3B82F6" />, label: t.reports, route: '/(app)/more/reports' },
-          ].map((item, i) => (
-            <TouchableOpacity
-              key={item.route}
-              onPress={() => router.push(item.route as any)}
-              style={{
-                flexDirection: 'row', alignItems: 'center', gap: 12,
-                paddingHorizontal: 20, paddingVertical: 14,
-                borderBottomWidth: i < 2 ? 1 : 0, borderBottomColor: '#F3F4F6',
-              }}
-            >
-              <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}>
-                {item.icon}
-              </View>
-              <Text style={{ flex: 1, fontSize: 15, fontWeight: '500', color: '#111827' }}>{item.label}</Text>
-              <ChevronRight size={16} color="#D1D5DB" />
-            </TouchableOpacity>
-          ))}
-        </View>
 
         {/* Profile Card */}
         <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 16, overflow: 'hidden' }}>

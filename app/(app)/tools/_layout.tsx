@@ -12,10 +12,11 @@ export default function MoreLayout() {
         headerTitleStyle: { fontWeight: '600' },
       }}
     >
-      <Stack.Screen name="index" options={{ title: t.settings }} />
+      <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="gas" options={{ title: t.gasUsage }} />
       <Stack.Screen name="cooperative" options={{ title: t.cooperative }} />
       <Stack.Screen name="reports" options={{ title: t.reports }} />
+      <Stack.Screen name="settings" options={{ title: t.settings }} />
     </Stack>
   )
 }

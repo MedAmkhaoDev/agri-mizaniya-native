@@ -8,6 +8,7 @@ import { getLastParcelId } from '@/hooks/useDraft'
 import { formatMAD } from '@/lib/format'
 import type { Parcel, FinancialSummary } from '@/lib/types'
 import Toast from 'react-native-toast-message'
+import { HeaderBar } from '@/components/HeaderBar'
 import {
   MapPin, Plus, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight,
   ChevronRight, Archive, X, Check,
@@ -111,12 +112,14 @@ export default function ParcelsScreen() {
     <SafeAreaView style={{ flex: 1 }} edges={['top']}>
       <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
         {/* Header */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
-          <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>{t.parcels}</Text>
-          <TouchableOpacity onPress={openAdd} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#16A34A', alignItems: 'center', justifyContent: 'center' }}>
-            <Plus size={20} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
+        <HeaderBar
+          title={t.parcels}
+          right={
+            <TouchableOpacity onPress={openAdd} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#16A34A', alignItems: 'center', justifyContent: 'center' }}>
+              <Plus size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+          }
+        />
 
         <ScrollView contentContainerStyle={{ padding: 16 }}>
           {loading ? (

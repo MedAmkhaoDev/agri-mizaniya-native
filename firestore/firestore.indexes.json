@@ -4,6 +4,7 @@
       "collectionGroup": "expenses",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "parcelId", "order": "ASCENDING" },
         { "fieldPath": "date", "order": "DESCENDING" }
       ]
     },
@@ -11,6 +12,7 @@
       "collectionGroup": "incomes",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "parcelId", "order": "ASCENDING" },
         { "fieldPath": "date", "order": "DESCENDING" }
       ]
     },
@@ -18,6 +20,7 @@
       "collectionGroup": "gasUsages",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "parcelId", "order": "ASCENDING" },
         { "fieldPath": "date", "order": "DESCENDING" }
       ]
     },
@@ -25,7 +28,16 @@
       "collectionGroup": "cooperativeSupports",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "parcelId", "order": "ASCENDING" },
         { "fieldPath": "date", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "expense_types",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isActive", "order": "ASCENDING" },
+        { "fieldPath": "name", "order": "ASCENDING" }
       ]
     }
   ],

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const DRAFT_KEY = 'agri-mizane-drafts'
@@ -25,21 +25,25 @@ async function writeDrafts(drafts: Drafts) {
 
 export function useDraft(kind: 'expense' | 'income') {
   const [draft, setDraftState] = useState<Record<string, any>>({})
+  const loadedRef = useRef(false)
+
+  useEffect(() => {
+    readDrafts().then((all) => {
+      setDraftState(all[kind] || {})
+      loadedRef.current = true
+    })
+  }, [kind])
 
   const setDraft = useCallback(
-    async (values: Record<string, any>) => {
+    (values: Record<string, any>) => {
       setDraftState(values)
-      const all = await readDrafts()
-      all[kind] = values
-      await writeDrafts(all)
+      readDrafts().then((all) => {
+        all[kind] = values
+        writeDrafts(all)
+      })
     },
     [kind],
   )
-
-  const loadDraft = useCallback(async () => {
-    const all = await readDrafts()
-    setDraftState(all[kind] || {})
-  }, [kind])
 
   const clearDraft = useCallback(async () => {
     setDraftState({})
@@ -48,7 +52,7 @@ export function useDraft(kind: 'expense' | 'income') {
     await writeDrafts(all)
   }, [kind])
 
-  return { draft, setDraft, clearDraft, loadDraft }
+  return { draft, setDraft, clearDraft }
 }
 
 // --- Last parcel persistence ---

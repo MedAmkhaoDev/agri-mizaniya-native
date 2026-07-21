@@ -10,10 +10,11 @@ import AddExpenseSheet from '@/components/AddExpenseSheet'
 import AddIncomeSheet from '@/components/AddIncomeSheet'
 import AddGasSheet from '@/components/AddGasSheet'
 import AddCooperativeSheet from '@/components/AddCooperativeSheet'
+import { useRouter } from 'expo-router'
 import type { FinancialSummary, ActivityItem, Parcel } from '@/lib/types'
 import {
   TrendingUp, TrendingDown, Flame, HandCoins, MapPin,
-  ArrowUpRight, ArrowDownRight, RefreshCcw,
+  ArrowUpRight, ArrowDownRight, RefreshCcw, Settings,
 } from 'lucide-react-native'
 
 interface ParcelWithFin extends Parcel {
@@ -23,6 +24,7 @@ interface ParcelWithFin extends Parcel {
 export default function DashboardScreen() {
   const { user } = useAuth()
   const { t } = useI18n()
+  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [summary, setSummary] = useState<FinancialSummary>({
@@ -37,24 +39,29 @@ export default function DashboardScreen() {
 
   const loadData = useCallback(async () => {
     if (!user) return
-    const [sum, act, { data: parcelData }] = await Promise.all([
-      getFinancialSummary(user.uid),
-      getRecentActivity(user.uid, 6),
-      getParcels(user.uid),
-    ])
-    setSummary(sum)
-    setActivity(act)
+    try {
+      const [sum, act, { data: parcelData }] = await Promise.all([
+        getFinancialSummary(user.uid),
+        getRecentActivity(user.uid, 6),
+        getParcels(user.uid),
+      ])
+      setSummary(sum)
+      setActivity(act)
 
-    const activeParcels = parcelData.filter((p) => p.status === 'active')
-    const parcelsWithFin: ParcelWithFin[] = await Promise.all(
-      activeParcels.map(async (p) => ({
-        ...p,
-        fin: await getFinancialSummary(user.uid, p.id),
-      }))
-    )
-    parcelsWithFin.sort((a, b) => (b.fin?.netProfit ?? 0) - (a.fin?.netProfit ?? 0))
-    setParcels(parcelsWithFin)
-    setLoading(false)
+      const activeParcels = parcelData.filter((p) => p.status === 'active')
+      const parcelsWithFin: ParcelWithFin[] = await Promise.all(
+        activeParcels.map(async (p) => ({
+          ...p,
+          fin: await getFinancialSummary(user.uid, p.id),
+        }))
+      )
+      parcelsWithFin.sort((a, b) => (b.fin?.netProfit ?? 0) - (a.fin?.netProfit ?? 0))
+      setParcels(parcelsWithFin)
+    } catch (e) {
+      console.error('Dashboard loadData error:', e)
+    } finally {
+      setLoading(false)
+    }
   }, [user])
 
   useEffect(() => { loadData() }, [loadData])
@@ -111,6 +118,10 @@ export default function DashboardScreen() {
               <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>{t.appName}</Text>
               <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t.appTagline}</Text>
             </View>
+            <View style={{ flex: 1 }} />
+            <TouchableOpacity onPress={() => router.push('/(app)/tools/settings')} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}>
+              <Settings size={18} color="#6B7280" />
+            </TouchableOpacity>
           </View>
         </View>
 

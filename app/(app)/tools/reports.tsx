@@ -19,7 +19,7 @@ export default function ReportsScreen() {
   const { t } = useI18n()
   const [parcels, setParcels] = useState<Parcel[]>([])
   const [selectedParcel, setSelectedParcel] = useState<string>('all')
-  const [period, setPeriod] = useState<Period>('monthly')
+  const [period, setPeriod] = useState<Period>('all')
   const [customFrom, setCustomFrom] = useState('')
   const [customTo, setCustomTo] = useState('')
   const [loading, setLoading] = useState(false)
@@ -50,17 +50,18 @@ export default function ReportsScreen() {
     if (!user) return
     setLoading(true)
     setGenerated(false)
-    const dateFilters = getDateFilters()
-    const filter = selectedParcel !== 'all' ? { parcelId: selectedParcel, ...dateFilters } : dateFilters
+    try {
+      const dateFilters = getDateFilters()
+      const filter = selectedParcel !== 'all' ? { parcelId: selectedParcel, ...dateFilters } : dateFilters
 
-    const [{ data: parcelsList }, { data: expenses }, { data: incomes }, { data: gas }, { data: coop }] = await Promise.all([
-      getParcels(user.uid),
-      getExpenses(user.uid, filter as any),
-      getIncomes(user.uid, filter as any),
-      getGasUsages(user.uid, filter as any),
-      getCooperativeSupports(user.uid, filter as any),
-    ])
-    setParcels(parcelsList)
+      const [{ data: parcelsList }, { data: expenses }, { data: incomes }, { data: gas }, { data: coop }] = await Promise.all([
+        getParcels(user.uid),
+        getExpenses(user.uid, filter as any),
+        getIncomes(user.uid, filter as any),
+        getGasUsages(user.uid, filter as any),
+        getCooperativeSupports(user.uid, filter as any),
+      ])
+      setParcels(parcelsList)
 
     const totalIncome = incomes.reduce((s, r) => s + r.totalAmount, 0)
     const totalExpenses = expenses.reduce((s, r) => s + r.amount, 0)
@@ -91,8 +92,12 @@ export default function ReportsScreen() {
       filters: dateFilters,
       parcelBreakdown,
     })
-    setLoading(false)
     setGenerated(true)
+    } catch (e) {
+      console.error('Reports generate error:', e)
+    } finally {
+      setLoading(false)
+    }
   }, [user, selectedParcel, period, customFrom, customTo, parcels, t.allParcels])
 
   const handleShare = () => {

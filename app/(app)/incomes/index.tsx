@@ -7,6 +7,7 @@ import { getIncomes, deleteIncome, getParcels } from '@/lib/api'
 import { formatMAD, formatMADDecimal } from '@/lib/format'
 import { useUndoDelete } from '@/hooks/useUndoDelete'
 import AddIncomeSheet from '@/components/AddIncomeSheet'
+import { HeaderBar } from '@/components/HeaderBar'
 import Toast from 'react-native-toast-message'
 import type { Income, Parcel } from '@/lib/types'
 import { TrendingUp, Plus, Trash2 } from 'lucide-react-native'
@@ -58,13 +59,14 @@ export default function IncomesScreen() {
   return (
     <SafeAreaView style={{ flex: 1 }} edges={['top']}>
       <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-        {/* Header */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
-          <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>{t.incomes}</Text>
-          <TouchableOpacity onPress={() => setSheetOpen(true)} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#16A34A', alignItems: 'center', justifyContent: 'center' }}>
-            <Plus size={20} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
+        <HeaderBar
+          title={t.incomes}
+          right={
+            <TouchableOpacity onPress={() => setSheetOpen(true)} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#16A34A', alignItems: 'center', justifyContent: 'center' }}>
+              <Plus size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+          }
+        />
 
         {/* Total */}
         <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>

@@ -66,9 +66,9 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
-        name="more"
+        name="tools"
         options={{
-          title: t.settings,
+          title: t.more,
           tabBarIcon: ({ color, size }) => <MoreHorizontal size={size} color={color} />,
         }}
       />

@@ -84,14 +84,61 @@ export async function deleteParcel(userId: string, id: string) {
 
 // ─── Expense Types ──────────────────────────────────────────────────────────
 
+const DEFAULT_EXPENSE_TYPES = [
+  { name: 'Main d\'œuvre', nameFr: 'Main d\'œuvre', icon: 'users', color: '#8B5CF6' },
+  { name: 'Carburant', nameFr: 'Carburant', icon: 'fuel', color: '#F97316' },
+  { name: 'Engrais', nameFr: 'Engrais', icon: 'sprout', color: '#22C55E' },
+  { name: 'Semences', nameFr: 'Semences', icon: 'leaf', color: '#10B981' },
+  { name: 'Pesticides', nameFr: 'Pesticides', icon: 'shield', color: '#EF4444' },
+  { name: 'Matériel', nameFr: 'Matériel', icon: 'wrench', color: '#3B82F6' },
+  { name: 'Transport', nameFr: 'Transport', icon: 'truck', color: '#6366F1' },
+  { name: 'Eau', nameFr: 'Eau', icon: 'droplets', color: '#06B6D4' },
+  { name: 'Autre', nameFr: 'Autre', icon: 'more-horizontal', color: '#6B7280' },
+]
+
+export async function seedExpenseTypes(): Promise<void> {
+  try {
+    const snapshot = await getDocs(collection(db, 'expense_types'))
+    if (!snapshot.empty) return
+    await Promise.all(
+      DEFAULT_EXPENSE_TYPES.map((t) =>
+        addDoc(collection(db, 'expense_types'), { ...t, userId: null, isActive: true, createdAt: new Date().toISOString() })
+      )
+    )
+  } catch (error) {
+    console.error('seedExpenseTypes error:', error)
+  }
+}
+
 export async function getExpenseTypes(): Promise<{ data: ExpenseType[]; error: Error | null }> {
   try {
-    const q = query(collection(db, 'expense_types'), where('isActive', '==', true), orderBy('name'))
+    const q = query(collection(db, 'expense_types'), where('isActive', '==', true))
     const snapshot = await getDocs(q)
     const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ExpenseType))
+    data.sort((a, b) => (a.name || '').localeCompare(b.name || ''))
     return { data, error: null }
   } catch (error) {
     return { data: [], error: error as Error }
+  }
+}
+
+export async function addExpenseType(userId: string, name: string): Promise<{ id: string; error: Error | null }> {
+  try {
+    const colors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16']
+    const randomColor = colors[Math.floor(Math.random() * colors.length)]
+    const docRef = await addDoc(collection(db, 'expense_types'), {
+      userId,
+      name,
+      nameFr: name,
+      nameAr: null,
+      icon: 'more-horizontal',
+      color: randomColor,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+    })
+    return { id: docRef.id, error: null }
+  } catch (error) {
+    return { id: '', error: error as Error }
   }
 }
 
@@ -329,33 +376,39 @@ export async function getFinancialSummary(
   userId: string,
   parcelId?: string
 ): Promise<FinancialSummary> {
-  const [incomes, expenses, gasUsages, cooperative, parcels] = await Promise.all([
-    getIncomes(userId, parcelId ? { parcelId } : undefined),
-    getExpenses(userId, parcelId ? { parcelId } : undefined),
-    getGasUsages(userId, parcelId ? { parcelId } : undefined),
-    getCooperativeSupports(userId, parcelId ? { parcelId } : undefined),
-    getParcels(userId),
-  ])
+  try {
+    const [incomes, expenses, gasUsages, cooperative, parcels] = await Promise.all([
+      getIncomes(userId, parcelId ? { parcelId } : undefined),
+      getExpenses(userId, parcelId ? { parcelId } : undefined),
+      getGasUsages(userId, parcelId ? { parcelId } : undefined),
+      getCooperativeSupports(userId, parcelId ? { parcelId } : undefined),
+      getParcels(userId),
+    ])
 
-  const totalIncome = incomes.data.reduce((sum, r) => sum + r.totalAmount, 0)
-  const totalExpenses = expenses.data.reduce((sum, r) => sum + r.amount, 0)
-  const totalGas = gasUsages.data.reduce((sum, r) => sum + r.totalAmount, 0)
-  const totalCooperative = cooperative.data.reduce((sum, r) => sum + r.amount, 0)
-  const netProfit = totalIncome - totalExpenses - totalGas - totalCooperative
-  const parcelCount = parcelId ? 1 : parcels.data.filter((p) => p.status === 'active').length
+    const totalIncome = incomes.data.reduce((sum, r) => sum + r.totalAmount, 0)
+    const totalExpenses = expenses.data.reduce((sum, r) => sum + r.amount, 0)
+    const totalGas = gasUsages.data.reduce((sum, r) => sum + r.totalAmount, 0)
+    const totalCooperative = cooperative.data.reduce((sum, r) => sum + r.amount, 0)
+    const netProfit = totalIncome - totalExpenses - totalGas - totalCooperative
+    const parcelCount = parcelId ? 1 : parcels.data.filter((p) => p.status === 'active').length
 
-  return { totalIncome, totalExpenses, totalGas, totalCooperative, netProfit, parcelCount }
+    return { totalIncome, totalExpenses, totalGas, totalCooperative, netProfit, parcelCount }
+  } catch (error) {
+    console.error('getFinancialSummary error:', error)
+    return { totalIncome: 0, totalExpenses: 0, totalGas: 0, totalCooperative: 0, netProfit: 0, parcelCount: 0 }
+  }
 }
 
 // ─── Recent Activity ────────────────────────────────────────────────────────
 
 export async function getRecentActivity(userId: string, limit = 10): Promise<ActivityItem[]> {
-  const [expenses, incomes, gasUsages, cooperative] = await Promise.all([
-    getDocs(query(userCollection(userId, 'expenses'), orderBy('createdAt', 'desc'), firestoreLimit(limit))),
-    getDocs(query(userCollection(userId, 'incomes'), orderBy('createdAt', 'desc'), firestoreLimit(limit))),
-    getDocs(query(userCollection(userId, 'gasUsages'), orderBy('createdAt', 'desc'), firestoreLimit(limit))),
-    getDocs(query(userCollection(userId, 'cooperativeSupports'), orderBy('createdAt', 'desc'), firestoreLimit(limit))),
-  ])
+  try {
+    const [expenses, incomes, gasUsages, cooperative] = await Promise.all([
+      getDocs(query(userCollection(userId, 'expenses'), orderBy('createdAt', 'desc'), firestoreLimit(limit))),
+      getDocs(query(userCollection(userId, 'incomes'), orderBy('createdAt', 'desc'), firestoreLimit(limit))),
+      getDocs(query(userCollection(userId, 'gasUsages'), orderBy('createdAt', 'desc'), firestoreLimit(limit))),
+      getDocs(query(userCollection(userId, 'cooperativeSupports'), orderBy('createdAt', 'desc'), firestoreLimit(limit))),
+    ])
 
   const items: ActivityItem[] = [
     ...expenses.docs.map((d) => ({
@@ -395,4 +448,8 @@ export async function getRecentActivity(userId: string, limit = 10): Promise<Act
   return items
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, limit)
+  } catch (error) {
+    console.error('getRecentActivity error:', error)
+    return []
+  }
 }

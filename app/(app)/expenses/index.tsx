@@ -7,6 +7,7 @@ import { getExpenses, deleteExpense, getParcels } from '@/lib/api'
 import { formatMAD } from '@/lib/format'
 import { useUndoDelete } from '@/hooks/useUndoDelete'
 import AddExpenseSheet from '@/components/AddExpenseSheet'
+import { HeaderBar } from '@/components/HeaderBar'
 import Toast from 'react-native-toast-message'
 import type { Expense, Parcel } from '@/lib/types'
 import { TrendingDown, Plus, Trash2, MapPin } from 'lucide-react-native'
@@ -64,13 +65,14 @@ export default function ExpensesScreen() {
   return (
     <SafeAreaView style={{ flex: 1 }} edges={['top']}>
       <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-        {/* Header */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
-          <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>{t.expenses}</Text>
-          <TouchableOpacity onPress={() => setSheetOpen(true)} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#EF4444', alignItems: 'center', justifyContent: 'center' }}>
-            <Plus size={20} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
+        <HeaderBar
+          title={t.expenses}
+          right={
+            <TouchableOpacity onPress={() => setSheetOpen(true)} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#16A34A', alignItems: 'center', justifyContent: 'center' }}>
+              <Plus size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+          }
+        />
 
         {/* Total */}
         <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>

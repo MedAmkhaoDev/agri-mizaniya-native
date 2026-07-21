@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, ScrollView, FlatList, ActivityIndicator } from 'react-native'
 import { useAuth } from '@/lib/auth-context'
 import { useI18n } from '@/lib/i18n-context'
 import { createIncome, getParcels } from '@/lib/api'
@@ -21,17 +21,16 @@ const UNITS = ['kg', 'quintal', 'tonne', 'litre', 'caisse', 'sac', 'unité']
 export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: AddIncomeSheetProps) {
   const { user } = useAuth()
   const { t } = useI18n()
-  const { draft, setDraft, clearDraft, loadDraft } = useDraft('income')
+  const { draft, setDraft, clearDraft } = useDraft('income')
   const [parcels, setParcels] = useState<Parcel[]>([])
   const [saving, setSaving] = useState(false)
   const [recentProducts, setRecentProducts] = useState<string[]>([])
 
   useEffect(() => {
     if (visible) {
-      loadDraft()
       getRecentProducts(8).then(setRecentProducts)
     }
-  }, [visible, loadDraft])
+  }, [visible])
 
   const loadParcels = useCallback(async () => {
     if (!user) return
@@ -54,14 +53,15 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
     if (visible) loadParcels()
   }, [visible, loadParcels])
 
-  const update = (patch: Record<string, any>) => setDraft({ ...draft, ...patch })
+  const update = (patch: Record<string, any>) => {
+    setDraft({ ...draft, ...patch })
+  }
 
   const reset = () => clearDraft()
 
-  const unitPrice =
-    draft.quantity && draft.total_amount && parseFloat(draft.quantity) > 0
-      ? parseFloat(draft.total_amount) / parseFloat(draft.quantity)
-      : null
+  const quantity = parseFloat(draft.quantity || '')
+  const totalAmount = parseFloat(draft.total_amount || '')
+  const unitPrice = quantity > 0 && totalAmount > 0 ? totalAmount / quantity : null
 
   const handleSave = async () => {
     if (!user || !draft.product_name || !draft.total_amount || !draft.parcel_id) return
@@ -137,46 +137,47 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
           </View>
         ) : null}
 
-        {/* Quantity + Unit */}
-        <View style={{ flexDirection: 'row', gap: 12, marginTop: 16 }}>
+        {/* Quantity */}
+        <View style={{ marginTop: 16 }}>
+          <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.quantity}</Text>
           <TextInput
             keyboardType="decimal-pad"
             value={draft.quantity || ''}
             onChangeText={(v) => update({ quantity: v })}
             placeholder={t.quantity}
             placeholderTextColor="#D1D5DB"
-            style={{ flex: 1, height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }}
+            style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }}
           />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ maxHeight: 48 }}>
-            <View style={{ flexDirection: 'row', gap: 4 }}>
-              {UNITS.map((u) => (
-                <TouchableOpacity
-                  key={u}
-                  onPress={() => update({ unit: u })}
-                  style={{
-                    paddingHorizontal: 12,
-                    height: 48,
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: draft.unit === u ? '#10B981' : '#E5E7EB',
-                    backgroundColor: draft.unit === u ? '#ECFDF5' : '#FFFFFF',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Text style={{ fontSize: 12, fontWeight: '600', color: draft.unit === u ? '#059669' : '#6B7280' }}>{u}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
         </View>
+
+        {/* Unit selector */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, marginTop: 8 }}>
+          {UNITS.map((u) => (
+            <TouchableOpacity
+              key={u}
+              onPress={() => update({ unit: u })}
+              style={{
+                paddingHorizontal: 14,
+                height: 38,
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: draft.unit === u ? '#10B981' : '#E5E7EB',
+                backgroundColor: draft.unit === u ? '#ECFDF5' : '#FFFFFF',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 12, fontWeight: '600', color: draft.unit === u ? '#059669' : '#6B7280' }}>{u}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
         {/* Total amount - big input */}
         <TextInput
           keyboardType="decimal-pad"
           value={draft.total_amount || ''}
           onChangeText={(v) => update({ total_amount: v })}
-          placeholder="0"
+          placeholder={t.totalAmount}
           placeholderTextColor="#D1D5DB"
           style={{
             height: 64,
@@ -201,43 +202,22 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
           </View>
         ) : null}
 
-        {/* Parcel list */}
-        <Text style={{ fontSize: 11, fontWeight: '600', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 1, marginTop: 20, marginBottom: 10 }}>
+        {/* Parcel list - compact horizontal chips */}
+        <Text style={{ fontSize: 11, fontWeight: '600', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 1, marginTop: 20, marginBottom: 8 }}>
           {t.parcel}
         </Text>
-        <View style={{ gap: 6 }}>
-          {parcels.slice(0, 4).map((parcel) => {
-            const selected = draft.parcel_id === parcel.id
-            return (
-              <TouchableOpacity
-                key={parcel.id}
-                onPress={() => update({ parcel_id: parcel.id })}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: 12,
-                  borderRadius: 12,
-                  borderWidth: 2,
-                  borderColor: selected ? '#10B981' : '#E5E7EB',
-                  backgroundColor: selected ? '#ECFDF5' : '#FFFFFF',
-                }}
-              >
-                <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: selected ? '#D1FAE5' : '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}>
-                  <MapPin size={16} color={selected ? '#10B981' : '#9CA3AF'} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 14, fontWeight: '500', color: '#111827' }}>{parcel.name}</Text>
-                  {parcel.areaHectares ? <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{parcel.areaHectares} ha</Text> : null}
-                </View>
-                {selected ? <Check size={16} color="#10B981" /> : null}
-              </TouchableOpacity>
-            )
-          })}
-          {parcels.length === 0 ? (
-            <Text style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center', paddingVertical: 12 }}>{t.noParcels}</Text>
-          ) : null}
-        </View>
+        <FlatList
+          horizontal
+          data={parcels}
+          keyExtractor={(i) => i.id}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 6 }}
+          renderItem={({ item }) => (
+            <TouchableOpacity onPress={() => update({ parcel_id: item.id })} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: draft.parcel_id === item.id ? '#10B981' : '#E5E7EB', backgroundColor: draft.parcel_id === item.id ? '#ECFDF5' : '#FFFFFF' }}>
+              <Text style={{ fontSize: 13, fontWeight: '500', color: draft.parcel_id === item.id ? '#059669' : '#6B7280' }}>{item.name}</Text>
+            </TouchableOpacity>
+          )}
+        />
 
         {/* Save button */}
         <TouchableOpacity
