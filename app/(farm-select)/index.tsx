@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Modal, TextInput, Pressable, Alert } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useFarm } from '@/lib/farm-context'
 import { useAuth } from '@/lib/auth-context'
 import { useI18n } from '@/lib/i18n-context'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/config/firebase'
-import { Wheat, Plus, Users, ArrowRight } from 'lucide-react-native'
+import { joinByShareCode } from '@/lib/api'
+import { Wheat, Plus, Users, ArrowRight, X } from 'lucide-react-native'
 import type { FarmRole } from '@/lib/types'
 
 export default function FarmSelectScreen() {
@@ -17,6 +18,9 @@ export default function FarmSelectScreen() {
 
   const [roles, setRoles] = useState<Record<string, FarmRole>>({})
   const [loading, setLoading] = useState(true)
+  const [joinModalVisible, setJoinModalVisible] = useState(false)
+  const [joinCode, setJoinCode] = useState('')
+  const [joining, setJoining] = useState(false)
 
   useEffect(() => {
     if (farmLoading || !user) return
@@ -47,6 +51,28 @@ export default function FarmSelectScreen() {
   const handleSelectFarm = async (farmId: string) => {
     await switchFarm(farmId)
     router.replace('/(app)')
+  }
+
+  const handleJoin = async () => {
+    if (!joinCode.trim() || !user) return
+    setJoining(true)
+    const { error, farmId } = await joinByShareCode(
+      joinCode.trim().toUpperCase(),
+      user.uid,
+      user.displayName || user.email || '',
+      user.email || ''
+    )
+    setJoining(false)
+    if (error) {
+      Alert.alert(t.error, error.message)
+      return
+    }
+    setJoinModalVisible(false)
+    setJoinCode('')
+    if (farmId) {
+      await switchFarm(farmId)
+      router.replace('/(app)')
+    }
   }
 
   const roleLabel = (role: FarmRole) => {
@@ -144,6 +170,26 @@ export default function FarmSelectScreen() {
                 </TouchableOpacity>
               )
             })}
+            {/* Join another farm */}
+            <TouchableOpacity
+              onPress={() => setJoinModalVisible(true)}
+              activeOpacity={0.7}
+              style={{
+                width: '100%',
+                height: 44,
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: '#D1D5DB',
+                borderStyle: 'dashed',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginTop: 4,
+              }}
+            >
+              <Text style={{ color: '#6B7280', fontSize: 14, fontWeight: '500' }}>
+                {t.joinExistingFarm}
+              </Text>
+            </TouchableOpacity>
           </>
         ) : (
           /* Empty state */
@@ -179,7 +225,7 @@ export default function FarmSelectScreen() {
 
             {/* Join farm button */}
             <TouchableOpacity
-              onPress={() => {}}
+              onPress={() => setJoinModalVisible(true)}
               activeOpacity={0.7}
               style={{
                 width: '100%',
@@ -199,6 +245,39 @@ export default function FarmSelectScreen() {
           </View>
         )}
       </View>
+
+      {/* Join Farm Modal */}
+      <Modal visible={joinModalVisible} animationType="slide" transparent>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'flex-end' }} onPress={() => setJoinModalVisible(false)}>
+          <Pressable onPress={(e: any) => e.stopPropagation()} style={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>{t.joinFarm}</Text>
+              <TouchableOpacity onPress={() => setJoinModalVisible(false)}>
+                <X size={20} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <Text style={{ fontSize: 13, color: '#6B7280', marginBottom: 12 }}>
+              {t.enterShareCode || 'Enter a share code to join an existing farm'}
+            </Text>
+            <TextInput
+              value={joinCode}
+              onChangeText={(text) => setJoinCode(text.toUpperCase())}
+              placeholder="XXXX-XXXX"
+              autoCapitalize="characters"
+              autoCorrect={false}
+              style={{ borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, fontFamily: 'monospace', letterSpacing: 2, marginBottom: 16 }}
+            />
+            <TouchableOpacity
+              onPress={handleJoin}
+              disabled={!joinCode.trim() || joining}
+              style={{ backgroundColor: joinCode.trim() && !joining ? '#16A34A' : '#D1D5DB', borderRadius: 10, paddingVertical: 14, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}
+            >
+              {joining && <ActivityIndicator color="#FFF" size="small" />}
+              <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFFFFF' }}>{t.joinFarm}</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScrollView>
   )
 }

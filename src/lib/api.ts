@@ -500,7 +500,8 @@ export async function generateShareCode(
     const now = new Date().toISOString()
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
     const code = generateCode()
-    const docRef = await addDoc(collection(db, 'farms', farmId, 'shareCodes'), {
+    const codeRef = doc(collection(db, 'farm_invite_codes'))
+    await setDoc(codeRef, {
       code,
       farmId,
       farmName,
@@ -540,7 +541,7 @@ export async function joinByShareCode(
 ): Promise<{ error: Error | null; farmId?: string }> {
   try {
     const q = query(
-      collection(db, 'farms', 'shareCodes') as any,
+      collection(db, 'farm_invite_codes'),
       where('code', '==', code),
       where('isActive', '==', true),
       firestoreLimit(1)
@@ -602,11 +603,12 @@ export async function getShareCodes(
 ): Promise<{ data: FarmInviteCode[]; error: Error | null }> {
   try {
     const q = query(
-      collection(db, 'farms', farmId, 'shareCodes'),
+      collection(db, 'farm_invite_codes'),
+      where('farmId', '==', farmId),
       orderBy('createdAt', 'desc')
     )
     const snapshot = await getDocs(q)
-    const data = snapshot.docs.map((d) => ({ code: d.id, ...d.data() } as FarmInviteCode))
+    const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as FarmInviteCode))
     return { data, error: null }
   } catch (error) {
     return { data: [], error: error as Error }
