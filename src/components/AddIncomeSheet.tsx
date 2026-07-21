@@ -6,7 +6,7 @@ import { useI18n } from '@/lib/i18n-context'
 import { createIncome, getParcels } from '@/lib/api'
 import { BottomSheet } from '@/components/BottomSheet'
 import { useDraft, getLastParcelId, setLastParcelId, getRecentProducts, addRecentProduct } from '@/hooks/useDraft'
-import { formatMADDecimal } from '@/lib/format'
+import { formatMADDecimal, filterNumeric } from '@/lib/format'
 import Toast from 'react-native-toast-message'
 import { MapPin, Check, X, Package } from 'lucide-react-native'
 import type { Parcel } from '@/lib/types'
@@ -145,7 +145,7 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
           <TextInput
             keyboardType="decimal-pad"
             value={draft.quantity || ''}
-            onChangeText={(v) => update({ quantity: v })}
+            onChangeText={(v) => update({ quantity: filterNumeric(v) })}
             placeholder={t.quantity}
             placeholderTextColor="#D1D5DB"
             style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }}
@@ -178,7 +178,7 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
         <TextInput
           keyboardType="decimal-pad"
           value={draft.total_amount || ''}
-          onChangeText={(v) => update({ total_amount: v })}
+          onChangeText={(v) => update({ total_amount: filterNumeric(v) })}
           placeholder={t.totalAmount}
           placeholderTextColor="#D1D5DB"
           style={{

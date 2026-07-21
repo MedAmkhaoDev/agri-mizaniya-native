@@ -6,7 +6,7 @@ import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
 import { getParcels, createParcel, updateParcel, deleteParcel, getFinancialSummary } from '@/lib/api'
 import { getLastParcelId } from '@/hooks/useDraft'
-import { formatMAD } from '@/lib/format'
+import { formatMAD, filterNumeric } from '@/lib/format'
 import type { Parcel, FinancialSummary } from '@/lib/types'
 import Toast from 'react-native-toast-message'
 import { HeaderBar } from '@/components/HeaderBar'
@@ -244,7 +244,7 @@ export default function ParcelsScreen() {
               <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.areaHectares}</Text>
-                  <TextInput value={form.area_hectares} onChangeText={v => setForm(p => ({ ...p, area_hectares: v }))} placeholder="2.5" placeholderTextColor="#9CA3AF" keyboardType="decimal-pad" style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }} />
+                  <TextInput value={form.area_hectares} onChangeText={v => setForm(p => ({ ...p, area_hectares: filterNumeric(v) }))} placeholder="2.5" placeholderTextColor="#9CA3AF" keyboardType="decimal-pad" style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.location}</Text>

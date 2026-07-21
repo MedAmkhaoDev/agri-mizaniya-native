@@ -11,3 +11,7 @@ export function formatMADDecimal(amount: number): string {
     maximumFractionDigits: 2,
   }).format(amount)
 }
+
+export function filterNumeric(v: string): string {
+  return v.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')
+}

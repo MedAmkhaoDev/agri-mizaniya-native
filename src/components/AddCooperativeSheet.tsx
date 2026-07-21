@@ -6,6 +6,7 @@ import { useI18n } from '@/lib/i18n-context'
 import { createCooperativeSupport, getParcels } from '@/lib/api'
 import { getLastParcelId, setLastParcelId } from '@/hooks/useDraft'
 import { BottomSheet } from '@/components/BottomSheet'
+import { filterNumeric } from '@/lib/format'
 import Toast from 'react-native-toast-message'
 import { MapPin, Check } from 'lucide-react-native'
 import type { Parcel, CooperativeSupportType } from '@/lib/types'
@@ -111,7 +112,7 @@ export default function AddCooperativeSheet({ visible, onClose }: AddCooperative
 
         {/* Amount */}
         <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.amount} (MAD)</Text>
-        <TextInput value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="0" placeholderTextColor="#9CA3AF"
+        <TextInput value={amount} onChangeText={v => setAmount(filterNumeric(v))} keyboardType="decimal-pad" placeholder="0" placeholderTextColor="#9CA3AF"
           style={{ height: 56, borderWidth: 2, borderColor: '#C4B5FD', borderRadius: 12, paddingHorizontal: 16, fontSize: 26, fontWeight: '700', color: '#8B5CF6', textAlign: 'center', marginBottom: 12 }} />
 
         {/* Invoice number */}

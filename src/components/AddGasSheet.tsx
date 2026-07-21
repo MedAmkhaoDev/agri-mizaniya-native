@@ -6,6 +6,7 @@ import { useI18n } from '@/lib/i18n-context'
 import { createGasUsage, getParcels } from '@/lib/api'
 import { getLastParcelId, setLastParcelId } from '@/hooks/useDraft'
 import { BottomSheet } from '@/components/BottomSheet'
+import { filterNumeric } from '@/lib/format'
 import Toast from 'react-native-toast-message'
 import { MapPin, Check } from 'lucide-react-native'
 import type { Parcel } from '@/lib/types'
@@ -101,11 +102,11 @@ export default function AddGasSheet({ visible, onClose, defaultParcelId }: AddGa
         <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.quantityBottles}</Text>
-            <TextInput value={quantityBottles} onChangeText={setQuantityBottles} keyboardType="decimal-pad" placeholder="5" placeholderTextColor="#9CA3AF" style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }} />
+            <TextInput value={quantityBottles} onChangeText={v => setQuantityBottles(filterNumeric(v))} keyboardType="decimal-pad" placeholder="5" placeholderTextColor="#9CA3AF" style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.amount} (MAD)</Text>
-            <TextInput value={totalAmount} onChangeText={setTotalAmount} keyboardType="decimal-pad" placeholder="0" placeholderTextColor="#9CA3AF" style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }} />
+            <TextInput value={totalAmount} onChangeText={v => setTotalAmount(filterNumeric(v))} keyboardType="decimal-pad" placeholder="0" placeholderTextColor="#9CA3AF" style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }} />
           </View>
         </View>
 

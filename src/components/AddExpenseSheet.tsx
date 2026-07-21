@@ -6,7 +6,7 @@ import { useI18n } from '@/lib/i18n-context'
 import { createExpense, getExpenseTypes, getParcels, seedExpenseTypes, addExpenseType } from '@/lib/api'
 import { BottomSheet } from '@/components/BottomSheet'
 import { useDraft, getLastParcelId, setLastParcelId, addRecentAmount, getRecentAmounts } from '@/hooks/useDraft'
-import { formatMADDecimal } from '@/lib/format'
+import { formatMADDecimal, filterNumeric } from '@/lib/format'
 import Toast from 'react-native-toast-message'
 import {
   Users, Fuel, Flame, Leaf, Wrench, Truck,
@@ -232,7 +232,7 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
           <TextInput
             keyboardType="decimal-pad"
             value={draft.quantity || ''}
-            onChangeText={(v) => update({ quantity: v })}
+            onChangeText={(v) => update({ quantity: filterNumeric(v) })}
             placeholder={t.quantity}
             placeholderTextColor="#D1D5DB"
             style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }}
@@ -265,7 +265,7 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
         <TextInput
           keyboardType="decimal-pad"
           value={draft.amount || ''}
-          onChangeText={(v) => update({ amount: v })}
+          onChangeText={(v) => update({ amount: filterNumeric(v) })}
           placeholder={t.amount}
           placeholderTextColor="#D1D5DB"
           style={{

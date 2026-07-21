@@ -4,7 +4,7 @@ import { useAuth } from '@/lib/auth-context'
 import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
 import { getCooperativeSupports, createCooperativeSupport, deleteCooperativeSupport, getParcels } from '@/lib/api'
-import { formatMAD } from '@/lib/format'
+import { formatMAD, filterNumeric } from '@/lib/format'
 import type { CooperativeSupport, Parcel, CooperativeSupportType } from '@/lib/types'
 import Toast from 'react-native-toast-message'
 import { Plus, Trash2, HandCoins, X, Check } from 'lucide-react-native'
@@ -159,7 +159,7 @@ export default function CooperativeScreen() {
             />
 
             <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.amount}</Text>
-            <TextInput value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="0" placeholderTextColor="#9CA3AF" style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827', marginBottom: 12 }} />
+            <TextInput value={amount} onChangeText={v => setAmount(filterNumeric(v))} keyboardType="decimal-pad" placeholder="0" placeholderTextColor="#9CA3AF" style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827', marginBottom: 12 }} />
 
             <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.invoiceNumber}</Text>
             <TextInput value={invoiceNumber} onChangeText={setInvoiceNumber} placeholderTextColor="#9CA3AF" style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827', marginBottom: 12 }} />
