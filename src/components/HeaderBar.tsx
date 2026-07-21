@@ -5,6 +5,7 @@ import { Settings, ChevronDown, ChevronLeft } from 'lucide-react-native'
 import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
 import FarmSwitcherModal from './FarmSwitcherModal'
+import { NotificationBell } from './NotificationBell'
 
 interface HeaderBarProps {
   title: string
@@ -12,9 +13,10 @@ interface HeaderBarProps {
   showFarmSwitcher?: boolean
   showBack?: boolean
   showSettings?: boolean
+  showNotifications?: boolean
 }
 
-export function HeaderBar({ title, right, showFarmSwitcher = true, showBack = false, showSettings = true }: HeaderBarProps) {
+export function HeaderBar({ title, right, showFarmSwitcher = true, showBack = false, showSettings = true, showNotifications = true }: HeaderBarProps) {
   const router = useRouter()
   const { currentFarm, userFarms } = useFarm()
   const { t } = useI18n()
@@ -42,6 +44,7 @@ export function HeaderBar({ title, right, showFarmSwitcher = true, showBack = fa
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           {right}
+          {showNotifications && <NotificationBell />}
           {showSettings && (
             <TouchableOpacity onPress={() => router.push('/(app)/tools/settings')} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}>
               <Settings size={18} color="#6B7280" />

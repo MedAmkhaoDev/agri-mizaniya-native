@@ -12,6 +12,7 @@ import { auth, db } from '@/config/firebase'
 import type { Profile } from './types'
 import { migrateUserData } from './migrate'
 import { useFarmStore } from './farm-store'
+import { registerPushToken, removeAllPushTokens } from './notifications'
 
 interface AuthContextType {
   user: User | null
@@ -82,6 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(firebaseUser)
       if (firebaseUser) {
         await fetchProfile(firebaseUser.uid)
+        registerPushToken(firebaseUser.uid).catch(() => {})
       } else {
         setProfile(null)
         setMigrating(false)
@@ -134,6 +136,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
+    if (user) {
+      await removeAllPushTokens(user.uid).catch(() => {})
+    }
     await firebaseSignOut(auth)
   }
 

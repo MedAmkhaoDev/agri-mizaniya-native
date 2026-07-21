@@ -32,6 +32,22 @@ service cloud.firestore {
       allow read, update: if isAuth() && request.auth.uid == uid;
       allow create: if isAuth() && request.auth.uid == uid;
       allow delete: if false;
+
+      // ──────────────────────────────────────────────
+      // users/{uid}/fcmTokens/{tokenId} — push tokens
+      // ──────────────────────────────────────────────
+      match /fcmTokens/{tokenId} {
+        allow read: if isAuth() && request.auth.uid == uid;
+        allow create, update, delete: if isAuth() && request.auth.uid == uid;
+      }
+
+      // ──────────────────────────────────────────────
+      // users/{uid}/notifications/{notificationId} — in-app notifications
+      // ──────────────────────────────────────────────
+      match /notifications/{notificationId} {
+        allow read, update, delete: if isAuth() && request.auth.uid == uid;
+        allow create: if isAuth();
+      }
     }
 
     // ──────────────────────────────────────────────

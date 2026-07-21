@@ -43,7 +43,7 @@ export default function FarmSettingsScreen() {
   const handleSave = async () => {
     if (!currentFarmId || !farmName.trim()) return
     setSaving(true)
-    const { error } = await updateFarm(currentFarmId, { name: farmName.trim(), description: farmDesc.trim() || undefined })
+    const { error } = await updateFarm(currentFarmId, { name: farmName.trim(), description: farmDesc.trim() || undefined }, user?.uid)
     if (error) {
       Alert.alert(t.error, error.message || t.failedToSave)
       setSaving(false)

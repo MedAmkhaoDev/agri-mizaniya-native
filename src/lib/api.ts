@@ -31,6 +31,7 @@ import type {
   ActivityItem,
   FinancialSummary,
 } from './types'
+import { createBulkFarmNotificationsAsync, type NotificationType } from './notifications'
 
 function farmCollection(farmId: string, collectionName: string) {
   return collection(db, 'farms', farmId, collectionName)
@@ -51,6 +52,41 @@ function generateCode(): string {
     code += chars.charAt(Math.floor(Math.random() * chars.length))
   }
   return code
+}
+
+async function getFarmName(farmId: string): Promise<string> {
+  try {
+    const snap = await getDoc(doc(db, 'farms', farmId))
+    return snap.exists() ? snap.data().name : 'Unknown Farm'
+  } catch {
+    return 'Unknown Farm'
+  }
+}
+
+async function getUserName(userId: string): Promise<string> {
+  try {
+    const snap = await getDoc(doc(db, 'users', userId))
+    return snap.exists() ? snap.data().fullName || 'Unknown' : 'Unknown'
+  } catch {
+    return 'Unknown'
+  }
+}
+
+async function notifyFarm(
+  farmId: string,
+  excludeUserId: string,
+  type: NotificationType,
+  title: string,
+  body: string,
+  data?: Record<string, string>
+) {
+  const farmName = await getFarmName(farmId)
+  createBulkFarmNotificationsAsync(farmId, farmName, excludeUserId, {
+    type,
+    title,
+    body,
+    data: data || {},
+  }).catch(() => {})
 }
 
 // ─── Activity Log ───────────────────────────────────────────────────────────
@@ -161,13 +197,18 @@ export async function getFarm(
 
 export async function updateFarm(
   farmId: string,
-  updates: Partial<Pick<Farm, 'name' | 'description' | 'location' | 'currency'>>
+  updates: Partial<Pick<Farm, 'name' | 'description' | 'location' | 'currency'>>,
+  userId?: string
 ): Promise<{ error: Error | null }> {
   try {
     await updateDoc(doc(db, 'farms', farmId), {
       ...updates,
       updatedAt: new Date().toISOString(),
     })
+    if (userId) {
+      const userName = await getUserName(userId)
+      notifyFarm(farmId, userId, 'FARM_SETTINGS_CHANGED', 'Paramètres modifiés', `${userName} a modifié les paramètres de la ferme`, { entityId: farmId, entityType: 'farm', actionBy: userId, actionByName: userName })
+    }
     return { error: null }
   } catch (error) {
     return { error: error as Error }
@@ -300,6 +341,8 @@ export async function addMemberToFarm(
     }
 
     await batch.commit()
+    const farmName = await getFarmName(farmId)
+    notifyFarm(farmId, member.userId, 'MEMBER_JOINED', 'Membre rejoint', `${member.fullName} a rejoint la ferme`, { entityId: member.userId, entityType: 'member', actionBy: member.userId, actionByName: member.fullName })
     return { error: null }
   } catch (error) {
     return { error: error as Error }
@@ -321,6 +364,9 @@ export async function updateMemberRole(
     if (snapshot.empty) return { error: new Error('Member not found') }
 
     await updateDoc(snapshot.docs[0].ref, { role: newRole })
+    const targetName = await getUserName(targetUserId)
+    const roleLabels: Record<string, string> = { owner: 'Propriétaire', manager: 'Gestionnaire', worker: 'Travailleur', viewer: 'Observateur' }
+    notifyFarm(farmId, targetUserId, 'ROLE_CHANGED', 'Rôle modifié', `Le rôle de ${targetName} a été changé en ${roleLabels[newRole] || newRole}`, { entityId: targetUserId, entityType: 'member', actionBy: targetUserId, actionByName: targetName })
     return { error: null }
   } catch (error) {
     return { error: error as Error }
@@ -359,6 +405,8 @@ export async function removeMember(
     })
 
     await batch.commit()
+    const targetName = await getUserName(targetUserId)
+    notifyFarm(farmId, targetUserId, 'MEMBER_LEFT', 'Membre retiré', `${targetName} a été retiré de la ferme`, { entityId: targetUserId, entityType: 'member', actionBy: targetUserId, actionByName: targetName })
     return { error: null }
   } catch (error) {
     return { error: error as Error }
@@ -389,6 +437,7 @@ export async function sendInvite(
       createdAt: now,
       expiresAt,
     })
+    notifyFarm(farmId, inviterId, 'INVITE_SENT', 'Invitation envoyée', `${inviterName} a invité ${email} à rejoindre la ferme`, { entityId: docRef.id, entityType: 'invitation', actionBy: inviterId, actionByName: inviterName })
     return {
       data: {
         id: docRef.id,
@@ -592,6 +641,7 @@ export async function joinByShareCode(
     })
 
     await batch.commit()
+    notifyFarm(codeData.farmId, userId, 'MEMBER_JOINED', 'Membre rejoint', `${userName} a rejoint la ferme via un code de partage`, { entityId: userId, entityType: 'member', actionBy: userId, actionByName: userName })
     return { error: null, farmId: codeData.farmId }
   } catch (error) {
     return { error: error as Error }
@@ -717,6 +767,8 @@ export async function createParcel(
       updatedAt: now,
     })
     const docSnap = await getDoc(docRef)
+    const userName = await getUserName(userId)
+    notifyFarm(farmId, userId, 'PARCEL_CREATED', 'Parcelle créée', `${userName} a créé la parcelle "${parcel.name}"`, { entityId: docRef.id, entityType: 'parcel', actionBy: userId, actionByName: userName })
     return { data: { id: docRef.id, farmId, createdBy: userId, ...docSnap.data() } as Parcel, error: null }
   } catch (error) {
     return { data: null, error: error as Error }
@@ -788,6 +840,9 @@ export async function createExpense(
       createdAt: now,
       updatedAt: now,
     })
+    const userName = await getUserName(userId)
+    const amount = expense.amount.toLocaleString('fr-FR')
+    notifyFarm(farmId, userId, 'EXPENSE_CREATED', 'Dépense enregistrée', `${userName} a enregistré une dépense de ${amount} MAD`, { entityId: docRef.id, entityType: 'expense', actionBy: userId, actionByName: userName })
     return { data: { id: docRef.id, farmId, createdBy: userId, ...expense, createdAt: now, updatedAt: now } as Expense, error: null }
   } catch (error) {
     return { data: null, error: error as Error }
@@ -858,6 +913,9 @@ export async function createIncome(
       createdAt: now,
       updatedAt: now,
     })
+    const userName = await getUserName(userId)
+    const amount = income.totalAmount.toLocaleString('fr-FR')
+    notifyFarm(farmId, userId, 'INCOME_CREATED', 'Revenu enregistré', `${userName} a enregistré un revenu de ${amount} MAD`, { entityId: docRef.id, entityType: 'income', actionBy: userId, actionByName: userName })
     return { data: { id: docRef.id, farmId, createdBy: userId, ...income, createdAt: now, updatedAt: now } as Income, error: null }
   } catch (error) {
     return { data: null, error: error as Error }
@@ -928,6 +986,9 @@ export async function createGasUsage(
       createdAt: now,
       updatedAt: now,
     })
+    const userName = await getUserName(userId)
+    const amount = gas.totalAmount.toLocaleString('fr-FR')
+    notifyFarm(farmId, userId, 'GAS_CREATED', 'Consommation de gaz enregistrée', `${userName} a enregistré une consommation de gaz de ${amount} MAD`, { entityId: docRef.id, entityType: 'gas', actionBy: userId, actionByName: userName })
     return { data: { id: docRef.id, farmId, createdBy: userId, ...gas, createdAt: now, updatedAt: now } as GasUsage, error: null }
   } catch (error) {
     return { data: null, error: error as Error }
@@ -998,6 +1059,9 @@ export async function createCooperativeSupport(
       createdAt: now,
       updatedAt: now,
     })
+    const userName = await getUserName(userId)
+    const amount = support.amount.toLocaleString('fr-FR')
+    notifyFarm(farmId, userId, 'COOPERATIVE_CREATED', 'Aide coopérative enregistrée', `${userName} a enregistré une aide coopérative de ${amount} MAD`, { entityId: docRef.id, entityType: 'cooperative', actionBy: userId, actionByName: userName })
     return { data: { id: docRef.id, farmId, createdBy: userId, ...support, createdAt: now, updatedAt: now } as CooperativeSupport, error: null }
   } catch (error) {
     return { data: null, error: error as Error }
