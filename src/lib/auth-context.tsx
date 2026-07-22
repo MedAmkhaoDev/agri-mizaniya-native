@@ -12,7 +12,7 @@ import { auth, db } from '@/config/firebase'
 import type { Profile } from './types'
 import { migrateUserData } from './migrate'
 import { useFarmStore } from './farm-store'
-import { registerPushToken, removeAllPushTokens } from './notifications'
+import { onesignalLogin, onesignalLogout } from './onesignal'
 
 interface AuthContextType {
   user: User | null
@@ -83,6 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(firebaseUser)
       if (firebaseUser) {
         await fetchProfile(firebaseUser.uid)
+        onesignalLogin(firebaseUser.uid)
       } else {
         setProfile(null)
         setMigrating(false)
@@ -135,9 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
-    if (user && profile?.farmIds?.length) {
-      await removeAllPushTokens(user.uid, profile.farmIds).catch(() => {})
-    }
+    onesignalLogout()
     await firebaseSignOut(auth)
   }
 

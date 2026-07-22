@@ -1,21 +1,14 @@
-import * as Notifications from 'expo-notifications'
-import * as Device from 'expo-device'
-import { Platform } from 'react-native'
 import {
   collection,
   doc,
   addDoc,
-  setDoc,
   getDocs,
-  getDoc,
   query,
   where,
   orderBy,
   onSnapshot,
   writeBatch,
   updateDoc,
-  serverTimestamp,
-  increment,
   type Unsubscribe,
 } from 'firebase/firestore'
 import { db } from '@/config/firebase'
@@ -64,109 +57,6 @@ export interface NotificationPayload {
     entityType?: string
     actionBy?: string
     actionByName?: string
-  }
-}
-
-export interface FcmToken {
-  token: string
-  platform: 'ios' | 'android' | 'web'
-  createdAt: string
-}
-
-// ─── Push Token Management ───────────────────────────────
-
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-})
-
-export async function requestNotificationPermission(): Promise<boolean> {
-  if (!Device.isDevice) {
-    console.warn('Notifications require a physical device')
-    return false
-  }
-
-  const { status: existingStatus } = await Notifications.getPermissionsAsync()
-  let finalStatus = existingStatus
-
-  if (existingStatus !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync()
-    finalStatus = status
-  }
-
-  if (finalStatus !== 'granted') {
-    console.warn('Notification permission not granted')
-    return false
-  }
-
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'Default',
-      importance: Notifications.AndroidImportance.HIGH,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#16A34A',
-    })
-  }
-
-  return true
-}
-
-export async function getPushToken(): Promise<string | null> {
-  try {
-    const tokenData = await Notifications.getExpoPushTokenAsync()
-    return tokenData.data
-  } catch (error) {
-    console.error('Failed to get push token:', error)
-    return null
-  }
-}
-
-export async function registerPushToken(userId: string, farmId: string): Promise<string | null> {
-  const hasPermission = await requestNotificationPermission()
-  if (!hasPermission) return null
-
-  const token = await getPushToken()
-  if (!token) return null
-
-  const platform = Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web'
-
-  try {
-    await setDoc(doc(db, 'farms', farmId, 'pushTokens', userId), {
-      token,
-      platform,
-      createdAt: new Date().toISOString(),
-    })
-    return token
-  } catch (error) {
-    console.error('Failed to save push token:', error)
-    return null
-  }
-}
-
-export async function removePushToken(userId: string, farmId: string): Promise<void> {
-  try {
-    await updateDoc(doc(db, 'farms', farmId, 'pushTokens', userId), {
-      active: false,
-    })
-  } catch (error) {
-    console.error('Failed to remove push token:', error)
-  }
-}
-
-export async function removeAllPushTokens(userId: string, farmIds: string[]): Promise<void> {
-  try {
-    const batch = writeBatch(db)
-    for (const farmId of farmIds) {
-      batch.delete(doc(db, 'farms', farmId, 'pushTokens', userId))
-    }
-    await batch.commit()
-  } catch (error) {
-    console.error('Failed to remove all push tokens:', error)
   }
 }
 

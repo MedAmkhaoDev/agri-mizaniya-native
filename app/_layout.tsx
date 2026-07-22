@@ -1,4 +1,5 @@
 import '../global.css'
+import { useEffect } from 'react'
 import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { AuthProvider, useAuth } from '@/lib/auth-context'
@@ -7,6 +8,7 @@ import { I18nProvider } from '@/lib/i18n-context'
 import { ThemeProvider } from '@/lib/theme-context'
 import { View, ActivityIndicator } from 'react-native'
 import Toast from 'react-native-toast-message'
+import { initializeOneSignal } from '@/lib/onesignal'
 
 function RootLayoutNav() {
   const { loading } = useAuth()
@@ -29,6 +31,10 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  useEffect(() => {
+    initializeOneSignal()
+  }, [])
+
   return (
     <I18nProvider>
       <ThemeProvider>

@@ -33,46 +33,47 @@ import type {
 } from './types'
 import { createBulkFarmNotificationsAsync, type NotificationType } from './notifications'
 
-const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send'
+const ONESIGNAL_APP_ID = process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID || ''
+const ONESIGNAL_REST_KEY = process.env.EXPO_PUBLIC_ONESIGNAL_REST_KEY || ''
+const ONESIGNAL_URL = 'https://api.onesignal.com/notifications'
 
-async function getMemberTokens(farmId: string, excludeUserId: string): Promise<string[]> {
+async function getMemberUids(farmId: string, excludeUserId: string): Promise<string[]> {
   try {
-    const tokensSnap = await getDocs(collection(db, 'farms', farmId, 'pushTokens'))
-    const tokens: string[] = []
-
-    for (const tokenDoc of tokensSnap.docs) {
-      if (tokenDoc.id === excludeUserId) continue
-      const data = tokenDoc.data()
-      if (data.token && data.active !== false) {
-        tokens.push(data.token)
-      }
-    }
-
-    return [...new Set(tokens)]
+    const membersSnap = await getDocs(collection(db, 'farms', farmId, 'members'))
+    return membersSnap.docs
+      .filter((d) => d.id !== excludeUserId)
+      .map((d) => d.id)
   } catch {
     return []
   }
 }
 
-async function sendExpoPush(tokens: string[], title: string, body: string, data: Record<string, string>) {
-  if (tokens.length === 0) return
+async function sendOneSignalPush(
+  externalIds: string[],
+  title: string,
+  body: string,
+  data: Record<string, string>
+) {
+  if (externalIds.length === 0) return
 
-  const messages = tokens.map((token) => ({
-    to: token,
-    sound: 'default' as const,
-    badge: 1,
-    title,
-    body,
-    data,
-    android: { priority: 'high' as const, channelId: 'default' },
-  }))
-
-  const batchSize = 100
-  for (let i = 0; i < messages.length; i += batchSize) {
-    fetch(EXPO_PUSH_URL, {
+  const batchSize = 2000
+  for (let i = 0; i < externalIds.length; i += batchSize) {
+    fetch(ONESIGNAL_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(messages.slice(i, i + batchSize)),
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Key ${ONESIGNAL_REST_KEY}`,
+      },
+      body: JSON.stringify({
+        app_id: ONESIGNAL_APP_ID,
+        target_channel: 'push',
+        include_aliases: {
+          external_id: externalIds.slice(i, i + batchSize),
+        },
+        headings: { en: title },
+        contents: { en: body },
+        data,
+      }),
     }).catch(() => {})
   }
 }
@@ -116,8 +117,6 @@ async function getUserName(userId: string): Promise<string> {
   }
 }
 
-const PUSH_WORKER_URL = process.env.EXPO_PUBLIC_PUSH_WORKER_URL || ''
-
 async function notifyFarm(
   farmId: string,
   excludeUserId: string,
@@ -134,8 +133,8 @@ async function notifyFarm(
     data: data || {},
   }).catch(() => {})
 
-  getMemberTokens(farmId, excludeUserId).then((tokens) => {
-    sendExpoPush(tokens, title, body, { type, farmId, ...data })
+  getMemberUids(farmId, excludeUserId).then((uids) => {
+    sendOneSignalPush(uids, title, body, { type, farmId, ...data })
   }).catch(() => {})
 }
 
