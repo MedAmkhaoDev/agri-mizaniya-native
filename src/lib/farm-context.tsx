@@ -55,9 +55,21 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
   const [initialized, setInitialized] = useState(false)
 
   const loadUserFarms = useCallback(async () => {
-    if (!profile) return
+    if (!user) return
 
-    const farmIds = profile.farmIds || []
+    let farmIds: string[] = []
+    let currentFarmId: string | null = null
+    try {
+      const userSnap = await getDoc(doc(db, 'users', user.uid))
+      if (userSnap.exists()) {
+        const userData = userSnap.data()
+        farmIds = userData.farmIds || []
+        currentFarmId = userData.currentFarmId || null
+      }
+    } catch (e) {
+      console.error('loadUserFarms: error fetching user profile:', e)
+    }
+
     if (farmIds.length === 0) {
       store.setUserFarms([])
       store.setCurrentFarm(null)
@@ -78,18 +90,16 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
 
       // Determine target farm
       let targetFarm: Farm | null = null
-      if (profile.currentFarmId && farms.find((f) => f.id === profile.currentFarmId)) {
-        targetFarm = farms.find((f) => f.id === profile.currentFarmId)!
+      if (currentFarmId && farms.find((f) => f.id === currentFarmId)) {
+        targetFarm = farms.find((f) => f.id === currentFarmId)!
       } else if (farms.length > 0) {
         targetFarm = farms[0]
-        if (user) {
-          await updateDoc(doc(db, 'users', user.uid), { currentFarmId: farms[0].id })
-        }
+        await updateDoc(doc(db, 'users', user.uid), { currentFarmId: farms[0].id })
       }
 
       // Load role BEFORE updating store to avoid flash of no-permission UI
       let targetRole: FarmRole | null = null
-      if (targetFarm && user) {
+      if (targetFarm) {
         const memberSnap = await getDoc(doc(db, 'farms', targetFarm.id, 'members', user.uid))
         if (memberSnap.exists()) {
           targetRole = memberSnap.data().role as FarmRole
@@ -106,7 +116,7 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
       store.setLoading(false)
       setInitialized(true)
     }
-  }, [profile, user])
+  }, [user])
 
   useEffect(() => {
     if (user && profile && !authLoading && !migrating && !initialized) {

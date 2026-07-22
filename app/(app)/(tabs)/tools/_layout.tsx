@@ -32,7 +32,6 @@ export default function MoreLayout() {
       <Stack.Screen name="gas" options={{ title: t.gasUsage }} />
       <Stack.Screen name="cooperative" options={{ title: t.cooperative }} />
       <Stack.Screen name="reports" options={{ title: t.reports }} />
-      <Stack.Screen name="settings" options={{ title: t.settings }} />
       <Stack.Screen name="members" options={{ headerShown: false }} />
       <Stack.Screen name="farm-settings" options={{ headerShown: false }} />
       <Stack.Screen name="activity" options={{ headerShown: false }} />

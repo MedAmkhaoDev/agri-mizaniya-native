@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Modal, TextInput, Pressable, Alert } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Modal, TextInput, Pressable, Alert, KeyboardAvoidingView, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useFarm } from '@/lib/farm-context'
 import { useAuth } from '@/lib/auth-context'
@@ -249,7 +249,8 @@ export default function FarmSelectScreen() {
       {/* Join Farm Modal */}
       <Modal visible={joinModalVisible} animationType="slide" transparent>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'flex-end' }} onPress={() => setJoinModalVisible(false)}>
-          <Pressable onPress={(e: any) => e.stopPropagation()} style={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 }}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+            <Pressable onPress={(e: any) => e.stopPropagation()} style={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>{t.joinFarm}</Text>
               <TouchableOpacity onPress={() => setJoinModalVisible(false)}>
@@ -276,6 +277,7 @@ export default function FarmSelectScreen() {
               <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFFFFF' }}>{t.joinFarm}</Text>
             </TouchableOpacity>
           </Pressable>
+          </KeyboardAvoidingView>
         </Pressable>
       </Modal>
     </ScrollView>

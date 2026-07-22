@@ -12,7 +12,6 @@ interface QuickActionBarProps {
 }
 
 export function QuickActionBar({ onAddExpense, onAddIncome, onAddGas, onAddCooperative, canWrite = true }: QuickActionBarProps) {
-  if (!canWrite) return null
   const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const anim = useRef(new Animated.Value(0)).current
@@ -25,6 +24,8 @@ export function QuickActionBar({ onAddExpense, onAddIncome, onAddGas, onAddCoope
       friction: 8,
     }).start()
   }, [open])
+
+  if (!canWrite) return null
 
   const plusRotation = anim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '45deg'] })
 
@@ -46,7 +47,7 @@ export function QuickActionBar({ onAddExpense, onAddIncome, onAddGas, onAddCoope
         const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [24, 0] })
 
         return (
-          <Animated.View key={action.key} style={[styles.childRow, { opacity, transform: [{ translateY }] }]}>
+          <Animated.View key={action.key} pointerEvents={open ? 'auto' : 'none'} style={[styles.childRow, { opacity, transform: [{ translateY }] }]}>
             <View style={styles.label}>
               <Text style={styles.labelText}>{action.label}</Text>
             </View>
@@ -74,6 +75,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     gap: 14,
     zIndex: 50,
+    pointerEvents: 'box-none',
   },
   childRow: {
     flexDirection: 'row',

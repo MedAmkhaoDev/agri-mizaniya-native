@@ -46,7 +46,7 @@ export function HeaderBar({ title, right, showFarmSwitcher = true, showBack = fa
           {right}
           {showNotifications && <NotificationBell />}
           {showSettings && (
-            <TouchableOpacity onPress={() => router.push('/(app)/tools/settings')} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}>
+            <TouchableOpacity onPress={() => router.push('/(app)/settings')} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}>
               <Settings size={18} color="#6B7280" />
             </TouchableOpacity>
           )}

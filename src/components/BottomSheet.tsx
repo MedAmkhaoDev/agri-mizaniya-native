@@ -1,5 +1,5 @@
 import React from 'react'
-import { Modal, View, TouchableOpacity, TouchableWithoutFeedback, ScrollView, StyleSheet } from 'react-native'
+import { Modal, View, TouchableOpacity, TouchableWithoutFeedback, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native'
 
 interface BottomSheetProps {
   visible: boolean
@@ -13,12 +13,15 @@ export function BottomSheet({ visible, onClose, children }: BottomSheetProps) {
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
-            <View style={styles.sheet}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              style={styles.sheet}
+            >
               <View style={styles.handle} />
               <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                 {children}
               </ScrollView>
-            </View>
+            </KeyboardAvoidingView>
           </TouchableWithoutFeedback>
         </View>
       </TouchableWithoutFeedback>

@@ -14,6 +14,7 @@ import AddGasSheet from '@/components/AddGasSheet'
 import AddCooperativeSheet from '@/components/AddCooperativeSheet'
 import { useRouter } from 'expo-router'
 import type { FinancialSummary, ActivityItem, Parcel } from '@/lib/types'
+import { NotificationBell } from '@/components/NotificationBell'
 import {
   TrendingUp, TrendingDown, Flame, HandCoins, MapPin,
   ArrowUpRight, ArrowDownRight, RefreshCcw, Settings, ChevronDown,
@@ -112,6 +113,7 @@ export default function DashboardScreen() {
     <SafeAreaView style={{ flex: 1 }} edges={['top']}>
       <ScrollView
         style={{ flex: 1, backgroundColor: '#FFFFFF' }}
+        contentContainerStyle={{ paddingBottom: 120 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Header */}
@@ -127,14 +129,15 @@ export default function DashboardScreen() {
               </View>
               <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t.appTagline}</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push('/(app)/tools/settings')} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}>
+            <NotificationBell />
+            <TouchableOpacity onPress={() => router.push('/(app)/settings')} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}>
               <Settings size={18} color="#6B7280" />
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Net P&L Hero Card */}
-        <View style={{
+        <View pointerEvents="box-none" style={{
           marginHorizontal: 16, marginTop: 16, padding: 20, borderRadius: 16,
           borderWidth: 2, borderColor: isProfit ? '#A7F3D0' : '#FECACA',
           shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3,
@@ -187,7 +190,12 @@ export default function DashboardScreen() {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 8 }}>
               <Text style={{ fontSize: 11, fontWeight: '600', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 1 }}>{t.parcels}</Text>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
+            <ScrollView
+              horizontal
+              directionalLockEnabled={true}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+            >
               {parcels.slice(0, 6).map((p) => {
                 const profit = p.fin?.netProfit ?? 0
                 const isP = profit >= 0
@@ -213,7 +221,7 @@ export default function DashboardScreen() {
         )}
 
         {/* Stats Grid */}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, marginTop: 20, gap: 10 }}>
+        <View pointerEvents="box-none" style={{ flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, marginTop: 20, gap: 10 }}>
           {stats.map((card) => (
             <View key={card.label} style={{ width: '47%', padding: 12, borderRadius: 12, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB' }}>
               <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: card.bg, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
@@ -251,7 +259,7 @@ export default function DashboardScreen() {
             </TouchableOpacity>
           </View>
 
-          <View style={{ borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#FFFFFF', overflow: 'hidden' }}>
+          <View pointerEvents="box-none" style={{ borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#FFFFFF', overflow: 'hidden' }}>
             {loading ? (
               <View style={{ padding: 16, gap: 12 }}>
                 {[1, 2, 3, 4].map((i) => (

@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput, Modal, Pressable, ActivityIndicator } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput, Modal, Pressable, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native'
 import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -158,7 +158,8 @@ export default function MembersScreen() {
       {/* Invite Modal */}
       <Modal visible={inviteModalVisible} animationType="slide" transparent>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'flex-end' }} onPress={() => setInviteModalVisible(false)}>
-          <Pressable onPress={(e: any) => e.stopPropagation()} style={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '60%' }}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+            <Pressable onPress={(e: any) => e.stopPropagation()} style={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '60%' }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>{t.inviteMember}</Text>
               <TouchableOpacity onPress={() => setInviteModalVisible(false)}>
@@ -191,6 +192,7 @@ export default function MembersScreen() {
               <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFFFFF' }}>{t.sendInvitation}</Text>
             </TouchableOpacity>
           </Pressable>
+          </KeyboardAvoidingView>
         </Pressable>
       </Modal>
 
