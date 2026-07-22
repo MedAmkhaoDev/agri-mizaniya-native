@@ -34,14 +34,6 @@ service cloud.firestore {
       allow delete: if false;
 
       // ──────────────────────────────────────────────
-      // users/{uid}/fcmTokens/{tokenId} — push tokens
-      // ──────────────────────────────────────────────
-      match /fcmTokens/{tokenId} {
-        allow read: if isAuth() && request.auth.uid == uid;
-        allow create, update, delete: if isAuth() && request.auth.uid == uid;
-      }
-
-      // ──────────────────────────────────────────────
       // users/{uid}/notifications/{notificationId} — in-app notifications
       // ──────────────────────────────────────────────
       match /notifications/{notificationId} {
@@ -161,6 +153,18 @@ service cloud.firestore {
 
         // No one can update or delete activity log entries
         allow update, delete: if false;
+      }
+
+      // ──────────────────────────────────────────────
+      // farms/{farmId}/pushTokens/{userId} — push tokens (one per user per farm)
+      // ──────────────────────────────────────────────
+      match /pushTokens/{userId} {
+        // Only farm members can read push tokens (used to fetch before sending)
+        allow read: if isMember(farmId);
+
+        // Only the token owner can write their own token doc
+        // (owner: read, any auth: write — user can set their own token for any farm they belong to)
+        allow create, update, delete: if isAuth() && request.auth.uid == userId;
       }
     }
 

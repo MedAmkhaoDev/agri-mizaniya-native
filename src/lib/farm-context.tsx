@@ -4,6 +4,7 @@ import { useAuth } from './auth-context'
 import { getDoc, doc, updateDoc } from 'firebase/firestore'
 import { db } from '@/config/firebase'
 import type { Farm, FarmRole } from './types'
+import { registerPushToken } from './notifications'
 import {
   canCreateEntries,
   canEditOwnEntries,
@@ -100,6 +101,11 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
       store.setUserFarms(farms)
       store.setCurrentFarm(targetFarm)
       store.setCurrentRole(targetRole)
+
+      // Register push token for the active farm
+      if (targetFarm && user) {
+        registerPushToken(user.uid, targetFarm.id).catch(() => {})
+      }
     } catch (e) {
       console.error('loadUserFarms error:', e)
     } finally {
@@ -133,6 +139,9 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
     store.setCurrentFarm(farm)
     store.setCurrentRole(newRole)
     await updateDoc(doc(db, 'users', user.uid), { currentFarmId: farmId })
+
+    // Register push token for the new farm
+    registerPushToken(user.uid, farmId).catch(() => {})
   }, [user])
 
   const refreshFarm = useCallback(async () => {

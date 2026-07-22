@@ -126,7 +126,7 @@ export async function getPushToken(): Promise<string | null> {
   }
 }
 
-export async function registerPushToken(userId: string): Promise<string | null> {
+export async function registerPushToken(userId: string, farmId: string): Promise<string | null> {
   const hasPermission = await requestNotificationPermission()
   if (!hasPermission) return null
 
@@ -136,7 +136,7 @@ export async function registerPushToken(userId: string): Promise<string | null> 
   const platform = Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web'
 
   try {
-    await setDoc(doc(db, 'users', userId, 'fcmTokens', token), {
+    await setDoc(doc(db, 'farms', farmId, 'pushTokens', userId), {
       token,
       platform,
       createdAt: new Date().toISOString(),
@@ -148,9 +148,9 @@ export async function registerPushToken(userId: string): Promise<string | null> 
   }
 }
 
-export async function removePushToken(userId: string, token: string): Promise<void> {
+export async function removePushToken(userId: string, farmId: string): Promise<void> {
   try {
-    await updateDoc(doc(db, 'users', userId, 'fcmTokens', token), {
+    await updateDoc(doc(db, 'farms', farmId, 'pushTokens', userId), {
       active: false,
     })
   } catch (error) {
@@ -158,13 +158,12 @@ export async function removePushToken(userId: string, token: string): Promise<vo
   }
 }
 
-export async function removeAllPushTokens(userId: string): Promise<void> {
+export async function removeAllPushTokens(userId: string, farmIds: string[]): Promise<void> {
   try {
-    const tokensSnap = await getDocs(collection(db, 'users', userId, 'fcmTokens'))
     const batch = writeBatch(db)
-    tokensSnap.docs.forEach((docSnap) => {
-      batch.update(docSnap.ref, { active: false })
-    })
+    for (const farmId of farmIds) {
+      batch.delete(doc(db, 'farms', farmId, 'pushTokens', userId))
+    }
     await batch.commit()
   } catch (error) {
     console.error('Failed to remove all push tokens:', error)

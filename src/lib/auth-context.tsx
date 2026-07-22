@@ -83,7 +83,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(firebaseUser)
       if (firebaseUser) {
         await fetchProfile(firebaseUser.uid)
-        registerPushToken(firebaseUser.uid).catch(() => {})
       } else {
         setProfile(null)
         setMigrating(false)
@@ -136,8 +135,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
-    if (user) {
-      await removeAllPushTokens(user.uid).catch(() => {})
+    if (user && profile?.farmIds?.length) {
+      await removeAllPushTokens(user.uid, profile.farmIds).catch(() => {})
     }
     await firebaseSignOut(auth)
   }

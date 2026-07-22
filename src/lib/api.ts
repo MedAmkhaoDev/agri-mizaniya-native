@@ -37,17 +37,14 @@ const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send'
 
 async function getMemberTokens(farmId: string, excludeUserId: string): Promise<string[]> {
   try {
-    const membersSnap = await getDocs(collection(db, 'farms', farmId, 'members'))
+    const tokensSnap = await getDocs(collection(db, 'farms', farmId, 'pushTokens'))
     const tokens: string[] = []
 
-    for (const memberDoc of membersSnap.docs) {
-      if (memberDoc.id === excludeUserId) continue
-      const tokensSnap = await getDocs(collection(db, 'users', memberDoc.id, 'fcmTokens'))
-      for (const tokenDoc of tokensSnap.docs) {
-        const data = tokenDoc.data()
-        if (data.token && data.active !== false) {
-          tokens.push(data.token)
-        }
+    for (const tokenDoc of tokensSnap.docs) {
+      if (tokenDoc.id === excludeUserId) continue
+      const data = tokenDoc.data()
+      if (data.token && data.active !== false) {
+        tokens.push(data.token)
       }
     }
 
