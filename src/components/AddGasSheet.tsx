@@ -117,9 +117,9 @@ export default function AddGasSheet({ visible, onClose, defaultParcelId }: AddGa
         ) : null}
 
         <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.notes} ({t.optional})</Text>
-        <TextInput value={notes} onChangeText={setNotes} placeholderTextColor="#9CA3AF" style={{ height: 44, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 14, color: '#111827', marginBottom: 16 }} />
+        <TextInput value={notes} onChangeText={setNotes} placeholderTextColor="#9CA3AF" style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827', marginBottom: 16 }} />
 
-        <TouchableOpacity onPress={handleSave} disabled={!parcelId || !quantityBottles || !totalAmount || saving} style={{ height: 56, borderRadius: 12, backgroundColor: '#F97316', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: !parcelId || !quantityBottles || !totalAmount || saving ? 0.5 : 1 }}>
+        <TouchableOpacity onPress={handleSave} disabled={!parcelId || !quantityBottles || !totalAmount || saving} style={{ height: 56, borderRadius: 12, backgroundColor: !parcelId || !quantityBottles || !totalAmount || saving ? '#FED7AA' : '#F97316', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}>
           {saving ? <ActivityIndicator color="#FFFFFF" /> : <Check size={20} color="#FFFFFF" />}
           <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>{t.save}</Text>
         </TouchableOpacity>

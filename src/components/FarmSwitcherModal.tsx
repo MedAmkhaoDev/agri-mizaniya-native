@@ -27,7 +27,7 @@ export default function FarmSwitcherModal({ visible, onClose, onCreateNew }: Far
   return (
     <Modal visible={visible} transparent animationType="fade">
       <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center', padding: 24 }} onPress={onClose}>
-        <Pressable onPress={(e) => e.stopPropagation()} style={{ backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, width: '100%', maxWidth: 400, maxHeight: '70%' }}>
+        <Pressable onPress={(e) => e.stopPropagation()} style={{ backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, width: '100%', maxWidth: 400, maxHeight: '70%', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 8 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>{t.myFarms}</Text>
             <TouchableOpacity onPress={onClose} style={{ padding: 4 }}>

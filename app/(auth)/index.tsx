@@ -8,7 +8,7 @@ type Tab = 'signin' | 'signup'
 
 export default function AuthScreen() {
   const { t, language, setLanguage } = useI18n()
-  const { signIn, signUp } = useAuth()
+  const { signIn, signUp, signInWithGoogle } = useAuth()
 
   const [tab, setTab] = useState<Tab>('signin')
   const [email, setEmail] = useState('')
@@ -17,6 +17,7 @@ export default function AuthScreen() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
 
   const handleSignIn = async () => {
     setError('')
@@ -47,6 +48,20 @@ export default function AuthScreen() {
     }
   }
 
+  const handleGoogleSignIn = async () => {
+    setError('')
+    setSuccess('')
+    setGoogleLoading(true)
+    try {
+      const result = await signInWithGoogle()
+      if (result.error) setError(result.error.message)
+    } catch {
+      setError('An unexpected error occurred')
+    } finally {
+      setGoogleLoading(false)
+    }
+  }
+
   const switchTab = (newTab: Tab) => {
     setTab(newTab)
     setError('')
@@ -55,7 +70,7 @@ export default function AuthScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={{ flex: 1, backgroundColor: '#FFFFFF' }}
     >
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
@@ -70,7 +85,7 @@ export default function AuthScreen() {
           </View>
 
           {/* Card */}
-          <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E5E7EB', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 4, overflow: 'hidden' }}>
+          <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E5E7EB', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 4 }}>
             {/* Tabs */}
             <View style={{ flexDirection: 'row', padding: 16, paddingBottom: 0 }}>
               <TouchableOpacity
@@ -148,6 +163,7 @@ export default function AuthScreen() {
                   <TextInput
                     value={email}
                     onChangeText={setEmail}
+                    placeholder="agriculteur@example.com"
                     placeholderTextColor="#9CA3AF"
                     keyboardType="email-address"
                     autoCapitalize="none"
@@ -170,6 +186,27 @@ export default function AuthScreen() {
                   </TouchableOpacity>
                 </>
               )}
+
+              {/* Divider */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 20 }}>
+                <View style={{ flex: 1, height: 1, backgroundColor: '#E5E7EB' }} />
+                <Text style={{ marginHorizontal: 12, fontSize: 13, color: '#9CA3AF' }}>{t.or}</Text>
+                <View style={{ flex: 1, height: 1, backgroundColor: '#E5E7EB' }} />
+              </View>
+
+              {/* Google Sign-In */}
+              <TouchableOpacity
+                onPress={handleGoogleSignIn}
+                disabled={googleLoading}
+                style={{ height: 48, borderRadius: 10, borderWidth: 1, borderColor: '#D1D5DB', backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 10, opacity: googleLoading ? 0.6 : 1 }}
+              >
+                {googleLoading ? (
+                  <ActivityIndicator color="#6B7280" />
+                ) : (
+                  <Text style={{ fontSize: 18, fontWeight: '700', color: '#4285F4' }}>G</Text>
+                )}
+                <Text style={{ color: '#374151', fontSize: 15, fontWeight: '500' }}>{t.continueWithGoogle}</Text>
+              </TouchableOpacity>
             </View>
           </View>
 

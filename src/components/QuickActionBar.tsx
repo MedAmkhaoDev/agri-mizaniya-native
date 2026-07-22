@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { View, Text, TouchableOpacity, Animated, StyleSheet } from 'react-native'
 import { useI18n } from '@/lib/i18n-context'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { TrendingDown, TrendingUp, Flame, HandCoins, Plus } from 'lucide-react-native'
 
 interface QuickActionBarProps {
@@ -13,6 +14,7 @@ interface QuickActionBarProps {
 
 export function QuickActionBar({ onAddExpense, onAddIncome, onAddGas, onAddCooperative, canWrite = true }: QuickActionBarProps) {
   const { t } = useI18n()
+  const { bottom } = useSafeAreaInsets()
   const [open, setOpen] = useState(false)
   const anim = useRef(new Animated.Value(0)).current
 
@@ -32,12 +34,12 @@ export function QuickActionBar({ onAddExpense, onAddIncome, onAddGas, onAddCoope
   const actions = [
     { key: 'coop', label: t.addCooperative, color: '#8B5CF6', icon: <HandCoins size={22} color="#FFFFFF" />, onPress: onAddCooperative },
     { key: 'gas', label: t.addGas, color: '#F97316', icon: <Flame size={22} color="#FFFFFF" />, onPress: onAddGas },
-    { key: 'income', label: t.addIncome, color: '#059669', icon: <TrendingUp size={22} color="#FFFFFF" />, onPress: onAddIncome },
+    { key: 'income', label: t.addIncome, color: '#10B981', icon: <TrendingUp size={22} color="#FFFFFF" />, onPress: onAddIncome },
     { key: 'expense', label: t.addExpense, color: '#EF4444', icon: <TrendingDown size={22} color="#FFFFFF" />, onPress: onAddExpense },
   ]
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { bottom: 80 + bottom }]}>
       {actions.map((action, i) => {
         const delay = (actions.length - 1 - i) * 0.04
         const opacity = anim.interpolate({

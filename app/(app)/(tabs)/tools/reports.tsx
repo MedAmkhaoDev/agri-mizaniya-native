@@ -153,7 +153,7 @@ export default function ReportsScreen() {
   ]
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#FFFFFF' }} contentContainerStyle={{ padding: 16 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: '#FFFFFF' }} contentContainerStyle={{ padding: 16 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
       <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 16 }}>{t.reports}</Text>
 
       {/* Period selector */}
@@ -170,11 +170,11 @@ export default function ReportsScreen() {
         <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 4 }}>{t.from}</Text>
-            <TextInput value={customFrom} onChangeText={setCustomFrom} placeholder="2024-01-01" placeholderTextColor="#D1D5DB" style={{ height: 40, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 8, paddingHorizontal: 12, fontSize: 13, color: '#111827' }} />
+            <TextInput value={customFrom} onChangeText={setCustomFrom} placeholder="2024-01-01" placeholderTextColor="#9CA3AF" style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 4 }}>{t.to}</Text>
-            <TextInput value={customTo} onChangeText={setCustomTo} placeholder="2024-12-31" placeholderTextColor="#D1D5DB" style={{ height: 40, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 8, paddingHorizontal: 12, fontSize: 13, color: '#111827' }} />
+            <TextInput value={customTo} onChangeText={setCustomTo} placeholder="2024-12-31" placeholderTextColor="#9CA3AF" style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }} />
           </View>
         </View>
       )}

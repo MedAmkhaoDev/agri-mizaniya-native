@@ -5,9 +5,12 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
   updateProfile,
+  GoogleAuthProvider,
+  signInWithCredential,
   type User,
 } from 'firebase/auth'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { GoogleSignin } from '@react-native-google-signin/google-signin'
 import { auth, db } from '@/config/firebase'
 import type { Profile } from './types'
 import { migrateUserData } from './migrate'
@@ -21,6 +24,7 @@ interface AuthContextType {
   migrating: boolean
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>
+  signInWithGoogle: () => Promise<{ error: Error | null }>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
   runMigration: () => Promise<void>
@@ -33,6 +37,7 @@ const AuthContext = createContext<AuthContextType>({
   migrating: false,
   signIn: async () => ({ error: null }),
   signUp: async () => ({ error: null }),
+  signInWithGoogle: async () => ({ error: null }),
   signOut: async () => {},
   refreshProfile: async () => {},
   runMigration: async () => {},
@@ -135,13 +140,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const signInWithGoogle = async () => {
+    try {
+      await GoogleSignin.hasPlayServices()
+      const { idToken } = await GoogleSignin.signIn()
+      if (!idToken) {
+        return { error: new Error('No id token received') }
+      }
+      const credential = GoogleAuthProvider.credential(idToken)
+      const result = await signInWithCredential(auth, credential)
+      const userRef = doc(db, 'users', result.user.uid)
+      const userSnap = await getDoc(userRef)
+      if (!userSnap.exists()) {
+        await setDoc(userRef, {
+          fullName: result.user.displayName || 'Utilisateur',
+          email: result.user.email || '',
+          preferredLanguage: 'fr',
+          avatarUrl: result.user.photoURL || null,
+          currentFarmId: null,
+          farmIds: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
+      }
+      await fetchProfile(result.user.uid)
+      return { error: null }
+    } catch (error: any) {
+      if (error?.code === 'SIGN_IN_CANCELLED') {
+        return { error: null }
+      }
+      return { error: error as Error }
+    }
+  }
+
   const signOut = async () => {
     onesignalLogout()
+    await GoogleSignin.signOut()
     await firebaseSignOut(auth)
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, migrating, signIn, signUp, signOut, refreshProfile, runMigration }}>
+    <AuthContext.Provider value={{ user, profile, loading, migrating, signIn, signUp, signInWithGoogle, signOut, refreshProfile, runMigration }}>
       {children}
     </AuthContext.Provider>
   )

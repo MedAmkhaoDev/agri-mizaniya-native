@@ -138,7 +138,7 @@ export default function DashboardScreen() {
 
         {/* Net P&L Hero Card */}
         <View pointerEvents="box-none" style={{
-          marginHorizontal: 16, marginTop: 16, padding: 20, borderRadius: 16,
+          marginHorizontal: 16, marginTop: 16, padding: 20, borderRadius: 16, backgroundColor: '#FFFFFF',
           borderWidth: 2, borderColor: isProfit ? '#A7F3D0' : '#FECACA',
           shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3,
         }}>
@@ -223,7 +223,7 @@ export default function DashboardScreen() {
         {/* Stats Grid */}
         <View pointerEvents="box-none" style={{ flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, marginTop: 20, gap: 10 }}>
           {stats.map((card) => (
-            <View key={card.label} style={{ width: '47%', padding: 12, borderRadius: 12, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB' }}>
+            <TouchableOpacity key={card.label} onPress={() => router.push(`/(app)/(tabs)/${card.page}`)} activeOpacity={0.7} style={{ width: '47%', padding: 12, borderRadius: 12, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB' }}>
               <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: card.bg, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
                 {card.icon}
               </View>
@@ -235,7 +235,7 @@ export default function DashboardScreen() {
                 </Text>
               )}
               <Text style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{card.label}</Text>
-            </View>
+            </TouchableOpacity>
           ))}
         </View>
 
@@ -254,7 +254,7 @@ export default function DashboardScreen() {
         <View style={{ marginHorizontal: 16, marginTop: 20, marginBottom: 32 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <Text style={{ fontSize: 11, fontWeight: '600', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 1 }}>{t.recentActivity}</Text>
-            <TouchableOpacity onPress={loadData} style={{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}>
+            <TouchableOpacity onPress={loadData} style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3F4F6' }}>
               <RefreshCcw size={14} color="#9CA3AF" />
             </TouchableOpacity>
           </View>

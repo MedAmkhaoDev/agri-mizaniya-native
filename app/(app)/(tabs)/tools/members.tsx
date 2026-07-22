@@ -158,7 +158,7 @@ export default function MembersScreen() {
       {/* Invite Modal */}
       <Modal visible={inviteModalVisible} animationType="slide" transparent>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'flex-end' }} onPress={() => setInviteModalVisible(false)}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <Pressable onPress={(e: any) => e.stopPropagation()} style={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '60%' }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>{t.inviteMember}</Text>
@@ -170,9 +170,11 @@ export default function MembersScreen() {
               value={inviteEmail}
               onChangeText={setInviteEmail}
               placeholder={t.email}
+              placeholderTextColor="#9CA3AF"
               keyboardType="email-address"
               autoCapitalize="none"
-              style={{ borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, marginBottom: 16 }}
+              returnKeyType="done"
+              style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827', marginBottom: 16 }}
             />
             <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8 }}>{t.role}</Text>
             {roleOptions.map(opt => (

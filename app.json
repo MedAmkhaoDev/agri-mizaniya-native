@@ -9,21 +9,25 @@
     "scheme": "agri-mizaniya",
     "newArchEnabled": true,
     "ios": {
+      "googleServicesFile": "./GoogleService-Info.plist",
       "supportsTablet": true,
-      "bundleIdentifier": "com.agrimizaniya.app",
+      "bundleIdentifier": "com.agrimizane.mobile",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       },
       "entitlements": {
         "aps-environment": "development"
-      }
+      },
+      "appleTeamId": "NB639P4RR9"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#16A34A",
         "foregroundImage": "./assets/icon.png"
       },
-      "package": "com.agrimizaniya.app"
+      "package": "com.agrimizane.mobile"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -44,10 +48,40 @@
           "fonts": []
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.517334185126-6fb6mdgqa963018deif40upobuoq1rf2"
+        }
+      ],
+      "./plugins/withModularHeaders"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "OneSignalNotificationServiceExtension",
+                  "bundleIdentifier": "com.agrimizane.mobile.OneSignalNotificationServiceExtension",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.agrimizane.mobile.onesignal"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "projectId": "4efbf491-5716-4fd2-b393-d19baa6711c0"
+      },
+      "router": {}
     }
   }
 }

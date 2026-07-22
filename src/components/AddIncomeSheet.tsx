@@ -109,7 +109,7 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
           value={draft.product_name || ''}
           onChangeText={(v) => update({ product_name: v })}
           placeholder={t.productName}
-          placeholderTextColor="#D1D5DB"
+          placeholderTextColor="#9CA3AF"
           style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, fontWeight: '500', color: '#111827' }}
         />
 
@@ -133,7 +133,7 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
                 }}
               >
                 <Package size={12} color={draft.product_name === p ? '#10B981' : '#9CA3AF'} />
-                <Text style={{ fontSize: 12, fontWeight: '500', color: draft.product_name === p ? '#059669' : '#374151' }}>{p}</Text>
+                <Text style={{ fontSize: 12, fontWeight: '500', color: draft.product_name === p ? '#10B981' : '#374151' }}>{p}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -147,7 +147,7 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
             value={draft.quantity || ''}
             onChangeText={(v) => update({ quantity: filterNumeric(v) })}
             placeholder={t.quantity}
-            placeholderTextColor="#D1D5DB"
+            placeholderTextColor="#9CA3AF"
             style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }}
           />
         </View>
@@ -169,7 +169,7 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
                 justifyContent: 'center',
               }}
             >
-              <Text style={{ fontSize: 12, fontWeight: '600', color: draft.unit === u ? '#059669' : '#6B7280' }}>{u}</Text>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: draft.unit === u ? '#10B981' : '#6B7280' }}>{u}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -180,7 +180,7 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
           value={draft.total_amount || ''}
           onChangeText={(v) => update({ total_amount: filterNumeric(v) })}
           placeholder={t.totalAmount}
-          placeholderTextColor="#D1D5DB"
+          placeholderTextColor="#9CA3AF"
           style={{
             height: 64,
             fontSize: 30,
@@ -216,7 +216,7 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
           contentContainerStyle={{ gap: 6 }}
           renderItem={({ item }) => (
             <TouchableOpacity onPress={() => update({ parcel_id: item.id })} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: draft.parcel_id === item.id ? '#10B981' : '#E5E7EB', backgroundColor: draft.parcel_id === item.id ? '#ECFDF5' : '#FFFFFF' }}>
-              <Text style={{ fontSize: 13, fontWeight: '500', color: draft.parcel_id === item.id ? '#059669' : '#6B7280' }}>{item.name}</Text>
+              <Text style={{ fontSize: 13, fontWeight: '500', color: draft.parcel_id === item.id ? '#10B981' : '#6B7280' }}>{item.name}</Text>
             </TouchableOpacity>
           )}
         />
@@ -228,7 +228,7 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
           style={{
             height: 56,
             borderRadius: 12,
-            backgroundColor: !draft.product_name || !draft.total_amount || !draft.parcel_id || saving ? '#A7F3D0' : '#059669',
+            backgroundColor: !draft.product_name || !draft.total_amount || !draft.parcel_id || saving ? '#A7F3D0' : '#10B981',
             alignItems: 'center',
             justifyContent: 'center',
             flexDirection: 'row',

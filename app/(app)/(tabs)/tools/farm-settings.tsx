@@ -78,7 +78,7 @@ export default function FarmSettingsScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F3F4F6' }} edges={['top']}>
       <HeaderBar title={t.farmSettings} showBack showSettings={false} />
-      <ScrollView style={{ flex: 1, padding: 16 }}>
+      <ScrollView style={{ flex: 1, padding: 16 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
         {/* Farm Info */}
         <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E5E7EB', padding: 20, marginBottom: 16 }}>
           <Text style={{ fontSize: 15, fontWeight: '600', color: '#374151', marginBottom: 12 }}>{t.farmInformation}</Text>
@@ -86,15 +86,20 @@ export default function FarmSettingsScreen() {
             value={farmName}
             onChangeText={setFarmName}
             placeholder={t.farmName}
-            style={{ borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, marginBottom: 12 }}
+            placeholderTextColor="#9CA3AF"
+            autoCapitalize="words"
+            returnKeyType="next"
+            style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827', marginBottom: 12 }}
           />
           <TextInput
             value={farmDesc}
             onChangeText={setFarmDesc}
             placeholder={t.farmDescriptionOptional}
+            placeholderTextColor="#9CA3AF"
+            returnKeyType="done"
             multiline
             numberOfLines={3}
-            style={{ borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, marginBottom: 16 }}
+            style={{ height: 80, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, color: '#111827', marginBottom: 16, textAlignVertical: 'top' }}
           />
           <TouchableOpacity
             onPress={handleSave}

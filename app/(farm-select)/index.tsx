@@ -103,7 +103,7 @@ export default function FarmSelectScreen() {
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#FFFFFF' }} contentContainerStyle={{ flexGrow: 1 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: '#FFFFFF' }} contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
       <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 64, paddingBottom: 48 }}>
         {/* Header */}
         <View style={{ alignItems: 'center', marginBottom: 40 }}>
@@ -143,7 +143,7 @@ export default function FarmSelectScreen() {
                     shadowOffset: { width: 0, height: 2 },
                     shadowOpacity: 0.05,
                     shadowRadius: 8,
-                    elevation: 2,
+                    elevation: 3,
                   }}
                 >
                   <View style={{ flex: 1 }}>
@@ -249,7 +249,7 @@ export default function FarmSelectScreen() {
       {/* Join Farm Modal */}
       <Modal visible={joinModalVisible} animationType="slide" transparent>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'flex-end' }} onPress={() => setJoinModalVisible(false)}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <Pressable onPress={(e: any) => e.stopPropagation()} style={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>{t.joinFarm}</Text>

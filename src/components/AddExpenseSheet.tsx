@@ -129,7 +129,7 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
           value={draft.description || ''}
           onChangeText={(v) => update({ description: v })}
           placeholder={t.description}
-          placeholderTextColor="#D1D5DB"
+          placeholderTextColor="#9CA3AF"
           style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, fontWeight: '500', color: '#111827' }}
         />
 
@@ -146,7 +146,7 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
                 key={type.id}
                 onPress={() => update({ type_id: selected ? null : type.id })}
                 style={{
-                  width: '18%',
+                  width: '30%',
                   alignItems: 'center',
                   padding: 8,
                   borderRadius: 12,
@@ -158,7 +158,7 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
                 <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: type.color + '20', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
                   <IconComp size={18} color={type.color} />
                 </View>
-                <Text style={{ fontSize: 10, fontWeight: '500', textAlign: 'center', color: '#374151' }} numberOfLines={2}>
+                <Text style={{ fontSize: 11, fontWeight: '500', textAlign: 'center', color: '#374151' }} numberOfLines={2}>
                   {type.nameFr || type.name}
                 </Text>
               </TouchableOpacity>
@@ -168,7 +168,7 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
             <TouchableOpacity
               onPress={() => setAddingCustom(true)}
               style={{
-                width: '18%',
+                width: '30%',
                 alignItems: 'center',
                 padding: 8,
                 borderRadius: 12,
@@ -181,7 +181,7 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
               <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
                 <Text style={{ fontSize: 18, fontWeight: '600', color: '#9CA3AF' }}>+</Text>
               </View>
-              <Text style={{ fontSize: 10, fontWeight: '500', textAlign: 'center', color: '#9CA3AF' }} numberOfLines={2}>
+              <Text style={{ fontSize: 11, fontWeight: '500', textAlign: 'center', color: '#9CA3AF' }} numberOfLines={2}>
                 {t.other}
               </Text>
             </TouchableOpacity>
@@ -194,9 +194,9 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
               value={customName}
               onChangeText={setCustomName}
               placeholder={t.expenseType}
-              placeholderTextColor="#D1D5DB"
+              placeholderTextColor="#9CA3AF"
               autoFocus
-              style={{ flex: 1, height: 42, borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 10, paddingHorizontal: 12, fontSize: 14, color: '#111827' }}
+              style={{ flex: 1, height: 48, borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 10, paddingHorizontal: 12, fontSize: 14, color: '#111827' }}
             />
             <TouchableOpacity
               onPress={async () => {
@@ -234,7 +234,7 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
             value={draft.quantity || ''}
             onChangeText={(v) => update({ quantity: filterNumeric(v) })}
             placeholder={t.quantity}
-            placeholderTextColor="#D1D5DB"
+            placeholderTextColor="#9CA3AF"
             style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }}
           />
         </View>
@@ -267,7 +267,7 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
           value={draft.amount || ''}
           onChangeText={(v) => update({ amount: filterNumeric(v) })}
           placeholder={t.amount}
-          placeholderTextColor="#D1D5DB"
+          placeholderTextColor="#9CA3AF"
           style={{
             height: 64,
             fontSize: 30,

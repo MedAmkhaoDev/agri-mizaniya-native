@@ -1,9 +1,11 @@
 import { Tabs } from 'expo-router'
 import { useI18n } from '@/lib/i18n-context'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LayoutDashboard, MapPin, TrendingDown, TrendingUp, MoreHorizontal } from 'lucide-react-native'
 
 export default function AppTabs() {
   const { t } = useI18n()
+  const { bottom } = useSafeAreaInsets()
 
   return (
     <Tabs
@@ -14,9 +16,9 @@ export default function AppTabs() {
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopColor: '#E5E7EB',
-          paddingBottom: 8,
+          paddingBottom: Math.max(bottom, 8),
           paddingTop: 8,
-          height: 64,
+          height: 64 + bottom,
         },
         tabBarLabelStyle: {
           fontSize: 11,

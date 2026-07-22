@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { AuthProvider, useAuth } from '@/lib/auth-context'
 import { FarmProvider } from '@/lib/farm-context'
 import { I18nProvider } from '@/lib/i18n-context'
@@ -40,17 +41,19 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <I18nProvider>
-        <ThemeProvider>
-          <AuthProvider>
-            <FarmProvider>
-              <RootLayoutNav />
-              <Toast config={toastConfig} />
-              <StatusBar style="auto" />
-            </FarmProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </I18nProvider>
+      <SafeAreaProvider>
+        <I18nProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <FarmProvider>
+                <RootLayoutNav />
+                <Toast config={toastConfig} />
+                <StatusBar style="auto" />
+              </FarmProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </I18nProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   )
 }

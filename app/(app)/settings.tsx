@@ -56,8 +56,8 @@ export default function SettingsScreen() {
   const appVersion = Constants.expoConfig?.version || '1.0.0'
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-      <ScrollView style={{ flex: 1, backgroundColor: '#FFFFFF' }} contentContainerStyle={{ padding: 16, maxWidth: 480, alignSelf: 'center', width: '100%' }}>
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+      <ScrollView style={{ flex: 1, backgroundColor: '#FFFFFF' }} contentContainerStyle={{ padding: 16, maxWidth: 480, alignSelf: 'center', width: '100%' }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
         <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 16 }}>{t.settings}</Text>
 
         {/* Farm Card */}
@@ -123,7 +123,7 @@ export default function SettingsScreen() {
             </View>
             <View>
               <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.fullName}</Text>
-              <TextInput value={name} onChangeText={setName} style={{ height: 44, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }} />
+              <TextInput value={name} onChangeText={setName} style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }} />
             </View>
             <TouchableOpacity onPress={handleSaveProfile} disabled={saving} style={{ height: 44, borderRadius: 10, backgroundColor: '#16A34A', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6, opacity: saving ? 0.6 : 1 }}>
               {saved ? <CheckCircle size={16} color="#FFFFFF" /> : null}
