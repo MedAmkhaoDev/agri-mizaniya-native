@@ -33,6 +33,53 @@ import type {
 } from './types'
 import { createBulkFarmNotificationsAsync, type NotificationType } from './notifications'
 
+const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send'
+
+async function getMemberTokens(farmId: string, excludeUserId: string): Promise<string[]> {
+  try {
+    const membersSnap = await getDocs(collection(db, 'farms', farmId, 'members'))
+    const tokens: string[] = []
+
+    for (const memberDoc of membersSnap.docs) {
+      if (memberDoc.id === excludeUserId) continue
+      const tokensSnap = await getDocs(collection(db, 'users', memberDoc.id, 'fcmTokens'))
+      for (const tokenDoc of tokensSnap.docs) {
+        const data = tokenDoc.data()
+        if (data.token && data.active !== false) {
+          tokens.push(data.token)
+        }
+      }
+    }
+
+    return [...new Set(tokens)]
+  } catch {
+    return []
+  }
+}
+
+async function sendExpoPush(tokens: string[], title: string, body: string, data: Record<string, string>) {
+  if (tokens.length === 0) return
+
+  const messages = tokens.map((token) => ({
+    to: token,
+    sound: 'default' as const,
+    badge: 1,
+    title,
+    body,
+    data,
+    android: { priority: 'high' as const, channelId: 'default' },
+  }))
+
+  const batchSize = 100
+  for (let i = 0; i < messages.length; i += batchSize) {
+    fetch(EXPO_PUSH_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(messages.slice(i, i + batchSize)),
+    }).catch(() => {})
+  }
+}
+
 function farmCollection(farmId: string, collectionName: string) {
   return collection(db, 'farms', farmId, collectionName)
 }
@@ -72,6 +119,8 @@ async function getUserName(userId: string): Promise<string> {
   }
 }
 
+const PUSH_WORKER_URL = process.env.EXPO_PUBLIC_PUSH_WORKER_URL || ''
+
 async function notifyFarm(
   farmId: string,
   excludeUserId: string,
@@ -86,6 +135,10 @@ async function notifyFarm(
     title,
     body,
     data: data || {},
+  }).catch(() => {})
+
+  getMemberTokens(farmId, excludeUserId).then((tokens) => {
+    sendExpoPush(tokens, title, body, { type, farmId, ...data })
   }).catch(() => {})
 }
 
