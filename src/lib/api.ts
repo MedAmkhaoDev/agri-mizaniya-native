@@ -771,6 +771,7 @@ export async function createMemberAccount(
   try {
     const finalPassword = password || generatePassword()
 
+    console.log('[createMemberAccount] Creating auth user for:', email)
     const response = await fetch(
       `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${process.env.EXPO_PUBLIC_FIREBASE_API_KEY}`,
       {
@@ -787,10 +788,12 @@ export async function createMemberAccount(
     const result = await response.json()
     if (!response.ok) {
       const msg = result?.error?.message || 'Failed to create account'
+      console.log('[createMemberAccount] Auth API error:', msg)
       return { data: null, error: new Error(msg) }
     }
 
     const newUserId = result.localId
+    console.log('[createMemberAccount] Auth user created:', newUserId)
 
     await setDoc(doc(db, 'users', newUserId), {
       email,
@@ -799,6 +802,7 @@ export async function createMemberAccount(
       currentFarmId: farmId,
       createdAt: new Date().toISOString(),
     })
+    console.log('[createMemberAccount] User doc written')
 
     const now = new Date().toISOString()
     const batch = writeBatch(db)
@@ -818,13 +822,16 @@ export async function createMemberAccount(
       updatedAt: now,
     })
 
+    console.log('[createMemberAccount] Committing batch...')
     await batch.commit()
+    console.log('[createMemberAccount] Batch committed successfully')
 
     return {
       data: { email, password: finalPassword },
       error: null,
     }
   } catch (error) {
+    console.log('[createMemberAccount] Catch error:', error)
     return { data: null, error: error as Error }
   }
 }

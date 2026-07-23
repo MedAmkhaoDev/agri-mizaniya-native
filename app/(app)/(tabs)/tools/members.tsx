@@ -127,7 +127,14 @@ export default function MembersScreen() {
     setCreating(false)
 
     if (error) {
-      Alert.alert(t.error, error.message || t.failedToCreateMember)
+      console.log('createMemberAccount error:', error.message)
+      setCreateName('')
+      setCreateEmail('')
+      setCreatePassword('')
+      setInviteModalVisible(false)
+      setTimeout(() => {
+        Alert.alert(t.error, error.message || t.failedToCreateMember)
+      }, 300)
       return
     }
 
