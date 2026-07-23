@@ -1,5 +1,5 @@
 import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput, Pressable, ActivityIndicator, RefreshControl, Share } from 'react-native'
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/lib/auth-context'
 import { useFarm } from '@/lib/farm-context'
@@ -7,7 +7,9 @@ import { useI18n } from '@/lib/i18n-context'
 import { HeaderBar } from '@/components/HeaderBar'
 import { QRCodeDisplay } from '@/components/QRCodeDisplay'
 import { BottomSheet } from '@/components/BottomSheet'
-import { getFarmMembers, generateShareCode, createMemberAccount, removeMember, updateMemberRole } from '@/lib/api'
+import { generateShareCode, createMemberAccount, removeMember, updateMemberRole } from '@/lib/api'
+import { useRealtimeCollection } from '@/hooks/useRealtimeCollection'
+import { useSync } from '@/lib/sync-context'
 import type { FarmMember, FarmRole } from '@/lib/types'
 import { UserPlus, MoreVertical, X, AlertCircle, RefreshCw, Copy, Share2, Link as LinkIcon, UserPlus2 } from 'lucide-react-native'
 import * as Clipboard from 'expo-clipboard'
@@ -18,11 +20,14 @@ export default function MembersScreen() {
   const { user, profile } = useAuth()
   const { currentFarmId, currentFarm, canManageMembers } = useFarm()
   const { t } = useI18n()
+  const { isConnected } = useSync()
 
-  const [members, setMembers] = useState<FarmMember[]>([])
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const membersPath = currentFarmId ? `farms/${currentFarmId}/members` : ''
+
+  const { data: members, loading, error } = useRealtimeCollection<FarmMember>(membersPath, {
+    enabled: !!currentFarmId,
+  })
+
   const [inviteModalVisible, setInviteModalVisible] = useState(false)
   const [inviteTab, setInviteTab] = useState<'link' | 'create'>('link')
   const [selectedMember, setSelectedMember] = useState<FarmMember | null>(null)
@@ -38,28 +43,6 @@ export default function MembersScreen() {
   const [createPassword, setCreatePassword] = useState('')
   const [autoGenerate, setAutoGenerate] = useState(true)
   const [creating, setCreating] = useState(false)
-
-  const loadMembers = useCallback(async (isRefresh = false) => {
-    if (!currentFarmId) return
-    if (isRefresh) setRefreshing(true)
-    else setLoading(true)
-    setError(null)
-    try {
-      const { data, error: loadError } = await getFarmMembers(currentFarmId)
-      if (loadError) {
-        setError(t.failedToLoad)
-        return
-      }
-      setMembers(data)
-    } catch {
-      setError(t.failedToLoad)
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }, [currentFarmId, t.failedToLoad])
-
-  useEffect(() => { loadMembers() }, [loadMembers])
 
   const generateInviteLink = useCallback(async () => {
     if (!currentFarmId || !currentFarm || !user) return
@@ -150,7 +133,6 @@ export default function MembersScreen() {
       setCreateEmail('')
       setCreatePassword('')
       setInviteModalVisible(false)
-      loadMembers()
 
       setTimeout(() => {
         Alert.alert(t.success, t.accountCreatedAndSent, [
@@ -181,7 +163,6 @@ export default function MembersScreen() {
           Alert.alert(t.error, error.message || t.failedToRemove)
           return
         }
-        setMembers(members.filter(m => m.userId !== member.userId))
       }}
     ])
   }
@@ -197,7 +178,6 @@ export default function MembersScreen() {
       Alert.alert(t.error, error.message || t.failedToChangeRole)
       return
     }
-    setMembers(members.map(m => m.userId === member.userId ? { ...m, role: newRole } : m))
     setRoleModalVisible(false)
   }
 
@@ -223,10 +203,14 @@ export default function MembersScreen() {
   if (!currentFarmId) return null
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <HeaderBar title={t.members} showBack showSettings={false} right={canManageMembers ? (
-        <TouchableOpacity onPress={() => { setInviteModalVisible(true); generateInviteLink() }} className="h-10 w-10 items-center justify-center rounded-[10px] bg-gray-100 dark:bg-gray-800">
-          <UserPlus size={20} color="#374151" />
+        <TouchableOpacity
+          onPress={() => { setInviteModalVisible(true); generateInviteLink() }}
+          disabled={!isConnected}
+          className={cn("h-10 w-10 items-center justify-center rounded-[10px]", isConnected ? "bg-accent" : "bg-border opacity-50")}
+        >
+          <UserPlus size={20} color={isConnected ? "#374151" : "#9CA3AF"} />
         </TouchableOpacity>
       ) : undefined} />
 
@@ -237,25 +221,21 @@ export default function MembersScreen() {
           <View className="w-14 h-14 rounded-full bg-red-50 dark:bg-red-950 items-center justify-center mb-4">
             <AlertCircle size={28} color="#EF4444" />
           </View>
-          <Text className="text-[15px] font-semibold text-gray-900 dark:text-gray-100 mb-1">{t.failedToLoad}</Text>
-          <Text className="text-[13px] text-gray-400 dark:text-gray-500 mb-5 text-center">{error}</Text>
-          <TouchableOpacity onPress={() => loadMembers()} className="flex-row items-center gap-2 px-5 py-2.5 rounded-[10px] bg-gray-100 dark:bg-gray-800">
-            <RefreshCw size={16} color="#6B7280" />
-            <Text className="text-[13px] font-semibold text-gray-600 dark:text-gray-300">{t.retry}</Text>
-          </TouchableOpacity>
+          <Text className="text-[15px] font-semibold text-foreground mb-1">{t.failedToLoad}</Text>
+          <Text className="text-[13px] text-muted-foreground mb-5 text-center">{error.message}</Text>
         </View>
       ) : (
-        <ScrollView className="flex-1 p-4" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadMembers(true)} tintColor="#6B7280" />}>
+        <ScrollView className="flex-1 p-4" refreshControl={<RefreshControl refreshing={false} onRefresh={() => {}} tintColor="#6B7280" />}>
           {members.map((member) => (
-            <View key={member.userId} className="mb-3 flex-row items-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-              <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700">
-                <Text className="text-base font-bold text-gray-700 dark:text-gray-300">
+            <View key={member.userId} className="mb-3 flex-row items-center rounded-xl border border-border bg-card p-4">
+              <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-accent">
+                <Text className="text-base font-bold text-foreground">
                   {(member.fullName || member.email || '?')[0].toUpperCase()}
                 </Text>
               </View>
               <View className="flex-1">
-                <Text className="text-[15px] font-semibold text-gray-900 dark:text-gray-100">{member.fullName || t.unnamedMember}</Text>
-                <Text className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{member.email}</Text>
+                <Text className="text-[15px] font-semibold text-foreground">{member.fullName || t.unnamedMember}</Text>
+                <Text className="mt-0.5 text-xs text-muted-foreground">{member.email}</Text>
               </View>
               <View className="flex-row items-center gap-2">
                 <View className="rounded-md px-2 py-0.5" style={{ backgroundColor: roleColors[member.role] + '15' }}>
@@ -271,7 +251,7 @@ export default function MembersScreen() {
           ))}
           {members.length === 0 && (
             <View className="items-center pt-[60px]">
-              <Text className="text-[15px] text-gray-400 dark:text-gray-500">{t.noMembersYet}</Text>
+              <Text className="text-[15px] text-muted-foreground">{t.noMembersYet}</Text>
             </View>
           )}
         </ScrollView>
@@ -281,7 +261,7 @@ export default function MembersScreen() {
       <BottomSheet visible={inviteModalVisible} onClose={() => setInviteModalVisible(false)}>
         <View className="px-5 pt-1 pb-2.5">
           <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-[17px] font-bold text-gray-900 dark:text-gray-100">{t.inviteMember}</Text>
+            <Text className="text-[17px] font-bold text-foreground">{t.inviteMember}</Text>
             <TouchableOpacity onPress={() => setInviteModalVisible(false)}>
               <X size={18} color="#9CA3AF" />
             </TouchableOpacity>
@@ -289,21 +269,27 @@ export default function MembersScreen() {
 
           {/* Tab bar */}
           {canManageMembers && (
-            <View className="mb-4 flex-row rounded-xl bg-gray-100 dark:bg-gray-800 p-1">
+            <View className="mb-4 flex-row rounded-xl bg-accent p-1">
               <TouchableOpacity
                 onPress={() => setInviteTab('link')}
-                className={cn('flex-1 flex-row items-center justify-center gap-1.5 rounded-lg py-2.5', inviteTab === 'link' ? 'bg-white dark:bg-gray-700 shadow-sm' : '')}
+                className={cn('flex-1 flex-row items-center justify-center gap-1.5 rounded-lg py-2.5', inviteTab === 'link' ? 'bg-card shadow-sm' : '')}
               >
                 <LinkIcon size={15} color={inviteTab === 'link' ? '#16A34A' : '#6B7280'} />
                 <Text className={cn('text-[13px] font-semibold', inviteTab === 'link' ? 'text-green-600' : 'text-gray-500')}>{t.inviteTab}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => setInviteTab('create')}
-                className={cn('flex-1 flex-row items-center justify-center gap-1.5 rounded-lg py-2.5', inviteTab === 'create' ? 'bg-white dark:bg-gray-700 shadow-sm' : '')}
+                className={cn('flex-1 flex-row items-center justify-center gap-1.5 rounded-lg py-2.5', inviteTab === 'create' ? 'bg-card shadow-sm' : '')}
               >
                 <UserPlus2 size={15} color={inviteTab === 'create' ? '#16A34A' : '#6B7280'} />
                 <Text className={cn('text-[13px] font-semibold', inviteTab === 'create' ? 'text-green-600' : 'text-gray-500')}>{t.createTab}</Text>
               </TouchableOpacity>
+            </View>
+          )}
+
+          {!isConnected && (
+            <View className="mb-4 rounded-xl bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 p-3">
+              <Text className="text-[13px] text-amber-700 dark:text-amber-300">{t.offlineUnavailable}</Text>
             </View>
           )}
 
@@ -320,24 +306,24 @@ export default function MembersScreen() {
                     <QRCodeDisplay value={deepLink} size={140} />
                   </View>
 
-                  <View className="mb-3 rounded-xl border border-gray-200 dark:border-gray-700 p-3">
-                    <Text className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">{t.shareCode}</Text>
-                    <Text className="text-lg font-mono font-bold text-gray-900 dark:text-gray-100 text-center tracking-wider">{inviteCode}</Text>
+                  <View className="mb-3 rounded-xl border border-border p-3">
+                    <Text className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">{t.shareCode}</Text>
+                    <Text className="text-lg font-mono font-bold text-foreground text-center tracking-wider">{inviteCode}</Text>
                   </View>
 
-                  <View className="mb-3 rounded-xl border border-gray-200 dark:border-gray-700 p-3">
-                    <Text className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">{t.inviteLink}</Text>
+                  <View className="mb-3 rounded-xl border border-border p-3">
+                    <Text className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">{t.inviteLink}</Text>
                     <Text className="text-[13px] text-green-600 dark:text-green-400" numberOfLines={1}>{deepLink}</Text>
                   </View>
 
                   <View className="flex-row gap-2 mb-3">
-                    <TouchableOpacity onPress={handleCopyCode} className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 py-3">
+                    <TouchableOpacity onPress={handleCopyCode} className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl border border-border py-3">
                       <Copy size={15} color="#6B7280" />
-                      <Text className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">{t.shareCode}</Text>
+                      <Text className="text-[13px] font-semibold text-foreground">{t.shareCode}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={handleCopyLink} className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 py-3">
+                    <TouchableOpacity onPress={handleCopyLink} className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl border border-border py-3">
                       <LinkIcon size={15} color="#6B7280" />
-                      <Text className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">{t.copyLink}</Text>
+                      <Text className="text-[13px] font-semibold text-foreground">{t.copyLink}</Text>
                     </TouchableOpacity>
                   </View>
 
@@ -348,10 +334,10 @@ export default function MembersScreen() {
                 </>
               ) : (
                 <View className="items-center py-8">
-                  <Text className="text-[13px] text-gray-400 dark:text-gray-500 mb-3">{t.failedToGenerate}</Text>
-                  <TouchableOpacity onPress={generateInviteLink} className="flex-row items-center gap-2 px-5 py-2.5 rounded-[10px] bg-gray-100 dark:bg-gray-800">
+                  <Text className="text-[13px] text-muted-foreground mb-3">{t.failedToGenerate}</Text>
+                  <TouchableOpacity onPress={generateInviteLink} className="flex-row items-center gap-2 px-5 py-2.5 rounded-[10px] bg-accent">
                     <RefreshCw size={16} color="#6B7280" />
-                    <Text className="text-[13px] font-semibold text-gray-600 dark:text-gray-300">{t.retry}</Text>
+                    <Text className="text-[13px] font-semibold text-foreground">{t.retry}</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -359,9 +345,9 @@ export default function MembersScreen() {
           ) : (
             /* Create Account Tab */
             <View>
-              <Text className="text-[13px] text-gray-500 dark:text-gray-400 mb-4">{t.createAccountFor}</Text>
+              <Text className="text-[13px] text-muted-foreground mb-4">{t.createAccountFor}</Text>
 
-              <Text className="mb-1.5 text-[13px] font-semibold text-gray-700 dark:text-gray-300">{t.memberName}</Text>
+              <Text className="mb-1.5 text-[13px] font-semibold text-foreground">{t.memberName}</Text>
               <TextInput
                 value={createName}
                 onChangeText={setCreateName}
@@ -369,10 +355,10 @@ export default function MembersScreen() {
                 placeholderTextColor="#9CA3AF"
                 autoCapitalize="words"
                 returnKeyType="next"
-                className="mb-3 h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-white"
+                className="mb-3 h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground"
               />
 
-              <Text className="mb-1.5 text-[13px] font-semibold text-gray-700 dark:text-gray-300">{t.memberEmail}</Text>
+              <Text className="mb-1.5 text-[13px] font-semibold text-foreground">{t.memberEmail}</Text>
               <TextInput
                 value={createEmail}
                 onChangeText={setCreateEmail}
@@ -381,22 +367,22 @@ export default function MembersScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 returnKeyType="next"
-                className="mb-3 h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-white"
+                className="mb-3 h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground"
               />
 
               <TouchableOpacity
                 onPress={() => setAutoGenerate(!autoGenerate)}
                 className="flex-row items-center gap-2 mb-3"
               >
-                <View className={cn('h-5 w-5 rounded-md border items-center justify-center', autoGenerate ? 'bg-green-600 border-green-600' : 'border-gray-300 dark:border-gray-600')}>
+                <View className={cn('h-5 w-5 rounded-md border items-center justify-center', autoGenerate ? 'bg-green-600 border-green-600' : 'border-border')}>
                   {autoGenerate && <Text className="text-white text-[11px] font-bold">✓</Text>}
                 </View>
-                <Text className="text-[13px] text-gray-700 dark:text-gray-300">{t.autoGeneratePassword}</Text>
+                <Text className="text-[13px] text-foreground">{t.autoGeneratePassword}</Text>
               </TouchableOpacity>
 
               {!autoGenerate && (
                 <>
-                  <Text className="mb-1.5 text-[13px] font-semibold text-gray-700 dark:text-gray-300">{t.newPassword}</Text>
+                  <Text className="mb-1.5 text-[13px] font-semibold text-foreground">{t.newPassword}</Text>
                   <TextInput
                     value={createPassword}
                     onChangeText={setCreatePassword}
@@ -405,17 +391,17 @@ export default function MembersScreen() {
                     secureTextEntry
                     autoCapitalize="none"
                     returnKeyType="done"
-                    className="mb-4 h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-white"
+                    className="mb-4 h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground"
                   />
                 </>
               )}
 
               <TouchableOpacity
                 onPress={handleCreateAccount}
-                disabled={!createEmail.trim() || !createName.trim() || creating}
+                disabled={!createEmail.trim() || !createName.trim() || creating || !isConnected}
                 className={cn(
                   'h-14 rounded-xl items-center justify-center flex-row gap-2',
-                  createEmail.trim() && createName.trim() && !creating ? 'bg-green-600' : 'bg-gray-300 dark:bg-gray-600'
+                  createEmail.trim() && createName.trim() && !creating && isConnected ? 'bg-green-600' : 'bg-border'
                 )}
               >
                 {creating ? <ActivityIndicator color="#FFF" size="small" /> : <UserPlus size={18} color="#FFFFFF" />}
@@ -429,15 +415,15 @@ export default function MembersScreen() {
       {/* Role Modal */}
       {roleModalVisible && (
         <Pressable className="absolute inset-0 z-50 items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.3)' }} onPress={() => setRoleModalVisible(false)}>
-          <Pressable onPress={(e: any) => e.stopPropagation()} className="w-4/5 rounded-2xl bg-white dark:bg-gray-900 p-5">
-            <Text className="mb-4 text-[17px] font-bold text-gray-900 dark:text-gray-100">{t.changeRole}</Text>
+          <Pressable onPress={(e: any) => e.stopPropagation()} className="w-4/5 rounded-2xl bg-background p-5">
+            <Text className="mb-4 text-[17px] font-bold text-foreground">{t.changeRole}</Text>
             {roleOptions.map(opt => (
               <TouchableOpacity
                 key={opt.value}
                 onPress={() => selectedMember && handleChangeRole(selectedMember, opt.value)}
-                className={`mb-2 rounded-[10px] border px-4 py-3 ${selectedMember?.role === opt.value ? 'border-green-600' : 'border-gray-200 dark:border-gray-700'}`}
+                className={`mb-2 rounded-[10px] border px-4 py-3 ${selectedMember?.role === opt.value ? 'border-green-600' : 'border-border'}`}
               >
-                <Text className="text-sm font-medium text-gray-700 dark:text-gray-300">{opt.label}</Text>
+                <Text className="text-sm font-medium text-foreground">{opt.label}</Text>
               </TouchableOpacity>
             ))}
             {selectedMember && (

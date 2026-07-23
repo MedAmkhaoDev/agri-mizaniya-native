@@ -13,6 +13,7 @@ import {
   limit as firestoreLimit,
   writeBatch,
   increment,
+  type QueryConstraint,
 } from 'firebase/firestore'
 import { db } from '@/config/firebase'
 import type {
@@ -971,6 +972,41 @@ export type ExpenseFilters = {
   amountMin?: number
   amountMax?: number
   typeId?: string
+}
+
+// ─── Constraint Builders (for useRealtimeCollection) ────────────────────────
+
+export function expenseConstraints(filters?: ExpenseFilters): QueryConstraint[] {
+  const constraints: QueryConstraint[] = [orderBy('date', 'desc')]
+  if (filters?.parcelId && filters.parcelId !== 'all') constraints.push(where('parcelId', '==', filters.parcelId))
+  if (filters?.createdBy) constraints.push(where('createdBy', '==', filters.createdBy))
+  if (filters?.typeId) constraints.push(where('typeId', '==', filters.typeId))
+  return constraints
+}
+
+export function incomeConstraints(filters?: ExpenseFilters): QueryConstraint[] {
+  const constraints: QueryConstraint[] = [orderBy('date', 'desc')]
+  if (filters?.parcelId && filters.parcelId !== 'all') constraints.push(where('parcelId', '==', filters.parcelId))
+  if (filters?.createdBy) constraints.push(where('createdBy', '==', filters.createdBy))
+  return constraints
+}
+
+export function gasUsageConstraints(filters?: ExpenseFilters): QueryConstraint[] {
+  const constraints: QueryConstraint[] = [orderBy('date', 'desc')]
+  if (filters?.parcelId && filters.parcelId !== 'all') constraints.push(where('parcelId', '==', filters.parcelId))
+  if (filters?.createdBy) constraints.push(where('createdBy', '==', filters.createdBy))
+  return constraints
+}
+
+export function cooperativeSupportConstraints(filters?: ExpenseFilters): QueryConstraint[] {
+  const constraints: QueryConstraint[] = [orderBy('date', 'desc')]
+  if (filters?.parcelId && filters.parcelId !== 'all') constraints.push(where('parcelId', '==', filters.parcelId))
+  if (filters?.createdBy) constraints.push(where('createdBy', '==', filters.createdBy))
+  return constraints
+}
+
+export function parcelConstraints(): QueryConstraint[] {
+  return [orderBy('createdAt', 'desc')]
 }
 
 export async function getExpenses(

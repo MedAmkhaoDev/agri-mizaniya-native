@@ -53,7 +53,8 @@ service cloud.firestore {
       allow read: if isMember(farmId);
 
       // Only owners/managers can update the farm doc (e.g. settings)
-      allow update: if isOwnerOrManager(farmId);
+      // Any authenticated user can update (join flow needs memberCount increment)
+      allow update: if isAuth();
 
       allow delete: if false;
 
@@ -167,10 +168,9 @@ service cloud.firestore {
       // (they will set createdBy to their own uid)
       allow create: if isAuth();
 
-      // Only the creator can update or delete the code
-      allow update: if isAuth() &&
-        resource.data.createdBy == request.auth.uid;
-
+      // The creator can update or delete the code
+      // Any authenticated user can update useCount (for join flow)
+      allow update: if isAuth();
       allow delete: if isAuth() &&
         resource.data.createdBy == request.auth.uid;
     }

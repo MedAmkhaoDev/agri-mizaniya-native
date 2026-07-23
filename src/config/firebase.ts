@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app'
 import { initializeAuth, getReactNativePersistence, type Auth } from 'firebase/auth/react-native'
 import { getAuth } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import { initializeFirestore, CACHE_SIZE_UNLIMITED } from 'firebase/firestore'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { GoogleSignin } from '@react-native-google-signin/google-signin'
 
@@ -25,7 +25,9 @@ try {
   auth = getAuth(app)
 }
 
-const db = getFirestore(app)
+const db = initializeFirestore(app, {
+  cacheSizeBytes: CACHE_SIZE_UNLIMITED,
+})
 
 GoogleSignin.configure({
   webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,

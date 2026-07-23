@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils'
 export default function FarmSelectScreen() {
   const router = useRouter()
   const { code: deepLinkCode } = useLocalSearchParams<{ code?: string }>()
-  const { userFarms, switchFarm, loading: farmLoading } = useFarm()
+  const { userFarms, switchFarm, reloadFarms, loading: farmLoading } = useFarm()
   const { user } = useAuth()
   const { t } = useI18n()
 
@@ -85,6 +85,7 @@ export default function FarmSelectScreen() {
     setJoinModalVisible(false)
     setJoinCode('')
     if (farmId) {
+      await reloadFarms()
       await switchFarm(farmId)
       router.replace('/(app)')
     }
@@ -117,17 +118,17 @@ export default function FarmSelectScreen() {
   if (farmLoading || loading) {
     return (
       <SafeAreaView className="flex-1">
-      <View className="flex-1 bg-white dark:bg-gray-900 px-6 pt-16">
+      <View className="flex-1 bg-background px-6 pt-16">
         <View className="items-center mb-10">
           <View className="w-14 h-14 rounded-[14px] bg-green-600 items-center justify-center mb-4">
             <Wheat size={30} color="#FFFFFF" />
           </View>
-          <View className="w-40 h-5 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse mb-2" />
-          <View className="w-28 h-3.5 rounded-md bg-gray-100 dark:bg-gray-800 animate-pulse" />
+          <View className="w-40 h-5 rounded-lg bg-accent animate-pulse mb-2" />
+          <View className="w-28 h-3.5 rounded-md bg-accent animate-pulse" />
         </View>
-        <Text className="text-[13px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">{t.farms}</Text>
+        <Text className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wide mb-3">{t.farms}</Text>
         {[1, 2, 3].map(i => (
-          <View key={i} className="h-[72px] rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse mb-3" />
+          <View key={i} className="h-[72px] rounded-xl bg-accent animate-pulse mb-3" />
         ))}
       </View>
       </SafeAreaView>
@@ -136,23 +137,23 @@ export default function FarmSelectScreen() {
 
   return (
     <SafeAreaView className="flex-1">
-    <ScrollView className="flex-1 bg-white dark:bg-gray-900" contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+    <ScrollView className="flex-1 bg-background" contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
       <View className="flex-1 px-6 pt-16 pb-12">
         {/* Header */}
         <View className="items-center mb-10">
           <View className="w-14 h-14 rounded-[14px] bg-green-600 items-center justify-center mb-4">
             <Wheat size={30} color="#FFFFFF" />
           </View>
-          <Text className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
+          <Text className="text-xl font-bold text-foreground mb-1">
             {t.welcome}, {user?.displayName || user?.email?.split('@')[0] || ''}
           </Text>
-          <Text className="text-[13px] text-gray-400 dark:text-gray-500">{t.appTagline}</Text>
+          <Text className="text-[13px] text-muted-foreground">{t.appTagline}</Text>
         </View>
 
         {userFarms.length > 0 ? (
           <>
             {/* Farm list */}
-            <Text className="text-[13px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
+            <Text className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wide mb-3">
               {t.farms}
             </Text>
             {userFarms.map((farm) => {
@@ -162,12 +163,12 @@ export default function FarmSelectScreen() {
                   key={farm.id}
                   onPress={() => handleSelectFarm(farm.id)}
                   activeOpacity={0.7}
-                  className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-3 flex-row items-center justify-between"
+                  className="bg-card border border-border rounded-xl p-4 mb-3 flex-row items-center justify-between"
                   style={{ boxShadow: '0px 1px 3px rgba(0,0,0,0.06), 0px 4px 12px rgba(0,0,0,0.04)' }}
                 >
                   <View className="flex-1">
                     <View className="flex-row items-center gap-2 mb-1.5">
-                      <Text className="text-base font-semibold text-gray-900 dark:text-gray-100" numberOfLines={1}>
+                      <Text className="text-base font-semibold text-foreground" numberOfLines={1}>
                         {farm.name}
                       </Text>
                       {role ? (
@@ -180,7 +181,7 @@ export default function FarmSelectScreen() {
                     </View>
                     <View className="flex-row items-center gap-1">
                       <Users size={13} color="#9CA3AF" />
-                      <Text className="text-[13px] text-gray-400 dark:text-gray-500">
+                      <Text className="text-[13px] text-muted-foreground">
                         {farm.memberCount} {t.memberCount}
                       </Text>
                     </View>
@@ -193,9 +194,9 @@ export default function FarmSelectScreen() {
             <TouchableOpacity
               onPress={() => setJoinModalVisible(true)}
               activeOpacity={0.7}
-              className="w-full h-11 rounded-[10px] border border-gray-300 dark:border-gray-600 border-dashed items-center justify-center mt-1"
+              className="w-full h-11 rounded-[10px] border border-border border-dashed items-center justify-center mt-1"
             >
-              <Text className="text-gray-500 dark:text-gray-400 text-sm font-medium">
+              <Text className="text-muted-foreground text-sm font-medium">
                 {t.joinExistingFarm}
               </Text>
             </TouchableOpacity>
@@ -203,10 +204,10 @@ export default function FarmSelectScreen() {
         ) : (
           /* Empty state */
           <View className="items-center pt-8">
-            <Text className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2 text-center">
+            <Text className="text-base font-semibold text-foreground mb-2 text-center">
               {t.noFarms}
             </Text>
-            <Text className="text-[13px] text-gray-400 dark:text-gray-500 mb-8 text-center px-4">
+            <Text className="text-[13px] text-muted-foreground mb-8 text-center px-4">
               {t.createFirstFarm}
             </Text>
 
@@ -226,9 +227,9 @@ export default function FarmSelectScreen() {
             <TouchableOpacity
               onPress={() => setJoinModalVisible(true)}
               activeOpacity={0.7}
-              className="w-full h-[52px] rounded-xl bg-gray-100 dark:bg-gray-700 items-center justify-center flex-row gap-2"
+              className="w-full h-[52px] rounded-xl bg-accent items-center justify-center flex-row gap-2"
             >
-              <Text className="text-gray-700 dark:text-gray-300 text-[15px] font-semibold">
+              <Text className="text-foreground text-[15px] font-semibold">
                 {t.joinExistingFarm}
               </Text>
             </TouchableOpacity>
@@ -240,21 +241,21 @@ export default function FarmSelectScreen() {
       <Modal visible={joinModalVisible} animationType="slide" transparent>
         <Pressable className="flex-1 bg-black/30 justify-end" onPress={() => setJoinModalVisible(false)}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-            <Pressable onPress={(e: any) => e.stopPropagation()} className="bg-white dark:bg-gray-800 rounded-t-[20px] p-5">
+            <Pressable onPress={(e: any) => e.stopPropagation()} className="bg-card rounded-t-[20px] p-5">
             <View className="flex-row justify-between items-center mb-5">
-              <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">{t.joinFarm}</Text>
+              <Text className="text-lg font-bold text-foreground">{t.joinFarm}</Text>
               <TouchableOpacity onPress={() => setJoinModalVisible(false)}>
                 <X size={20} color="#6B7280" />
               </TouchableOpacity>
             </View>
-            <Text className="text-[13px] text-gray-500 dark:text-gray-400 mb-3">
+            <Text className="text-[13px] text-muted-foreground mb-3">
               {t.orEnterCodeManually}
             </Text>
 
             {/* QR scan button */}
             <TouchableOpacity
               onPress={() => setScannerVisible(true)}
-              className="mb-3 flex-row items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-gray-600 border-dashed py-3"
+              className="mb-3 flex-row items-center justify-center gap-2 rounded-xl border border-border border-dashed py-3"
             >
               <ScanLine size={18} color="#16A34A" />
               <Text className="text-[14px] font-semibold text-green-600">{t.scanQRToJoin}</Text>
@@ -266,7 +267,7 @@ export default function FarmSelectScreen() {
               placeholder="XXXXXX"
               autoCapitalize="characters"
               autoCorrect={false}
-              className="border border-gray-200 dark:border-gray-600 rounded-[10px] px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 mb-4"
+              className="border border-border rounded-[10px] px-3 py-2.5 text-sm text-foreground bg-card mb-4"
               style={{ fontFamily: 'monospace', letterSpacing: 2 }}
             />
             <TouchableOpacity
@@ -274,7 +275,7 @@ export default function FarmSelectScreen() {
               disabled={!joinCode.trim() || joining}
               className={cn(
                 'rounded-[10px] py-3.5 items-center flex-row justify-center gap-2',
-                joinCode.trim() && !joining ? 'bg-green-600' : 'bg-gray-300 dark:bg-gray-600'
+                joinCode.trim() && !joining ? 'bg-green-600' : 'bg-border'
               )}
             >
               {joining && <ActivityIndicator color="#FFF" size="small" />}

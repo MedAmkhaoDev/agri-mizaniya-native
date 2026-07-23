@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useEffect, useCallback, useState } from 'react'
+import React, { createContext, useContext, useEffect, useCallback, useState, useRef } from 'react'
 import { useFarmStore } from './farm-store'
 import { useAuth } from './auth-context'
-import { getDoc, doc, updateDoc } from 'firebase/firestore'
+import { getDoc, doc, updateDoc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/config/firebase'
 import type { Farm, FarmRole } from './types'
 import {
@@ -127,8 +127,28 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, authLoading, migrating, initialized, loadUserFarms])
 
+  // Real-time subscription to current farm document
+  useEffect(() => {
+    if (!store.currentFarmId) return
+
+    const unsubscribe = onSnapshot(
+      doc(db, 'farms', store.currentFarmId),
+      (snap) => {
+        if (snap.exists()) {
+          store.setCurrentFarm({ id: snap.id, ...snap.data() } as Farm)
+        }
+      },
+      (err) => {
+        console.error('Farm snapshot error:', err)
+      }
+    )
+
+    return () => unsubscribe()
+  }, [store.currentFarmId])
+
   const switchFarm = useCallback(async (farmId: string) => {
-    const farm = store.userFarms.find((f) => f.id === farmId)
+    const currentStore = useFarmStore.getState()
+    const farm = currentStore.userFarms.find((f) => f.id === farmId)
     if (!farm || !user) return
 
     // Load role BEFORE updating store
@@ -139,29 +159,30 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Update store once
-    store.setCurrentFarm(farm)
-    store.setCurrentRole(newRole)
+    currentStore.setCurrentFarm(farm)
+    currentStore.setCurrentRole(newRole)
     await updateDoc(doc(db, 'users', user.uid), { currentFarmId: farmId })
   }, [user])
 
   const refreshFarm = useCallback(async () => {
-    if (store.currentFarmId) {
+    const currentStore = useFarmStore.getState()
+    if (currentStore.currentFarmId) {
       let updatedFarm: Farm | null = null
-      const farmSnap = await getDoc(doc(db, 'farms', store.currentFarmId))
+      const farmSnap = await getDoc(doc(db, 'farms', currentStore.currentFarmId))
       if (farmSnap.exists()) {
         updatedFarm = { id: farmSnap.id, ...farmSnap.data() } as Farm
       }
       let updatedRole: FarmRole | null = null
       if (user) {
-        const memberSnap = await getDoc(doc(db, 'farms', store.currentFarmId, 'members', user.uid))
+        const memberSnap = await getDoc(doc(db, 'farms', currentStore.currentFarmId, 'members', user.uid))
         if (memberSnap.exists()) {
           updatedRole = memberSnap.data().role as FarmRole
         }
       }
-      if (updatedFarm) store.setCurrentFarm(updatedFarm)
-      store.setCurrentRole(updatedRole)
+      if (updatedFarm) currentStore.setCurrentFarm(updatedFarm)
+      currentStore.setCurrentRole(updatedRole)
     }
-  }, [store.currentFarmId, user])
+  }, [user])
 
   const reloadFarms = useCallback(async () => {
     setInitialized(false)

@@ -1,13 +1,14 @@
-import { useState, useEffect, useCallback } from 'react'
-import { View, Text, FlatList, TouchableOpacity, RefreshControl } from 'react-native'
+import { useState, useMemo } from 'react'
+import { View, Text, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/lib/auth-context'
 import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
-import { getCooperativeSupports, createCooperativeSupport, deleteCooperativeSupport, getParcels } from '@/lib/api'
+import { deleteCooperativeSupport, cooperativeSupportConstraints } from '@/lib/api'
 import { formatMAD } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useUndoDelete } from '@/hooks/useUndoDelete'
+import { useRealtimeCollection, type WithPending } from '@/hooks/useRealtimeCollection'
 import AddCooperativeSheet from '@/components/AddCooperativeSheet'
 import { FilterSheet } from '@/components/FilterSheet'
 import { HeaderBar } from '@/components/HeaderBar'
@@ -19,55 +20,39 @@ export default function CooperativeScreen() {
   const { user } = useAuth()
   const { currentFarmId, canWrite } = useFarm()
   const { t } = useI18n()
-  const [supports, setSupports] = useState<CooperativeSupport[]>([])
-  const [parcels, setParcels] = useState<Parcel[]>([])
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [filters, setFilters] = useState<ExpenseFilters>({ parcelId: 'all' })
   const [sheetOpen, setSheetOpen] = useState(false)
   const [filterSheetOpen, setFilterSheetOpen] = useState(false)
 
-  const loadData = useCallback(async (isRefresh = false) => {
-    if (!user || !currentFarmId) return
-    if (isRefresh) setRefreshing(true)
-    else setLoading(true)
-    setError(null)
-    try {
-      const [s, p] = await Promise.all([
-        getCooperativeSupports(currentFarmId!, filters),
-        getParcels(currentFarmId!),
-      ])
-      if (s.error || p.error) {
-        setError(t.failedToLoad)
-        return
-      }
-      setSupports(s.data)
-      setParcels(p.data)
-    } catch {
-      setError(t.failedToLoad)
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }, [user, filters, currentFarmId, t.failedToLoad])
+  const coopPath = currentFarmId ? `farms/${currentFarmId}/cooperativeSupports` : ''
+  const parcelsPath = currentFarmId ? `farms/${currentFarmId}/parcels` : ''
 
-  useEffect(() => { loadData() }, [loadData])
+  const constraints = useMemo(() => cooperativeSupportConstraints(filters), [filters])
+  const parcelConstraintsMemo = useMemo(() => [], [])
 
-  const handleRestore = async (item: CooperativeSupport) => {
+  const { data: supports, loading, error } = useRealtimeCollection<CooperativeSupport>(coopPath, {
+    constraints,
+    enabled: !!currentFarmId,
+  })
+
+  const { data: parcels } = useRealtimeCollection<Parcel>(parcelsPath, {
+    constraints: parcelConstraintsMemo,
+    enabled: !!currentFarmId,
+  })
+
+  const handleRestore = async (item: WithPending<CooperativeSupport>) => {
     if (!user || !currentFarmId) return
-    await createCooperativeSupport(currentFarmId!, user.uid, {
+    await import('@/lib/api').then(m => m.createCooperativeSupport(currentFarmId!, user.uid, {
       parcelId: item.parcelId, supportType: item.supportType,
       amount: item.amount, invoiceNumber: item.invoiceNumber,
       description: item.description, date: item.date, notes: item.notes,
-    })
-    loadData()
+    }))
   }
 
   const { deleteWithUndo } = useUndoDelete(
     (id) => deleteCooperativeSupport(currentFarmId!, id),
     handleRestore,
-    loadData,
+    () => {},
     { deleted: t.deleted, undo: t.undo, error: t.error },
   )
 
@@ -79,7 +64,7 @@ export default function CooperativeScreen() {
 
   return (
     <SafeAreaView className="flex-1" edges={['top']}>
-      <View className="flex-1 bg-white dark:bg-gray-900">
+      <View className="flex-1 bg-background">
         <HeaderBar
           title={t.cooperative}
           right={
@@ -108,7 +93,7 @@ export default function CooperativeScreen() {
               return (
                 <TouchableOpacity
                   onPress={() => setFilterSheetOpen(true)}
-                  className="flex-row items-center gap-1.5 px-3.5 h-9 rounded-[10px] bg-gray-100 dark:bg-gray-800 justify-center"
+                  className="flex-row items-center gap-1.5 px-3.5 h-9 rounded-[10px] bg-accent justify-center"
                 >
                   <SlidersHorizontal size={14} color="#6B7280" />
                   {advancedFilterCount > 0 && (
@@ -122,9 +107,9 @@ export default function CooperativeScreen() {
             return (
               <TouchableOpacity
                 onPress={() => setFilters((f) => ({ ...f, parcelId: item.id }))}
-                className={cn("px-3.5 py-2.5 rounded-[10px] h-9 items-center justify-center", filters.parcelId === item.id ? "bg-violet-500 dark:bg-violet-600" : "bg-gray-100 dark:bg-gray-800")}
+                className={cn("px-3.5 py-2.5 rounded-[10px] h-9 items-center justify-center", filters.parcelId === item.id ? "bg-violet-500 dark:bg-violet-600" : "bg-accent")}
               >
-                <Text className={cn("text-xs font-semibold", filters.parcelId === item.id ? "text-white dark:text-gray-100" : "text-gray-500 dark:text-gray-400")}>{item.name}</Text>
+                <Text className={cn("text-xs font-semibold", filters.parcelId === item.id ? "text-white dark:text-gray-100" : "text-muted-foreground")}>{item.name}</Text>
               </TouchableOpacity>
             )
           }}
@@ -135,19 +120,15 @@ export default function CooperativeScreen() {
             <View className="w-14 h-14 rounded-full bg-red-50 dark:bg-red-950 items-center justify-center mb-4">
               <AlertCircle size={28} color="#EF4444" />
             </View>
-            <Text className="text-[15px] font-semibold text-gray-900 dark:text-gray-100 mb-1">{t.failedToLoad}</Text>
-            <Text className="text-[13px] text-gray-400 dark:text-gray-500 mb-5 text-center">{error}</Text>
-            <TouchableOpacity onPress={() => loadData()} className="flex-row items-center gap-2 px-5 py-2.5 rounded-[10px] bg-gray-100 dark:bg-gray-800">
-              <RefreshCw size={16} color="#6B7280" />
-              <Text className="text-[13px] font-semibold text-gray-600 dark:text-gray-300">{t.retry}</Text>
-            </TouchableOpacity>
+            <Text className="text-[15px] font-semibold text-foreground mb-1">{t.failedToLoad}</Text>
+            <Text className="text-[13px] text-muted-foreground mb-5 text-center">{error.message}</Text>
           </View>
         ) : (
           <View className="flex-1">
             {loading && (
               <View className="absolute inset-0 z-10 items-center justify-center">
                 <View className="items-center py-12">
-                  {[1, 2, 3].map(i => <View key={i} className="h-[72px] w-full rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse mb-2.5" />)}
+                  {[1, 2, 3].map(i => <View key={i} className="h-[72px] w-full rounded-xl bg-accent animate-pulse mb-2.5" />)}
                 </View>
               </View>
             )}
@@ -155,32 +136,38 @@ export default function CooperativeScreen() {
               data={supports}
               keyExtractor={(item) => item.id}
               contentContainerClassName="p-4"
-              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadData(true)} tintColor="#6B7280" />}
+              refreshControl={<RefreshControl refreshing={false} onRefresh={() => {}} tintColor="#6B7280" />}
               ListEmptyComponent={
                 !loading ? (
                   <View className="items-center py-12">
                     <HandCoins size={48} color="#D1D5DB" />
-                    <Text className="text-gray-400 dark:text-gray-500 mt-3">{t.noCooperative}</Text>
+                    <Text className="text-muted-foreground mt-3">{t.noCooperative}</Text>
                   </View>
                 ) : null
               }
               renderItem={({ item }) => (
-                <View className="flex-row items-center p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 mb-2">
+                <View className="flex-row items-center p-3.5 rounded-xl border border-border mb-2">
                   <View className="w-9 h-9 rounded-[10px] bg-violet-50 dark:bg-violet-950 items-center justify-center mr-3">
                     <HandCoins size={16} color="#8B5CF6" />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-sm font-medium text-gray-900 dark:text-gray-100">{t.supportTypes[item.supportType]}</Text>
+                    <Text className="text-sm font-medium text-foreground">{t.supportTypes[item.supportType]}</Text>
                     <View className="flex-row items-center gap-1 mt-0.5">
-                      <Text className="text-[11px] text-gray-400 dark:text-gray-500">{item.date}</Text>
+                      <Text className="text-[11px] text-muted-foreground">{item.date}</Text>
                       {item.createdByName ? (
                         <>
                           <Text className="text-[11px] text-gray-300 dark:text-gray-600">·</Text>
-                          <Text className="text-[11px] text-gray-400 dark:text-gray-500">{t.by} {item.createdByName}</Text>
+                          <Text className="text-[11px] text-muted-foreground">{t.by} {item.createdByName}</Text>
                         </>
                       ) : null}
                     </View>
-                    {item.invoiceNumber ? <Text className="text-[11px] text-gray-400 dark:text-gray-500">{t.invoiceNumber}: {item.invoiceNumber}</Text> : null}
+                    {item.invoiceNumber ? <Text className="text-[11px] text-muted-foreground">{t.invoiceNumber}: {item.invoiceNumber}</Text> : null}
+                    {item._pending && (
+                      <View className="flex-row items-center gap-1 mt-0.5">
+                        <ActivityIndicator size="small" color="#9CA3AF" />
+                        <Text className="text-[10px] text-gray-400">{t.syncing}</Text>
+                      </View>
+                    )}
                   </View>
                   <Text style={{ fontVariant: ['tabular-nums'] }} className="text-sm font-semibold text-violet-500 dark:text-violet-400">-{formatMAD(item.amount)} MAD</Text>
                   <TouchableOpacity onPress={() => deleteWithUndo(item)} className="p-1.5 ml-2">
@@ -192,7 +179,7 @@ export default function CooperativeScreen() {
           </View>
         )}
 
-        <AddCooperativeSheet visible={sheetOpen} onClose={() => { setSheetOpen(false); loadData() }} />
+        <AddCooperativeSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} />
         <FilterSheet visible={filterSheetOpen} onClose={() => setFilterSheetOpen(false)} filters={filters} onApply={setFilters} />
       </View>
     </SafeAreaView>
