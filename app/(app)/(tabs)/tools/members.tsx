@@ -95,7 +95,8 @@ export default function MembersScreen() {
       .replace('{farmName}', currentFarm.name)
       .replace('{link}', deepLink)
       .replace('{code}', inviteCode)
-    await Share.share({ message, url: deepLink })
+    setInviteModalVisible(false)
+    setTimeout(() => Share.share({ message, url: deepLink }), 300)
   }
 
   const handleCreateAccount = async () => {
@@ -138,18 +139,20 @@ export default function MembersScreen() {
         .replace('{link}', deepLink)
         .replace('{code}', inviteCode)}`
 
-      Alert.alert(t.success, t.accountCreatedAndSent, [
-        { text: t.sendCredentials, onPress: async () => {
-          await Share.share({ message: credsMessage, url: deepLink })
-        }},
-        { text: t.close, style: 'cancel' },
-      ])
-
       setCreateName('')
       setCreateEmail('')
       setCreatePassword('')
       setInviteModalVisible(false)
       loadMembers()
+
+      setTimeout(() => {
+        Alert.alert(t.success, t.accountCreatedAndSent, [
+          { text: t.sendCredentials, onPress: async () => {
+            await Share.share({ message: credsMessage, url: deepLink })
+          }},
+          { text: t.close, style: 'cancel' },
+        ])
+      }, 300)
     }
   }
 
