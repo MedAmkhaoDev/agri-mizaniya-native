@@ -15,7 +15,7 @@ export default function JoinScreen() {
   }, [code])
 
   return (
-    <View className="flex-1 items-center justify-center bg-white dark:bg-gray-900">
+    <View className="flex-1 items-center justify-center bg-background">
       <ActivityIndicator size="large" color="#16A34A" />
     </View>
   )

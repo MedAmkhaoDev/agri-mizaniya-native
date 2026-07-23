@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 function Separator({ className, ...props }: ViewProps) {
   return (
     <View
-      className={cn("h-px w-full bg-gray-200 dark:bg-gray-700", className)}
+      className={cn(        "h-px w-full bg-border", className)}
       {...props}
     />
   )

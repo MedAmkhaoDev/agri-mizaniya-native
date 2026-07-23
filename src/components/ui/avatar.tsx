@@ -20,12 +20,12 @@ function AvatarFallback({ className, children, ...props }: ViewProps) {
   return (
     <View
       className={cn(
-        "flex h-full w-full items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800",
+        "flex h-full w-full items-center justify-center rounded-full bg-accent",
         className
       )}
       {...props}
     >
-      <Text className="text-sm font-medium text-gray-600 dark:text-gray-400">
+      <Text className="text-sm font-medium text-muted-foreground">
         {children}
       </Text>
     </View>

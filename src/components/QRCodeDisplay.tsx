@@ -13,7 +13,7 @@ export function QRCodeDisplay({ value, size = 200 }: QRCodeDisplayProps) {
   const isDark = colorScheme === 'dark'
 
   return (
-    <View className="items-center justify-center rounded-2xl bg-white dark:bg-gray-100 p-4">
+    <View className="items-center justify-center rounded-2xl bg-card p-4">
       <QRCode
         value={value}
         size={size}

@@ -24,14 +24,14 @@ export function HeaderBar({ title, right, showFarmSwitcher = true, showBack = fa
 
   return (
     <>
-      <View className="flex-row items-center px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+      <View className="flex-row items-center px-4 py-3 border-b border-border">
         {showBack && (
-          <TouchableOpacity onPress={() => router.back()} className="w-9 h-9 rounded-[10px] bg-gray-100 dark:bg-gray-700 items-center justify-center mr-2.5">
+          <TouchableOpacity onPress={() => router.back()} className="w-9 h-9 rounded-[10px] bg-accent items-center justify-center mr-2.5">
             <ChevronLeft size={20} color="#374151" />
           </TouchableOpacity>
         )}
         <View className="flex-1">
-          <Text className="text-lg font-bold text-gray-900 dark:text-white">{title}</Text>
+          <Text className="text-lg font-bold text-foreground">{title}</Text>
           {showFarmSwitcher && currentFarm && userFarms.length > 1 && (
             <TouchableOpacity onPress={() => setFarmSwitcherVisible(true)} className="flex-row items-center gap-0.5 mt-0.5">
               <Text className="text-xs text-green-600 dark:text-emerald-500 font-medium">{currentFarm.name}</Text>
@@ -46,7 +46,7 @@ export function HeaderBar({ title, right, showFarmSwitcher = true, showBack = fa
           {right}
           {showNotifications && <NotificationBell />}
           {showSettings && (
-            <TouchableOpacity onPress={() => router.push('/(app)/settings')} className="w-9 h-9 rounded-[10px] bg-gray-100 dark:bg-gray-700 items-center justify-center">
+            <TouchableOpacity onPress={() => router.push('/(app)/settings')} className="w-9 h-9 rounded-[10px] bg-accent items-center justify-center">
               <Settings size={18} color="#6B7280" />
             </TouchableOpacity>
           )}

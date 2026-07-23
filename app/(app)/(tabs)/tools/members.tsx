@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput, Pressable, ActivityIndicator, RefreshControl, Share } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, Alert, Pressable, ActivityIndicator, RefreshControl, Share } from 'react-native'
+import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/lib/auth-context'
@@ -348,7 +349,7 @@ export default function MembersScreen() {
               <Text className="text-[13px] text-muted-foreground mb-4">{t.createAccountFor}</Text>
 
               <Text className="mb-1.5 text-[13px] font-semibold text-foreground">{t.memberName}</Text>
-              <TextInput
+              <BottomSheetTextInput
                 value={createName}
                 onChangeText={setCreateName}
                 placeholder={t.fullName}
@@ -359,7 +360,7 @@ export default function MembersScreen() {
               />
 
               <Text className="mb-1.5 text-[13px] font-semibold text-foreground">{t.memberEmail}</Text>
-              <TextInput
+              <BottomSheetTextInput
                 value={createEmail}
                 onChangeText={setCreateEmail}
                 placeholder={t.email}
@@ -383,7 +384,7 @@ export default function MembersScreen() {
               {!autoGenerate && (
                 <>
                   <Text className="mb-1.5 text-[13px] font-semibold text-foreground">{t.newPassword}</Text>
-                  <TextInput
+                  <BottomSheetTextInput
                     value={createPassword}
                     onChangeText={setCreatePassword}
                     placeholder="••••••••"

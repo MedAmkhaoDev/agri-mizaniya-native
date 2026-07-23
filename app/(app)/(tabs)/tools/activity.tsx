@@ -73,7 +73,7 @@ export default function ActivityScreen() {
   if (!currentFarmId) return null
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <HeaderBar title={t.activityLog} showBack showSettings={false} showFarmSwitcher={false} />
       {loading ? (
         <ActivityIndicator size="large" color="#16A34A" className="mt-[60px]" />
@@ -82,11 +82,11 @@ export default function ActivityScreen() {
           <View className="w-14 h-14 rounded-full bg-red-50 dark:bg-red-950 items-center justify-center mb-4">
             <AlertCircle size={28} color="#EF4444" />
           </View>
-          <Text className="text-[15px] font-semibold text-gray-900 dark:text-gray-100 mb-1">{t.failedToLoad}</Text>
-          <Text className="text-[13px] text-gray-400 dark:text-gray-500 mb-5 text-center">{error}</Text>
-          <TouchableOpacity onPress={() => loadLogs()} className="flex-row items-center gap-2 px-5 py-2.5 rounded-[10px] bg-gray-100 dark:bg-gray-800">
+          <Text className="text-[15px] font-semibold text-foreground mb-1">{t.failedToLoad}</Text>
+          <Text className="text-[13px] text-muted-foreground mb-5 text-center">{error}</Text>
+          <TouchableOpacity onPress={() => loadLogs()} className="flex-row items-center gap-2 px-5 py-2.5 rounded-[10px] bg-accent">
             <RefreshCw size={16} color="#6B7280" />
-            <Text className="text-[13px] font-semibold text-gray-600 dark:text-gray-300">{t.retry}</Text>
+            <Text className="text-[13px] font-semibold text-foreground">{t.retry}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -97,13 +97,13 @@ export default function ActivityScreen() {
                 {entityIcons[log.entityType] || <Clock size={14} color="#6B7280" />}
               </View>
               <View className="flex-1">
-                <Text className="text-[13px] leading-[18px] text-gray-700 dark:text-gray-300">
+                <Text className="text-[13px] leading-[18px] text-foreground">
                   <Text className="font-semibold">{log.userName || t.someone}</Text>
                   {' '}{log.action === 'create' ? t.added : log.action === 'update' ? t.updated : t.deleted}{' '}
                   <Text className="font-semibold">{log.entityName || log.entityType}</Text>
                 </Text>
                 {log.details ? (
-                  <Text className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{JSON.stringify(log.details)}</Text>
+                  <Text className="mt-0.5 text-xs text-muted-foreground">{JSON.stringify(log.details)}</Text>
                 ) : null}
                 <Text className="mt-1 text-[11px] text-gray-300 dark:text-gray-600">{formatTimestamp(log.createdAt)}</Text>
               </View>
@@ -112,7 +112,7 @@ export default function ActivityScreen() {
           {logs.length === 0 && (
             <View className="items-center pt-[60px]">
               <Clock size={40} color="#D1D5DB" />
-              <Text className="mt-3 text-[15px] text-gray-400 dark:text-gray-500">{t.noActivityYet}</Text>
+              <Text className="mt-3 text-[15px] text-muted-foreground">{t.noActivityYet}</Text>
             </View>
           )}
         </ScrollView>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { View, Text, TextInput, TouchableOpacity, FlatList, ActivityIndicator, ScrollView } from 'react-native'
+import { View, Text, TouchableOpacity, FlatList, ActivityIndicator, ScrollView } from 'react-native'
+import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
 import { useAuth } from '@/lib/auth-context'
 import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
@@ -90,7 +91,7 @@ export default function AddCooperativeSheet({ visible, onClose }: AddCooperative
       <View className="px-5 pt-1 pb-2.5">
         <Text className="text-[17px] font-bold text-violet-500 dark:text-violet-500 mb-4">{t.addCooperative}</Text>
 
-        <Text className="text-[11px] font-semibold text-gray-400 dark:text-gray-400 uppercase tracking-[1px] mb-2">{t.supportType}</Text>
+        <Text className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[1px] mb-2">{t.supportType}</Text>
         <View className="flex-row flex-wrap gap-1.5 mb-4">
           {SUPPORT_TYPES.map((st) => (
             <TouchableOpacity
@@ -102,22 +103,22 @@ export default function AddCooperativeSheet({ visible, onClose }: AddCooperative
                 backgroundColor: supportType === st ? SUPPORT_COLORS[st] + '15' : '#FFFFFF',
               }}
             >
-              <Text className="text-[13px] font-medium text-gray-500 dark:text-gray-400">
+              <Text className="text-[13px] font-medium text-muted-foreground">
                 {supportTypeLabel(st)}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t.amount} (MAD)</Text>
-        <TextInput value={amount} onChangeText={v => setAmount(filterNumeric(v))} keyboardType="decimal-pad" placeholder="0" placeholderTextColor="#9CA3AF"
+        <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.amount} (MAD)</Text>
+        <BottomSheetTextInput value={amount} onChangeText={v => setAmount(filterNumeric(v))} keyboardType="decimal-pad" placeholder="0" placeholderTextColor="#9CA3AF"
           className="h-16 border-2 border-violet-300 dark:border-violet-700 rounded-xl text-[30px] font-bold text-violet-500 text-center mt-4 mb-3" />
 
-        <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t.invoiceNumber}</Text>
-        <TextInput value={invoiceNumber} onChangeText={setInvoiceNumber} placeholder="FAC-2024-001" placeholderTextColor="#9CA3AF"
-          className="h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-white mb-3" />
+        <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.invoiceNumber}</Text>
+        <BottomSheetTextInput value={invoiceNumber} onChangeText={setInvoiceNumber} placeholder="FAC-2024-001" placeholderTextColor="#9CA3AF"
+          className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground mb-3" />
 
-        <Text className="text-[11px] font-semibold text-gray-400 dark:text-gray-400 uppercase tracking-[1px] mb-2">{t.parcel}</Text>
+        <Text className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[1px] mb-2">{t.parcel}</Text>
         <FlatList
           horizontal
           data={[{ id: '', name: t.none } as Parcel, ...parcels]}
@@ -125,15 +126,15 @@ export default function AddCooperativeSheet({ visible, onClose }: AddCooperative
           showsHorizontalScrollIndicator={false}
           contentContainerClassName="gap-1.5 mb-3"
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => setParcelId(item.id)} className={`px-3.5 py-2 rounded-[10px] border ${parcelId === item.id ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/30' : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800'}`}>
-              <Text className={`text-[13px] font-medium ${parcelId === item.id ? 'text-violet-500' : 'text-gray-500 dark:text-gray-400'}`}>{item.name}</Text>
+            <TouchableOpacity onPress={() => setParcelId(item.id)} className={`px-3.5 py-2 rounded-[10px] border ${parcelId === item.id ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/30' : 'border-border bg-card'}`}>
+              <Text className={`text-[13px] font-medium ${parcelId === item.id ? 'text-violet-500' : 'text-muted-foreground'}`}>{item.name}</Text>
             </TouchableOpacity>
           )}
         />
 
-        <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t.notes} ({t.optional})</Text>
-        <TextInput value={notes} onChangeText={setNotes} placeholderTextColor="#9CA3AF"
-          className="h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-white mb-4" />
+        <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.notes} ({t.optional})</Text>
+        <BottomSheetTextInput value={notes} onChangeText={setNotes} placeholderTextColor="#9CA3AF"
+          className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground mb-4" />
 
         <TouchableOpacity onPress={handleSave} disabled={!amount || saving}
           className={`h-14 rounded-xl items-center justify-center flex-row gap-2 ${!amount || saving ? 'bg-violet-200 dark:bg-violet-800' : 'bg-violet-500 dark:bg-violet-600'}`}>

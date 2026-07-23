@@ -38,8 +38,10 @@ export function QuickActionBar({ onAddExpense, onAddIncome, onAddGas, onAddCoope
     { key: 'expense', label: t.addExpense, color: '#EF4444', icon: <TrendingDown size={22} color="#FFFFFF" />, onPress: onAddExpense },
   ]
 
+  const tabBarHeight = 64 + bottom
+
   return (
-    <View pointerEvents="box-none" className="absolute bottom-20 right-5 items-end gap-3.5 z-50">
+    <View pointerEvents="box-none" style={{ position: 'absolute', bottom: tabBarHeight + 8, right: 20, alignItems: 'flex-end', gap: 14, zIndex: 50 }}>
       {actions.map((action, i) => {
         const delay = (actions.length - 1 - i) * 0.04
         const opacity = anim.interpolate({
@@ -50,8 +52,8 @@ export function QuickActionBar({ onAddExpense, onAddIncome, onAddGas, onAddCoope
 
         return (
           <Animated.View key={action.key} pointerEvents={open ? 'auto' : 'none'} className="flex-row items-center gap-3" style={{ opacity, transform: [{ translateY }] }}>
-            <View className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-[20px] px-3.5 py-1.5" style={{ boxShadow: '0px 1px 3px rgba(0,0,0,0.08)' }}>
-              <Text className="text-[13px] font-semibold text-gray-900 dark:text-white">{action.label}</Text>
+            <View className="bg-card border border-border rounded-[20px] px-3.5 py-1.5" style={{ boxShadow: '0px 1px 3px rgba(0,0,0,0.08)' }}>
+              <Text className="text-[13px] font-semibold text-foreground">{action.label}</Text>
             </View>
             <TouchableOpacity className="w-[54px] h-[54px] rounded-[27px] items-center justify-center" style={{ backgroundColor: action.color, boxShadow: '0px 2px 8px rgba(0,0,0,0.2)' }} onPress={() => { setOpen(false); action.onPress() }} activeOpacity={0.8}>
               {action.icon}

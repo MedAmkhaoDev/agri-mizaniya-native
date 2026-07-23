@@ -9,9 +9,9 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default: "bg-green-100 dark:bg-green-900",
-        secondary: "bg-gray-100 dark:bg-gray-800",
+        secondary: "bg-accent",
         destructive: "bg-red-100 dark:bg-red-900",
-        outline: "border border-gray-200 dark:border-gray-700",
+        outline: "border border-border",
       },
     },
     defaultVariants: {
@@ -24,9 +24,9 @@ const badgeTextVariants = cva("text-xs font-semibold", {
   variants: {
     variant: {
       default: "text-green-700 dark:text-green-300",
-      secondary: "text-gray-700 dark:text-gray-300",
+      secondary: "text-foreground",
       destructive: "text-red-700 dark:text-red-300",
-      outline: "text-gray-900 dark:text-gray-100",
+      outline: "text-foreground",
     },
   },
   defaultVariants: {

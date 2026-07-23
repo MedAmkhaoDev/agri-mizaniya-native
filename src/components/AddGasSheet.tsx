@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { View, Text, TextInput, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native'
+import { View, Text, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native'
+import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
 import { useAuth } from '@/lib/auth-context'
 import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
@@ -84,7 +85,7 @@ export default function AddGasSheet({ visible, onClose, defaultParcelId }: AddGa
       <View className="px-5 pt-1 pb-2.5">
         <Text className="text-[17px] font-bold text-orange-500 dark:text-orange-500 mb-4">{t.addGas}</Text>
 
-        <Text className="text-[11px] font-semibold text-gray-400 dark:text-gray-400 uppercase tracking-[1px] mb-2">{t.parcel}</Text>
+        <Text className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[1px] mb-2">{t.parcel}</Text>
         <FlatList
           horizontal
           data={parcels}
@@ -92,20 +93,20 @@ export default function AddGasSheet({ visible, onClose, defaultParcelId }: AddGa
           showsHorizontalScrollIndicator={false}
           contentContainerClassName="gap-1.5 mb-4"
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => setParcelId(item.id)} className={`px-3.5 py-2 rounded-[10px] border ${parcelId === item.id ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/30' : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800'}`}>
-              <Text className={`text-[13px] font-medium ${parcelId === item.id ? 'text-orange-500' : 'text-gray-500 dark:text-gray-400'}`}>{item.name}</Text>
+            <TouchableOpacity onPress={() => setParcelId(item.id)} className={`px-3.5 py-2 rounded-[10px] border ${parcelId === item.id ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/30' : 'border-border bg-card'}`}>
+              <Text className={`text-[13px] font-medium ${parcelId === item.id ? 'text-orange-500' : 'text-muted-foreground'}`}>{item.name}</Text>
             </TouchableOpacity>
           )}
         />
 
         <View className="flex-row gap-3 mb-3">
           <View className="flex-1">
-            <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t.quantityBottles}</Text>
-            <TextInput value={quantityBottles} onChangeText={v => setQuantityBottles(filterNumeric(v))} keyboardType="decimal-pad" placeholder="5" placeholderTextColor="#9CA3AF" className="h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-white" />
+            <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.quantityBottles}</Text>
+            <BottomSheetTextInput value={quantityBottles} onChangeText={v => setQuantityBottles(filterNumeric(v))} keyboardType="decimal-pad" placeholder="5" placeholderTextColor="#9CA3AF" className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground" />
           </View>
           <View className="flex-1">
-            <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t.amount} (MAD)</Text>
-            <TextInput value={totalAmount} onChangeText={v => setTotalAmount(filterNumeric(v))} keyboardType="decimal-pad" placeholder="0" placeholderTextColor="#9CA3AF" className="h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-white" />
+            <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.amount} (MAD)</Text>
+            <BottomSheetTextInput value={totalAmount} onChangeText={v => setTotalAmount(filterNumeric(v))} keyboardType="decimal-pad" placeholder="0" placeholderTextColor="#9CA3AF" className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground" />
           </View>
         </View>
 
@@ -115,8 +116,8 @@ export default function AddGasSheet({ visible, onClose, defaultParcelId }: AddGa
           </View>
         ) : null}
 
-        <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t.notes} ({t.optional})</Text>
-        <TextInput value={notes} onChangeText={setNotes} placeholderTextColor="#9CA3AF" className="h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-white mb-4" />
+        <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.notes} ({t.optional})</Text>
+        <BottomSheetTextInput value={notes} onChangeText={setNotes} placeholderTextColor="#9CA3AF" className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground mb-4" />
 
         <TouchableOpacity onPress={handleSave} disabled={!parcelId || !quantityBottles || !totalAmount || saving} className={`h-14 rounded-xl items-center justify-center flex-row gap-2 ${!parcelId || !quantityBottles || !totalAmount || saving ? 'bg-orange-200 dark:bg-orange-800' : 'bg-orange-500 dark:bg-orange-600'}`}>
           {saving ? <ActivityIndicator color="#FFFFFF" /> : <Check size={20} color="#FFFFFF" />}

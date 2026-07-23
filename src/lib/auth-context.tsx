@@ -5,6 +5,10 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
   updateProfile,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+  sendPasswordResetEmail,
   GoogleAuthProvider,
   signInWithCredential,
   type User,
@@ -28,6 +32,8 @@ interface AuthContextType {
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
   runMigration: () => Promise<void>
+  changePassword: (currentPassword: string, newPassword: string) => Promise<{ error: Error | null }>
+  sendResetPasswordEmail: (email: string) => Promise<{ error: Error | null }>
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -41,6 +47,8 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
   refreshProfile: async () => {},
   runMigration: async () => {},
+  changePassword: async () => ({ error: null }),
+  sendResetPasswordEmail: async () => ({ error: null }),
 })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -179,8 +187,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await firebaseSignOut(auth)
   }
 
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    if (!user || !user.email) return { error: new Error('No user logged in') }
+    try {
+      const credential = EmailAuthProvider.credential(user.email, currentPassword)
+      await reauthenticateWithCredential(user, credential)
+      await updatePassword(user, newPassword)
+      return { error: null }
+    } catch (error) {
+      return { error: error as Error }
+    }
+  }
+
+  const sendResetPasswordEmail = async (email: string) => {
+    try {
+      await sendPasswordResetEmail(auth, email)
+      return { error: null }
+    } catch (error) {
+      return { error: error as Error }
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, profile, loading, migrating, signIn, signUp, signInWithGoogle, signOut, refreshProfile, runMigration }}>
+    <AuthContext.Provider value={{ user, profile, loading, migrating, signIn, signUp, signInWithGoogle, signOut, refreshProfile, runMigration, changePassword, sendResetPasswordEmail }}>
       {children}
     </AuthContext.Provider>
   )

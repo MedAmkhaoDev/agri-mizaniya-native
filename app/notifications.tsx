@@ -47,7 +47,7 @@ function NotificationItem({ notification, onPress }: { notification: AppNotifica
   return (
     <TouchableOpacity
       onPress={onPress}
-      className={`flex-row items-start p-3.5 border-b border-gray-100 dark:border-gray-800 ${notification.read ? 'bg-white dark:bg-gray-900' : 'bg-green-50 dark:bg-green-950'}`}
+      className={`flex-row items-start p-3.5 border-b border-gray-100 dark:border-gray-800 ${notification.read ? 'bg-background' : 'bg-green-50 dark:bg-green-950'}`}
     >
       <View
         className="w-9 h-9 rounded-[10px] items-center justify-center mr-3 mt-0.5"
@@ -56,13 +56,13 @@ function NotificationItem({ notification, onPress }: { notification: AppNotifica
         <IconComponent size={18} color={iconColor} />
       </View>
       <View className="flex-1">
-        <Text className={`text-[13px] ${notification.read ? 'font-medium' : 'font-bold'} text-gray-900 dark:text-gray-100`} numberOfLines={1}>
+        <Text className={`text-[13px] ${notification.read ? 'font-medium' : 'font-bold'} text-foreground`} numberOfLines={1}>
           {notification.title}
         </Text>
-        <Text className="text-xs text-gray-500 dark:text-gray-400 mt-0.5" numberOfLines={2}>
+        <Text className="text-xs text-muted-foreground mt-0.5" numberOfLines={2}>
           {notification.body}
         </Text>
-        <Text className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+        <Text className="text-[10px] text-muted-foreground mt-1">
           {notification.farmName} · {getRelativeTime(notification.createdAt, { justNow: 'à l\'instant' })}
         </Text>
       </View>
@@ -87,7 +87,7 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900" edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <HeaderBar
         title={t.notifications}
         showBack
@@ -97,10 +97,10 @@ export default function NotificationsScreen() {
           notifications.some((n) => !n.read) ? (
             <TouchableOpacity
               onPress={markAllAsRead}
-              className="flex-row items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800"
+              className="flex-row items-center gap-1 px-2.5 py-1.5 rounded-lg bg-accent"
             >
               <CheckCheck size={14} color="#6B7280" />
-              <Text className="text-[11px] font-medium text-gray-500 dark:text-gray-400">{t.markAllRead}</Text>
+              <Text className="text-[11px] font-medium text-muted-foreground">{t.markAllRead}</Text>
             </TouchableOpacity>
           ) : undefined
         }
@@ -112,10 +112,10 @@ export default function NotificationsScreen() {
         </View>
       ) : notifications.length === 0 ? (
         <View className="flex-1 items-center justify-center px-10">
-          <View className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 items-center justify-center mb-4">
+          <View className="w-16 h-16 rounded-2xl bg-accent items-center justify-center mb-4">
             <Inbox size={28} color="#D1D5DB" />
           </View>
-          <Text className="text-[15px] font-semibold text-gray-700 dark:text-gray-300 text-center">{t.noNotifications}</Text>
+          <Text className="text-[15px] font-semibold text-foreground text-center">{t.noNotifications}</Text>
         </View>
       ) : (
         <FlatList

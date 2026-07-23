@@ -113,7 +113,7 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView className="flex-1" edges={['top']}>
       <ScrollView
-        className="flex-1 bg-white dark:bg-gray-900"
+        className="flex-1 bg-background"
         contentContainerClassName="pb-[120px]"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
@@ -124,33 +124,33 @@ export default function DashboardScreen() {
             </View>
             <TouchableOpacity onPress={() => setFarmSwitcherVisible(true)} className="flex-1" activeOpacity={0.7}>
               <View className="flex-row items-center gap-1">
-                <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">{currentFarm?.name || t.appName}</Text>
+                <Text className="text-lg font-bold text-foreground">{currentFarm?.name || t.appName}</Text>
                 <ChevronDown size={16} color="#9CA3AF" />
               </View>
-              <Text className="text-xs text-gray-400 dark:text-gray-500">{t.appTagline}</Text>
+              <Text className="text-xs text-muted-foreground">{t.appTagline}</Text>
             </TouchableOpacity>
             <NotificationBell />
-            <TouchableOpacity onPress={() => router.push('/(app)/settings')} className="w-9 h-9 rounded-[10px] bg-gray-100 dark:bg-gray-800 items-center justify-center">
+            <TouchableOpacity onPress={() => router.push('/(app)/settings')} className="w-9 h-9 rounded-[10px] bg-accent items-center justify-center">
               <Settings size={18} color="#6B7280" />
             </TouchableOpacity>
           </View>
         </View>
 
-        <View pointerEvents="box-none" className={cn("mx-4 mt-4 p-5 rounded-2xl bg-white dark:bg-gray-900 border-2",
+        <View pointerEvents="box-none" className={cn("mx-4 mt-4 p-5 rounded-2xl bg-background border-2",
           isProfit ? "border-emerald-200 dark:border-emerald-800" : "border-red-200 dark:border-red-800"
         )} style={{ boxShadow: '0px 2px 8px rgba(0,0,0,0.08)' }}>
           <View className="flex-row justify-between items-center">
             <View>
-              <Text className="text-[13px] font-medium text-gray-400 dark:text-gray-500 mb-1">{t.netProfitLoss}</Text>
+              <Text className="text-[13px] font-medium text-muted-foreground mb-1">{t.netProfitLoss}</Text>
               {loading ? (
-                <View className="w-40 h-10 rounded-lg bg-gray-100 dark:bg-gray-800" />
+                <View className="w-40 h-10 rounded-lg bg-accent" />
               ) : (
                 <>
                   <View className="flex-row items-baseline gap-1.5">
                     <Text className={cn("text-4xl font-bold tabular-nums", isProfit ? "text-emerald-500 dark:text-emerald-400" : "text-red-500 dark:text-red-400")}>
                       {isProfit ? '+' : '-'}{formatMAD(summary.netProfit)}
                     </Text>
-                    <Text className="text-base font-semibold text-gray-400 dark:text-gray-500">MAD</Text>
+                    <Text className="text-base font-semibold text-muted-foreground">MAD</Text>
                   </View>
                   <View className="flex-row items-center gap-2 mt-2 flex-wrap">
                     <View className={cn("flex-row items-center gap-0.5 px-2 py-[3px] rounded-xl border",
@@ -161,7 +161,7 @@ export default function DashboardScreen() {
                         {isProfit ? t.profit : t.loss}
                       </Text>
                     </View>
-                    <Text className="text-[11px] text-gray-400 dark:text-gray-500">
+                    <Text className="text-[11px] text-muted-foreground">
                       +{formatMAD(summary.totalIncome)} / -{formatMAD(totalCosts)} MAD
                     </Text>
                   </View>
@@ -179,7 +179,7 @@ export default function DashboardScreen() {
         {!loading && parcels.length > 0 && (
           <View className="mt-5">
             <View className="flex-row justify-between items-center px-4 mb-2">
-              <Text className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{t.parcels}</Text>
+              <Text className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">{t.parcels}</Text>
             </View>
             <ScrollView
               horizontal
@@ -191,17 +191,17 @@ export default function DashboardScreen() {
                 const profit = p.fin?.netProfit ?? 0
                 const isP = profit >= 0
                 return (
-                  <View key={p.id} className="w-32 p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+                  <View key={p.id} className="w-32 p-3 rounded-xl border border-border bg-background">
                     <View className="flex-row items-center gap-1.5 mb-1">
                       <View className="w-6 h-6 rounded-md bg-blue-50 dark:bg-blue-950 items-center justify-center">
                         <MapPin size={14} color="#3B82F6" />
                       </View>
-                      <Text className="text-xs font-medium text-gray-700 dark:text-gray-300 flex-1" numberOfLines={1}>{p.name}</Text>
+                      <Text className="text-xs font-medium text-foreground flex-1" numberOfLines={1}>{p.name}</Text>
                     </View>
                     <Text className={cn("text-sm font-bold tabular-nums", isP ? "text-emerald-500 dark:text-emerald-400" : "text-red-500 dark:text-red-400")}>
                       {isP ? '+' : '-'}{formatMAD(profit)}
                     </Text>
-                    <Text className="text-[10px] text-gray-400 dark:text-gray-500">
+                    <Text className="text-[10px] text-muted-foreground">
                       +{formatMAD(p.fin?.totalIncome ?? 0)} / -{formatMAD((p.fin?.totalExpenses ?? 0) + (p.fin?.totalGas ?? 0) + (p.fin?.totalCooperative ?? 0))}
                     </Text>
                   </View>
@@ -213,56 +213,56 @@ export default function DashboardScreen() {
 
         <View pointerEvents="box-none" className="flex-row flex-wrap px-4 mt-5 gap-2.5">
           {stats.map((card) => (
-            <TouchableOpacity key={card.label} onPress={() => router.push(`/(app)/(tabs)/${card.page}`)} activeOpacity={0.7} className="w-[47%] p-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+            <TouchableOpacity key={card.label} onPress={() => router.push(`/(app)/(tabs)/${card.page}`)} activeOpacity={0.7} className="w-[47%] p-3 rounded-xl bg-background border border-border">
               <View className={cn("w-9 h-9 rounded-[10px] items-center justify-center mb-2.5", card.bgClass)}>
                 {card.icon}
               </View>
               {loading ? (
-                <View className="w-20 h-7 rounded-md bg-gray-100 dark:bg-gray-800 mb-1" />
+                <View className="w-20 h-7 rounded-md bg-accent mb-1" />
               ) : (
-                <Text className="text-xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">
+                <Text className="text-xl font-bold text-foreground tabular-nums">
                   {formatMAD(card.value)} MAD
                 </Text>
               )}
-              <Text className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{card.label}</Text>
+              <Text className="text-[11px] text-muted-foreground mt-0.5">{card.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        <View className="mx-4 mt-2.5 p-3.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 flex-row items-center gap-2">
+        <View className="mx-4 mt-2.5 p-3.5 rounded-xl bg-background border border-border flex-row items-center gap-2">
           <MapPin size={18} color="#10B981" />
-          <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 flex-1">{t.totalParcels}</Text>
+          <Text className="text-[13px] font-medium text-foreground flex-1">{t.totalParcels}</Text>
           {loading ? (
-            <View className="w-6 h-6 rounded-md bg-gray-100 dark:bg-gray-800" />
+            <View className="w-6 h-6 rounded-md bg-accent" />
           ) : (
-            <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">{summary.parcelCount}</Text>
+            <Text className="text-xl font-bold text-foreground">{summary.parcelCount}</Text>
           )}
         </View>
 
         <View className="mx-4 mt-5 mb-8">
           <View className="flex-row justify-between items-center mb-3">
-            <Text className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{t.recentActivity}</Text>
-            <TouchableOpacity onPress={loadData} className="w-8 h-8 rounded-2xl items-center justify-center bg-gray-100 dark:bg-gray-800">
+            <Text className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">{t.recentActivity}</Text>
+            <TouchableOpacity onPress={loadData} className="w-8 h-8 rounded-2xl items-center justify-center bg-accent">
               <RefreshCcw size={14} color="#9CA3AF" />
             </TouchableOpacity>
           </View>
 
-          <View pointerEvents="box-none" className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
+          <View pointerEvents="box-none" className="rounded-xl border border-border bg-background overflow-hidden">
             {loading ? (
               <View className="p-4 gap-3">
                 {[1, 2, 3, 4].map((i) => (
                   <View key={i} className="flex-row items-center gap-3">
-                    <View className="w-9 h-9 rounded-[10px] bg-gray-100 dark:bg-gray-800" />
+                    <View className="w-9 h-9 rounded-[10px] bg-accent" />
                     <View className="flex-1 gap-1">
-                      <View className="w-[75%] h-3.5 rounded bg-gray-100 dark:bg-gray-800" />
-                      <View className="w-[50%] h-2.5 rounded bg-gray-100 dark:bg-gray-800" />
+                      <View className="w-[75%] h-3.5 rounded bg-accent" />
+                      <View className="w-[50%] h-2.5 rounded bg-accent" />
                     </View>
-                    <View className="w-[60px] h-3.5 rounded bg-gray-100 dark:bg-gray-800" />
+                    <View className="w-[60px] h-3.5 rounded bg-accent" />
                   </View>
                 ))}
               </View>
             ) : activity.length === 0 ? (
-              <Text className="text-center py-10 text-[13px] text-gray-400 dark:text-gray-500">{t.noRecentActivity}</Text>
+              <Text className="text-center py-10 text-[13px] text-muted-foreground">{t.noRecentActivity}</Text>
             ) : (
               activity.map((item, i) => (
                 <View key={`${item.id}-${i}`} className="flex-row items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-800">
@@ -270,8 +270,8 @@ export default function DashboardScreen() {
                     {activityIcon(item.type)}
                   </View>
                   <View className="flex-1 min-w-0">
-                    <Text className="text-[13px] font-medium text-gray-900 dark:text-gray-100" numberOfLines={1}>{item.description}</Text>
-                    <Text className="text-[11px] text-gray-400 dark:text-gray-500" numberOfLines={1}>
+                    <Text className="text-[13px] font-medium text-foreground" numberOfLines={1}>{item.description}</Text>
+                    <Text className="text-[11px] text-muted-foreground" numberOfLines={1}>
                       {item.parcelName ? `${item.parcelName} · ` : ''}{new Date(item.date).toLocaleDateString('fr-MA')}
                     </Text>
                   </View>

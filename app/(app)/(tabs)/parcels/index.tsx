@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, ActivityIndicator, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native'
+import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/lib/auth-context'
 import { useFarm } from '@/lib/farm-context'
@@ -12,6 +13,7 @@ import { useRealtimeCollection, type WithPending } from '@/hooks/useRealtimeColl
 import type { Parcel, FinancialSummary } from '@/lib/types'
 import Toast from 'react-native-toast-message'
 import { HeaderBar } from '@/components/HeaderBar'
+import { BottomSheet } from '@/components/BottomSheet'
 import {
   MapPin, Plus, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight,
   ChevronRight, Archive, X, Check, AlertCircle, RefreshCw,
@@ -175,9 +177,7 @@ export default function ParcelsScreen() {
           )}
         </ScrollView>
 
-        <Modal visible={!!selectedParcel} transparent animationType="slide" onRequestClose={() => setSelectedParcel(null)}>
-          <TouchableOpacity activeOpacity={1} onPress={() => setSelectedParcel(null)} className="flex-1 bg-black/40 justify-end">
-            <TouchableOpacity activeOpacity={1} className="bg-background rounded-tl-[20px] rounded-tr-[20px] max-h-[85%] p-5 pb-[34px]">
+        <BottomSheet visible={!!selectedParcel} onClose={() => setSelectedParcel(null)}>
               {selectedParcel && (() => {
                 const fin = financials[selectedParcel.id]
                 const isProfit = (fin?.netProfit ?? 0) >= 0
@@ -251,30 +251,24 @@ export default function ParcelsScreen() {
                   </>
                 )
               })()}
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </Modal>
+        </BottomSheet>
 
-        <Modal visible={sheetOpen} transparent animationType="slide" onRequestClose={() => setSheetOpen(false)}>
-          <TouchableOpacity activeOpacity={1} onPress={() => setSheetOpen(false)} className="flex-1 bg-black/40 justify-end">
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-              <TouchableOpacity activeOpacity={1} className="bg-background rounded-tl-[20px] rounded-tr-[20px] p-5 pb-[34px]">
-              <View className="w-10 h-1 rounded-[2px] bg-border self-center mb-4" />
+        <BottomSheet visible={sheetOpen} onClose={() => setSheetOpen(false)}>
               <Text className="text-[17px] font-bold text-foreground mb-4">{editingParcel ? t.editParcel : t.addParcel}</Text>
               <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.parcelName} *</Text>
-              <TextInput value={form.name} onChangeText={v => setForm(p => ({ ...p, name: v }))} placeholder="Parcelle A" placeholderTextColor="#9CA3AF" className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground mb-3" />
+              <BottomSheetTextInput value={form.name} onChangeText={v => setForm(p => ({ ...p, name: v }))} placeholder="Parcelle A" placeholderTextColor="#9CA3AF" className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground mb-3" />
               <View className="flex-row gap-3 mb-3">
                 <View className="flex-1">
                   <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.areaHectares}</Text>
-                  <TextInput value={form.area_hectares} onChangeText={v => setForm(p => ({ ...p, area_hectares: filterNumeric(v) }))} placeholder="2.5" placeholderTextColor="#9CA3AF" keyboardType="decimal-pad" className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground" />
+                  <BottomSheetTextInput value={form.area_hectares} onChangeText={v => setForm(p => ({ ...p, area_hectares: filterNumeric(v) }))} placeholder="2.5" placeholderTextColor="#9CA3AF" keyboardType="decimal-pad" className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground" />
                 </View>
                 <View className="flex-1">
                   <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.location}</Text>
-                  <TextInput value={form.location} onChangeText={v => setForm(p => ({ ...p, location: v }))} placeholder="Douar..." placeholderTextColor="#9CA3AF" className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground" />
+                  <BottomSheetTextInput value={form.location} onChangeText={v => setForm(p => ({ ...p, location: v }))} placeholder="Douar..." placeholderTextColor="#9CA3AF" className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground" />
                 </View>
               </View>
               <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.notes}</Text>
-              <TextInput value={form.notes} onChangeText={v => setForm(p => ({ ...p, notes: v }))} placeholder={t.notes} placeholderTextColor="#9CA3AF" multiline numberOfLines={2} className="border border-border rounded-[10px] px-4 py-2.5 text-[15px] text-foreground mb-4 min-h-[60px]" style={{ textAlignVertical: 'top' }} />
+              <BottomSheetTextInput value={form.notes} onChangeText={v => setForm(p => ({ ...p, notes: v }))} placeholder={t.notes} placeholderTextColor="#9CA3AF" multiline numberOfLines={2} className="border border-border rounded-[10px] px-4 py-2.5 text-[15px] text-foreground mb-4 min-h-[60px]" style={{ textAlignVertical: 'top' }} />
               <View className="flex-row gap-3">
                 <TouchableOpacity onPress={() => setSheetOpen(false)} className="flex-1 h-12 rounded-[10px] border border-border items-center justify-center">
                   <Text className="font-semibold text-muted-foreground">{t.cancel}</Text>
@@ -284,10 +278,7 @@ export default function ParcelsScreen() {
                   <Text className="text-white font-semibold">{t.save}</Text>
                 </TouchableOpacity>
               </View>
-            </TouchableOpacity>
-          </KeyboardAvoidingView>
-        </TouchableOpacity>
-        </Modal>
+        </BottomSheet>
       </View>
     </SafeAreaView>
   )

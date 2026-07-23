@@ -50,7 +50,7 @@ export default function CreateFarmScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-white dark:bg-gray-900"
+      className="flex-1 bg-background"
     >
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
         <View className="flex-1 px-6 pt-14 pb-12">
@@ -60,11 +60,11 @@ export default function CreateFarmScreen() {
             className="flex-row items-center gap-1 mb-6"
           >
             <ArrowLeft size={20} color="#374151" />
-            <Text className="text-sm font-medium text-gray-700 dark:text-gray-300">{t.back}</Text>
+            <Text className="text-sm font-medium text-foreground">{t.back}</Text>
           </TouchableOpacity>
 
           {/* Title */}
-          <Text className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+          <Text className="text-2xl font-bold text-foreground mb-6">
             {t.createFarm}
           </Text>
 
@@ -76,7 +76,7 @@ export default function CreateFarmScreen() {
           ) : null}
 
           {/* Farm name */}
-          <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+          <Text className="text-[13px] font-medium text-foreground mb-1.5">
             {t.farmName}
           </Text>
           <TextInput
@@ -84,15 +84,15 @@ export default function CreateFarmScreen() {
             onChangeText={setName}
             placeholder={t.farmName}
             placeholderTextColor="#9CA3AF"
-            className="h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 mb-4"
+            className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground bg-card mb-4"
           />
 
           {/* Description */}
           <View className="flex-row items-center gap-1.5 mb-1.5">
-            <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300">
+            <Text className="text-[13px] font-medium text-foreground">
               {t.farmDescription}
             </Text>
-            <Text className="text-xs text-gray-400 dark:text-gray-500">
+            <Text className="text-xs text-muted-foreground">
               ({t.optional})
             </Text>
           </View>
@@ -104,16 +104,16 @@ export default function CreateFarmScreen() {
             multiline
             numberOfLines={3}
             textAlignVertical="top"
-            className="border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 py-3 text-[15px] text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 mb-4"
+            className="border border-border rounded-[10px] px-4 py-3 text-[15px] text-foreground bg-card mb-4"
             style={{ minHeight: 80 }}
           />
 
           {/* Location */}
           <View className="flex-row items-center gap-1.5 mb-1.5">
-            <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300">
+            <Text className="text-[13px] font-medium text-foreground">
               {t.farmLocation}
             </Text>
-            <Text className="text-xs text-gray-400 dark:text-gray-500">
+            <Text className="text-xs text-muted-foreground">
               ({t.optional})
             </Text>
           </View>
@@ -122,7 +122,7 @@ export default function CreateFarmScreen() {
             onChangeText={setLocation}
             placeholder={t.farmLocation}
             placeholderTextColor="#9CA3AF"
-            className="h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 mb-8"
+            className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground bg-card mb-8"
           />
 
           {/* Create button */}
@@ -145,11 +145,11 @@ export default function CreateFarmScreen() {
             onPress={() => router.back()}
             disabled={loading}
             className={cn(
-              'h-12 rounded-lg bg-gray-100 dark:bg-gray-700 items-center justify-center mt-3',
+              'h-12 rounded-lg bg-accent items-center justify-center mt-3',
               loading && 'opacity-50'
             )}
           >
-            <Text className="text-gray-500 dark:text-gray-400 text-base font-semibold">
+            <Text className="text-muted-foreground text-base font-semibold">
               {t.cancel}
             </Text>
           </TouchableOpacity>

@@ -76,11 +76,11 @@ export default function FarmSettingsScreen() {
   if (!currentFarmId) return null
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <HeaderBar title={t.farmSettings} showBack showSettings={false} />
       <ScrollView className="flex-1 p-4" keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
-        <View className="mb-4 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
-          <Text className="mb-3 text-[15px] font-semibold text-gray-700 dark:text-gray-300">{t.farmInformation}</Text>
+        <View className="mb-4 rounded-2xl border border-border bg-card p-5">
+          <Text className="mb-3 text-[15px] font-semibold text-foreground">{t.farmInformation}</Text>
           <TextInput
             value={farmName}
             onChangeText={setFarmName}
@@ -88,7 +88,7 @@ export default function FarmSettingsScreen() {
             placeholderTextColor="#9CA3AF"
             autoCapitalize="words"
             returnKeyType="next"
-            className="mb-3 h-12 rounded-[10px] border border-gray-200 dark:border-gray-700 px-4 text-[15px] text-gray-900 dark:text-gray-100"
+            className="mb-3 h-12 rounded-[10px] border border-border px-4 text-[15px] text-foreground"
           />
           <TextInput
             value={farmDesc}
@@ -98,13 +98,13 @@ export default function FarmSettingsScreen() {
             returnKeyType="done"
             multiline
             numberOfLines={3}
-            className="mb-4 h-20 rounded-[10px] border border-gray-200 dark:border-gray-700 px-4 py-2.5 text-[15px] text-gray-900 dark:text-gray-100"
+            className="mb-4 h-20 rounded-[10px] border border-border px-4 py-2.5 text-[15px] text-foreground"
             style={{ textAlignVertical: 'top' }}
           />
           <TouchableOpacity
             onPress={handleSave}
             disabled={saving || !farmName.trim() || !canManageFarmSettings}
-            className={`flex-row items-center justify-center gap-2 rounded-[10px] py-3.5 ${farmName.trim() && canManageFarmSettings ? 'bg-green-600' : 'bg-gray-300 dark:bg-gray-600'}`}
+            className={`flex-row items-center justify-center gap-2 rounded-[10px] py-3.5 ${farmName.trim() && canManageFarmSettings ? 'bg-green-600' : 'bg-border'}`}
           >
             {saving ? <ActivityIndicator color="#FFF" size="small" /> : <Save size={16} color="#FFFFFF" />}
             <Text className="text-[15px] font-bold text-white">{saving ? t.saving : t.save}</Text>
@@ -112,13 +112,13 @@ export default function FarmSettingsScreen() {
         </View>
 
         {canManageFarmSettings && (
-          <View className="mb-4 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
+          <View className="mb-4 rounded-2xl border border-border bg-card p-5">
             <View className="mb-3 flex-row items-center justify-between">
-              <Text className="text-[15px] font-semibold text-gray-700 dark:text-gray-300">{t.shareCodes}</Text>
+              <Text className="text-[15px] font-semibold text-foreground">{t.shareCodes}</Text>
               <TouchableOpacity
                 onPress={handleGenerateCode}
                 disabled={generating}
-                className="h-9 w-9 items-center justify-center rounded-[10px] bg-gray-100 dark:bg-gray-700"
+                className="h-9 w-9 items-center justify-center rounded-[10px] bg-accent"
               >
                 {generating ? <ActivityIndicator size="small" /> : <Plus size={16} color="#374151" />}
               </TouchableOpacity>
@@ -126,12 +126,12 @@ export default function FarmSettingsScreen() {
             {loading ? (
               <ActivityIndicator size="small" color="#16A34A" />
             ) : shareCodes.length === 0 ? (
-              <Text className="text-[13px] text-gray-400 dark:text-gray-500">{t.noShareCodes}</Text>
+              <Text className="text-[13px] text-muted-foreground">{t.noShareCodes}</Text>
             ) : (
               shareCodes.map(code => (
                 <View key={code.code} className="flex-row items-center border-b border-gray-100 dark:border-gray-800 py-2.5">
-                  <Text className="flex-1 text-sm font-mono text-gray-900 dark:text-gray-100">{code.code}</Text>
-                  <Text className="mr-3 text-[11px] text-gray-400 dark:text-gray-500">{code.useCount}/{code.maxUses || '∞'}</Text>
+                  <Text className="flex-1 text-sm font-mono text-foreground">{code.code}</Text>
+                  <Text className="mr-3 text-[11px] text-muted-foreground">{code.useCount}/{code.maxUses || '∞'}</Text>
                   <TouchableOpacity onPress={() => handleCopyCode(code.code)} className="p-1">
                     <Copy size={14} color="#6B7280" />
                   </TouchableOpacity>

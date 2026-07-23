@@ -10,7 +10,7 @@ export function NotificationBell() {
   return (
     <TouchableOpacity
       onPress={() => router.push('/notifications')}
-      className="w-9 h-9 rounded-[10px] bg-gray-100 dark:bg-gray-700 items-center justify-center"
+      className="w-9 h-9 rounded-[10px] bg-accent items-center justify-center"
     >
       <Bell size={18} color="#6B7280" />
       {unreadCount > 0 && (

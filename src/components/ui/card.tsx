@@ -6,7 +6,7 @@ function Card({ className, style, ...props }: ViewProps & { style?: any }) {
   return (
     <View
       className={cn(
-        "rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900",
+        "rounded-2xl border border-border bg-card",
         className
       )}
       style={[

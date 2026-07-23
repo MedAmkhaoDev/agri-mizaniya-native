@@ -10,8 +10,8 @@ const buttonVariants = cva(
       variant: {
         default: "bg-green-600 dark:bg-green-500",
         destructive: "bg-red-500 dark:bg-red-600",
-        outline: "border border-gray-200 dark:border-gray-700 bg-transparent",
-        secondary: "bg-gray-100 dark:bg-gray-800",
+        outline: "border border-border bg-transparent",
+        secondary: "bg-accent",
         ghost: "bg-transparent",
         link: "bg-transparent",
       },
@@ -34,9 +34,9 @@ const buttonTextVariants = cva("text-sm font-semibold", {
     variant: {
       default: "text-white dark:text-white",
       destructive: "text-white dark:text-white",
-      outline: "text-gray-900 dark:text-gray-100",
-      secondary: "text-gray-900 dark:text-gray-100",
-      ghost: "text-gray-900 dark:text-gray-100",
+      outline: "text-foreground",
+      secondary: "text-foreground",
+      ghost: "text-foreground",
       link: "text-green-600 dark:text-green-400 underline-offset-4",
     },
     size: {

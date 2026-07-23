@@ -6,8 +6,8 @@ function Input({ className, ...props }: TextInputProps) {
   return (
     <TextInput
       className={cn(
-        "h-12 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 text-[15px] text-gray-900 dark:text-gray-100",
-        "placeholder:text-gray-400 dark:placeholder:text-gray-500",
+        "h-12 rounded-xl border border-border bg-background px-4 text-[15px] text-foreground",
+        "placeholder:text-muted-foreground dark:placeholder:text-muted-foreground",
         Platform.OS === "ios" && "py-3",
         className
       )}

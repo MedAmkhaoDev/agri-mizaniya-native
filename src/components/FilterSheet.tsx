@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { View, Text, TextInput, TouchableOpacity } from 'react-native'
+import { View, Text, TouchableOpacity } from 'react-native'
+import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
 import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
 import { getFarmMembers } from '@/lib/api'
@@ -82,14 +83,14 @@ export function FilterSheet({ visible, onClose, filters, onApply }: FilterSheetP
     <BottomSheet visible={visible} onClose={onClose}>
       <View className="px-5 pt-1 pb-2">
         <View className="flex-row items-center justify-between mb-5">
-          <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">{t.filters}</Text>
-          <TouchableOpacity onPress={onClose} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center">
+          <Text className="text-lg font-bold text-foreground">{t.filters}</Text>
+          <TouchableOpacity onPress={onClose} className="w-8 h-8 rounded-full bg-accent items-center justify-center">
             <X size={16} color="#6B7280" />
           </TouchableOpacity>
         </View>
 
         {/* Date range */}
-        <Text className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2.5 uppercase tracking-wider">{t.dateRange}</Text>
+        <Text className="text-xs font-semibold text-muted-foreground mb-2.5 uppercase tracking-wider">{t.dateRange}</Text>
         <View className="flex-row gap-2 mb-6">
           {DATE_PRESETS.map((key) => (
             <TouchableOpacity
@@ -100,10 +101,10 @@ export function FilterSheet({ visible, onClose, filters, onApply }: FilterSheetP
               }}
               className={cn(
                 'px-4 h-9 items-center justify-center rounded-[10px]',
-                activePreset === key ? 'bg-green-600 dark:bg-green-500' : 'bg-gray-100 dark:bg-gray-800'
+                activePreset === key ? 'bg-green-600 dark:bg-green-500' : 'bg-accent'
               )}
             >
-              <Text className={cn('text-xs font-semibold', activePreset === key ? 'text-white' : 'text-gray-600 dark:text-gray-300')}>
+              <Text className={cn('text-xs font-semibold', activePreset === key ? 'text-white' : 'text-foreground')}>
                 {getPresetLabel(key, t)}
               </Text>
             </TouchableOpacity>
@@ -113,7 +114,7 @@ export function FilterSheet({ visible, onClose, filters, onApply }: FilterSheetP
         {/* Created by — only show if multi-user farm */}
         {members.length > 1 && (
           <>
-            <Text className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2.5 uppercase tracking-wider">{t.createdBy}</Text>
+            <Text className="text-xs font-semibold text-muted-foreground mb-2.5 uppercase tracking-wider">{t.createdBy}</Text>
             <View className="flex-row flex-wrap gap-2 mb-6">
               {members.map((m) => (
                 <TouchableOpacity
@@ -126,11 +127,11 @@ export function FilterSheet({ visible, onClose, filters, onApply }: FilterSheetP
                   }
                   className={cn(
                     'flex-row items-center gap-1.5 px-3.5 h-9 justify-center rounded-[10px]',
-                    draft.createdBy === m.userId ? 'bg-green-600 dark:bg-green-500' : 'bg-gray-100 dark:bg-gray-800'
+                    draft.createdBy === m.userId ? 'bg-green-600 dark:bg-green-500' : 'bg-accent'
                   )}
                 >
                   {draft.createdBy === m.userId && <Check size={14} color="#FFFFFF" />}
-                  <Text className={cn('text-xs font-semibold', draft.createdBy === m.userId ? 'text-white' : 'text-gray-600 dark:text-gray-300')}>
+                  <Text className={cn('text-xs font-semibold', draft.createdBy === m.userId ? 'text-white' : 'text-foreground')}>
                     {m.fullName}
                   </Text>
                 </TouchableOpacity>
@@ -140,23 +141,23 @@ export function FilterSheet({ visible, onClose, filters, onApply }: FilterSheetP
         )}
 
         {/* Amount range */}
-        <Text className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2.5 uppercase tracking-wider">{t.amountRange}</Text>
+        <Text className="text-xs font-semibold text-muted-foreground mb-2.5 uppercase tracking-wider">{t.amountRange}</Text>
         <View className="flex-row gap-3 mb-6">
-          <TextInput
+          <BottomSheetTextInput
             value={draft.amountMin?.toString() ?? ''}
             onChangeText={(v) => setDraft((d) => ({ ...d, amountMin: v ? Number(v) : undefined }))}
             placeholder={t.min}
             placeholderTextColor="#9CA3AF"
             keyboardType="numeric"
-            className="flex-1 h-11 px-3 rounded-[10px] border border-gray-200 dark:border-gray-700 text-[15px] text-gray-900 dark:text-gray-100"
+            className="flex-1 h-11 px-3 rounded-[10px] border border-border text-[15px] text-foreground"
           />
-          <TextInput
+          <BottomSheetTextInput
             value={draft.amountMax?.toString() ?? ''}
             onChangeText={(v) => setDraft((d) => ({ ...d, amountMax: v ? Number(v) : undefined }))}
             placeholder={t.max}
             placeholderTextColor="#9CA3AF"
             keyboardType="numeric"
-            className="flex-1 h-11 px-3 rounded-[10px] border border-gray-200 dark:border-gray-700 text-[15px] text-gray-900 dark:text-gray-100"
+            className="flex-1 h-11 px-3 rounded-[10px] border border-border text-[15px] text-foreground"
           />
         </View>
 
@@ -165,9 +166,9 @@ export function FilterSheet({ visible, onClose, filters, onApply }: FilterSheetP
           <TouchableOpacity
             onPress={clearAll}
             disabled={activeCount === 0}
-            className={cn('flex-1 h-11 items-center justify-center rounded-[10px] bg-gray-100 dark:bg-gray-800', activeCount === 0 && 'opacity-50')}
+            className={cn('flex-1 h-11 items-center justify-center rounded-[10px] bg-accent', activeCount === 0 && 'opacity-50')}
           >
-            <Text className="text-sm font-semibold text-gray-600 dark:text-gray-300">{t.clearAll}</Text>
+            <Text className="text-sm font-semibold text-foreground">{t.clearAll}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => {

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { View, Text, TextInput, TouchableOpacity, ScrollView, FlatList, ActivityIndicator } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, FlatList, ActivityIndicator } from 'react-native'
+import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
 import { useAuth } from '@/lib/auth-context'
 import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
@@ -118,20 +119,20 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
           {draft.description ? (
             <TouchableOpacity onPress={reset} className="flex-row items-center gap-1">
               <X size={14} color="#9CA3AF" />
-              <Text className="text-xs text-gray-400 dark:text-gray-400">{t.clear}</Text>
+              <Text className="text-xs text-muted-foreground">{t.clear}</Text>
             </TouchableOpacity>
           ) : null}
         </View>
 
-        <TextInput
+        <BottomSheetTextInput
           value={draft.description || ''}
           onChangeText={(v) => update({ description: v })}
           placeholder={t.description}
           placeholderTextColor="#9CA3AF"
-          className="h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] font-medium text-gray-900 dark:text-white"
+          className="h-12 border border-border rounded-[10px] px-4 text-[15px] font-medium text-foreground"
         />
 
-        <Text className="text-[11px] font-semibold text-gray-400 dark:text-gray-400 uppercase tracking-[1px] mt-5 mb-2.5">
+        <Text className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[1px] mt-5 mb-2.5">
           {t.expenseType}
         </Text>
         <View className="flex-row flex-wrap gap-2">
@@ -142,12 +143,12 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
               <TouchableOpacity
                 key={type.id}
                 onPress={() => update({ type_id: selected ? null : type.id })}
-                className={`w-[30%] items-center p-2 rounded-xl border-2 ${selected ? 'border-red-500 bg-red-50 dark:bg-red-900/30' : 'border-transparent bg-gray-100 dark:bg-gray-700'}`}
+                className={`w-[30%] items-center p-2 rounded-xl border-2 ${selected ? 'border-red-500 bg-red-50 dark:bg-red-900/30' : 'border-transparent bg-accent'}`}
               >
                 <View className="w-9 h-9 rounded-[10px] items-center justify-center mb-1" style={{ backgroundColor: type.color + '20' }}>
                   <IconComp size={18} color={type.color} />
                 </View>
-                <Text className="text-[11px] font-medium text-center text-gray-700 dark:text-gray-300" numberOfLines={2}>
+                <Text className="text-[11px] font-medium text-center text-foreground" numberOfLines={2}>
                   {type.nameFr || type.name}
                 </Text>
               </TouchableOpacity>
@@ -156,12 +157,12 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
           {!addingCustom ? (
             <TouchableOpacity
               onPress={() => setAddingCustom(true)}
-              className="w-[30%] items-center p-2 rounded-xl border-2 border-gray-300 dark:border-gray-500 border-dashed bg-gray-50 dark:bg-gray-800"
+              className="w-[30%] items-center p-2 rounded-xl border-2 border-border border-dashed bg-card"
             >
-              <View className="w-9 h-9 rounded-[10px] bg-gray-100 dark:bg-gray-600 items-center justify-center mb-1">
-                <Text className="text-lg font-semibold text-gray-400 dark:text-gray-400">+</Text>
+              <View className="w-9 h-9 rounded-[10px] bg-accent items-center justify-center mb-1">
+                <Text className="text-lg font-semibold text-muted-foreground">+</Text>
               </View>
-              <Text className="text-[11px] font-medium text-center text-gray-400 dark:text-gray-400" numberOfLines={2}>
+              <Text className="text-[11px] font-medium text-center text-muted-foreground" numberOfLines={2}>
                 {t.other}
               </Text>
             </TouchableOpacity>
@@ -170,13 +171,13 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
 
         {addingCustom ? (
           <View className="flex-row items-center gap-2 mt-2.5">
-            <TextInput
+            <BottomSheetTextInput
               value={customName}
               onChangeText={setCustomName}
               placeholder={t.expenseType}
               placeholderTextColor="#9CA3AF"
               autoFocus
-              className="flex-1 h-12 border border-gray-300 dark:border-gray-500 rounded-[10px] px-3 text-sm text-gray-900 dark:text-white"
+              className="flex-1 h-12 border border-border rounded-[10px] px-3 text-sm text-foreground"
             />
             <TouchableOpacity
               onPress={async () => {
@@ -199,7 +200,7 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => { setAddingCustom(false); setCustomName('') }}
-              className="w-[42px] h-[42px] rounded-[10px] bg-gray-100 dark:bg-gray-600 items-center justify-center"
+              className="w-[42px] h-[42px] rounded-[10px] bg-accent items-center justify-center"
             >
               <X size={18} color="#9CA3AF" />
             </TouchableOpacity>
@@ -207,14 +208,14 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
         ) : null}
 
         <View className="mt-4">
-          <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t.quantity}</Text>
-          <TextInput
+          <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.quantity}</Text>
+          <BottomSheetTextInput
             keyboardType="decimal-pad"
             value={draft.quantity || ''}
             onChangeText={(v) => update({ quantity: filterNumeric(v) })}
             placeholder={t.quantity}
             placeholderTextColor="#9CA3AF"
-            className="h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-white"
+            className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground"
           />
         </View>
 
@@ -223,14 +224,14 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
             <TouchableOpacity
               key={u}
               onPress={() => update({ unit: u })}
-              className={`px-3.5 h-[38px] rounded-[10px] border items-center justify-center ${draft.unit === u ? 'border-red-500 bg-red-50 dark:bg-red-900/30' : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800'}`}
+              className={`px-3.5 h-[38px] rounded-[10px] border items-center justify-center ${draft.unit === u ? 'border-red-500 bg-red-50 dark:bg-red-900/30' : 'border-border bg-card'}`}
             >
-              <Text className={`text-xs font-semibold ${draft.unit === u ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}`}>{u}</Text>
+              <Text className={`text-xs font-semibold ${draft.unit === u ? 'text-red-500' : 'text-muted-foreground'}`}>{u}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
-        <TextInput
+        <BottomSheetTextInput
           keyboardType="decimal-pad"
           value={draft.amount || ''}
           onChangeText={(v) => update({ amount: filterNumeric(v) })}
@@ -241,7 +242,7 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
 
         {unitPrice && unitPrice > 0 ? (
           <View className="flex-row justify-between items-center p-3 rounded-xl bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 mt-3">
-            <Text className="text-[13px] text-gray-500 dark:text-gray-400">{t.unitPrice} · {t.autoCalculated}</Text>
+            <Text className="text-[13px] text-muted-foreground">{t.unitPrice} · {t.autoCalculated}</Text>
             <Text className="text-[17px] font-bold text-red-500">
               {formatMADDecimal(unitPrice)} <Text className="text-[13px] font-medium">MAD/{draft.unit || 'u'}</Text>
             </Text>
@@ -254,15 +255,15 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
               <TouchableOpacity
                 key={a}
                 onPress={() => update({ amount: a.toString() })}
-                className="flex-row items-center gap-1 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800"
+                className="flex-row items-center gap-1 px-3 py-1.5 rounded-full border border-border bg-card"
               >
-                <Text className="text-[12px] font-medium text-gray-700 dark:text-gray-300">{a}</Text>
+                <Text className="text-[12px] font-medium text-foreground">{a}</Text>
               </TouchableOpacity>
             ))}
           </View>
         ) : null}
 
-        <Text className="text-[11px] font-semibold text-gray-400 dark:text-gray-400 uppercase tracking-[1px] mt-5 mb-2">
+        <Text className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[1px] mt-5 mb-2">
           {t.parcel}
         </Text>
         <FlatList
@@ -272,8 +273,8 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
           showsHorizontalScrollIndicator={false}
           contentContainerClassName="gap-1.5"
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => update({ parcel_id: item.id })} className={`px-3.5 py-2 rounded-[10px] border ${draft.parcel_id === item.id ? 'border-red-500 bg-red-50 dark:bg-red-900/30' : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800'}`}>
-              <Text className={`text-[13px] font-medium ${draft.parcel_id === item.id ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}`}>{item.name}</Text>
+            <TouchableOpacity onPress={() => update({ parcel_id: item.id })} className={`px-3.5 py-2 rounded-[10px] border ${draft.parcel_id === item.id ? 'border-red-500 bg-red-50 dark:bg-red-900/30' : 'border-border bg-card'}`}>
+              <Text className={`text-[13px] font-medium ${draft.parcel_id === item.id ? 'text-red-500' : 'text-muted-foreground'}`}>{item.name}</Text>
             </TouchableOpacity>
           )}
         />

@@ -154,13 +154,13 @@ export default function ReportsScreen() {
 
   return (
     <SafeAreaView className="flex-1" edges={['top']}>
-    <ScrollView className="flex-1 bg-white dark:bg-gray-900" contentContainerStyle={{ padding: 16 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
-      <Text className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">{t.reports}</Text>
+    <ScrollView className="flex-1 bg-background" contentContainerStyle={{ padding: 16 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
+      <Text className="mb-4 text-lg font-bold text-foreground">{t.reports}</Text>
 
       <View className="mb-3 flex-row gap-1.5">
         {periods.map((p) => (
-          <TouchableOpacity key={p.key} onPress={() => setPeriod(p.key)} className={`flex-1 items-center rounded-[10px] py-2.5 ${period === p.key ? 'bg-green-600' : 'bg-gray-100 dark:bg-gray-800'}`}>
-            <Text className={`text-xs font-semibold ${period === p.key ? 'text-white' : 'text-gray-500 dark:text-gray-400'}`}>{p.label}</Text>
+          <TouchableOpacity key={p.key} onPress={() => setPeriod(p.key)} className={`flex-1 items-center rounded-[10px] py-2.5 ${period === p.key ? 'bg-green-600' : 'bg-accent'}`}>
+            <Text className={`text-xs font-semibold ${period === p.key ? 'text-white' : 'text-muted-foreground'}`}>{p.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -168,23 +168,23 @@ export default function ReportsScreen() {
       {period === 'custom' && (
         <View className="mb-3 flex-row gap-3">
           <View className="flex-1">
-            <Text className="mb-1 text-xs text-gray-400 dark:text-gray-500">{t.from}</Text>
-            <TextInput value={customFrom} onChangeText={setCustomFrom} placeholder="2024-01-01" placeholderTextColor="#9CA3AF" className="h-12 rounded-[10px] border border-gray-200 dark:border-gray-700 px-4 text-[15px] text-gray-900 dark:text-gray-100" />
+            <Text className="mb-1 text-xs text-muted-foreground">{t.from}</Text>
+            <TextInput value={customFrom} onChangeText={setCustomFrom} placeholder="2024-01-01" placeholderTextColor="#9CA3AF" className="h-12 rounded-[10px] border border-border px-4 text-[15px] text-foreground" />
           </View>
           <View className="flex-1">
-            <Text className="mb-1 text-xs text-gray-400 dark:text-gray-500">{t.to}</Text>
-            <TextInput value={customTo} onChangeText={setCustomTo} placeholder="2024-12-31" placeholderTextColor="#9CA3AF" className="h-12 rounded-[10px] border border-gray-200 dark:border-gray-700 px-4 text-[15px] text-gray-900 dark:text-gray-100" />
+            <Text className="mb-1 text-xs text-muted-foreground">{t.to}</Text>
+            <TextInput value={customTo} onChangeText={setCustomTo} placeholder="2024-12-31" placeholderTextColor="#9CA3AF" className="h-12 rounded-[10px] border border-border px-4 text-[15px] text-foreground" />
           </View>
         </View>
       )}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, marginBottom: 16 }}>
-        <TouchableOpacity onPress={() => setSelectedParcel('all')} className={`rounded-[10px] px-3.5 py-2.5 ${selectedParcel === 'all' ? 'bg-green-600' : 'bg-gray-100 dark:bg-gray-800'}`}>
-          <Text className={`text-xs font-semibold ${selectedParcel === 'all' ? 'text-white' : 'text-gray-500 dark:text-gray-400'}`}>{t.allParcels}</Text>
+        <TouchableOpacity onPress={() => setSelectedParcel('all')} className={`rounded-[10px] px-3.5 py-2.5 ${selectedParcel === 'all' ? 'bg-green-600' : 'bg-accent'}`}>
+          <Text className={`text-xs font-semibold ${selectedParcel === 'all' ? 'text-white' : 'text-muted-foreground'}`}>{t.allParcels}</Text>
         </TouchableOpacity>
         {parcels.filter(p => p.status === 'active').map((p) => (
-          <TouchableOpacity key={p.id} onPress={() => setSelectedParcel(p.id)} className={`rounded-[10px] px-3.5 py-2.5 ${selectedParcel === p.id ? 'bg-green-600' : 'bg-gray-100 dark:bg-gray-800'}`}>
-            <Text className={`text-xs font-semibold ${selectedParcel === p.id ? 'text-white' : 'text-gray-500 dark:text-gray-400'}`}>{p.name}</Text>
+          <TouchableOpacity key={p.id} onPress={() => setSelectedParcel(p.id)} className={`rounded-[10px] px-3.5 py-2.5 ${selectedParcel === p.id ? 'bg-green-600' : 'bg-accent'}`}>
+            <Text className={`text-xs font-semibold ${selectedParcel === p.id ? 'text-white' : 'text-muted-foreground'}`}>{p.name}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -198,13 +198,13 @@ export default function ReportsScreen() {
         <>
           {canExportReports && (
             <View className="mb-4 flex-row gap-2">
-              <TouchableOpacity onPress={handleShare} className="h-10 flex-1 flex-row items-center justify-center gap-1.5 rounded-[10px] border border-gray-200 dark:border-gray-700">
+              <TouchableOpacity onPress={handleShare} className="h-10 flex-1 flex-row items-center justify-center gap-1.5 rounded-[10px] border border-border">
                 <Share2 size={14} color="#374151" />
-                <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300">WhatsApp</Text>
+                <Text className="text-[13px] font-medium text-foreground">WhatsApp</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleDownloadPDF} className="h-10 flex-1 flex-row items-center justify-center gap-1.5 rounded-[10px] border border-gray-200 dark:border-gray-700">
+              <TouchableOpacity onPress={handleDownloadPDF} className="h-10 flex-1 flex-row items-center justify-center gap-1.5 rounded-[10px] border border-border">
                 <Download size={14} color="#374151" />
-                <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300">PDF</Text>
+                <Text className="text-[13px] font-medium text-foreground">PDF</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -215,7 +215,7 @@ export default function ReportsScreen() {
                 {summary.netProfit >= 0 ? <ArrowUpRight size={24} color="#10B981" /> : <ArrowDownRight size={24} color="#EF4444" />}
               </View>
               <View>
-                <Text className="text-xs text-gray-400 dark:text-gray-500">{t.netProfitLoss}</Text>
+                <Text className="text-xs text-muted-foreground">{t.netProfitLoss}</Text>
                 <Text className="text-[28px] font-bold" style={{ fontVariant: ['tabular-nums'], color: summary.netProfit >= 0 ? '#10B981' : '#EF4444' }}>
                   {summary.netProfit >= 0 ? '+' : '-'}{formatMAD(summary.netProfit)} MAD
                 </Text>
@@ -253,17 +253,17 @@ export default function ReportsScreen() {
             )
 
             return (
-              <View className="mb-3 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+              <View className="mb-3 rounded-xl border border-border p-4">
                 <View className="mb-3 flex-row items-center justify-between">
-                  <Text className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">{t.parcelComparison}</Text>
+                  <Text className="text-[13px] font-semibold text-foreground">{t.parcelComparison}</Text>
                   <View className="flex-row gap-3">
                     <View className="flex-row items-center gap-1">
                       <View className="h-2 w-2 rounded-sm bg-emerald-500" />
-                      <Text className="text-[10px] text-gray-500 dark:text-gray-400">{t.income}</Text>
+                      <Text className="text-[10px] text-muted-foreground">{t.income}</Text>
                     </View>
                     <View className="flex-row items-center gap-1">
                       <View className="h-2 w-2 rounded-sm bg-red-500" />
-                      <Text className="text-[10px] text-gray-500 dark:text-gray-400">{t.expenses}</Text>
+                      <Text className="text-[10px] text-muted-foreground">{t.expenses}</Text>
                     </View>
                   </View>
                 </View>
@@ -306,7 +306,7 @@ export default function ReportsScreen() {
             )
           })()}
 
-          <View className="mb-3 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+          <View className="mb-3 rounded-xl border border-border p-4">
             {[
               { label: t.totalIncome, value: summary.totalIncome, color: '#10B981', icon: <TrendingUp size={16} color="#10B981" />, prefix: '+' },
               { label: t.totalExpenses, value: summary.totalExpenses, color: '#EF4444', icon: <TrendingDown size={16} color="#EF4444" />, prefix: '-' },
@@ -316,15 +316,15 @@ export default function ReportsScreen() {
               <View key={row.label} className={`flex-row items-center justify-between py-2.5 ${i < 3 ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}>
                 <View className="flex-row items-center gap-2">
                   {row.icon}
-                  <Text className="text-[13px] text-gray-700 dark:text-gray-300">{row.label}</Text>
+                  <Text className="text-[13px] text-foreground">{row.label}</Text>
                 </View>
                 <Text className="text-sm font-semibold" style={{ fontVariant: ['tabular-nums'], color: row.color }}>
                   {row.prefix}{formatMAD(row.value)} MAD
                 </Text>
               </View>
             ))}
-            <View className="flex-row items-center justify-between border-t border-gray-200 dark:border-gray-700 py-2.5 mt-1">
-              <Text className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">{t.totalCost}</Text>
+            <View className="flex-row items-center justify-between border-t border-border py-2.5 mt-1">
+              <Text className="text-[13px] font-semibold text-foreground">{t.totalCost}</Text>
               <Text className="text-sm font-bold text-red-500" style={{ fontVariant: ['tabular-nums'] }}>
                 -{formatMAD(summary.totalExpenses + summary.totalGas + summary.totalCooperative)} MAD
               </Text>
@@ -332,11 +332,11 @@ export default function ReportsScreen() {
           </View>
 
           {summary.parcelBreakdown && summary.parcelBreakdown.length > 0 && (
-            <View className="rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-              <Text className="mb-3 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Détail par parcelle</Text>
+            <View className="rounded-xl border border-border p-4">
+              <Text className="mb-3 text-[13px] font-semibold text-foreground">Détail par parcelle</Text>
               {summary.parcelBreakdown.map((p: any, i: number) => (
                 <View key={i} className={`flex-row items-center justify-between py-2 ${i < summary.parcelBreakdown.length - 1 ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}>
-                  <Text className="flex-1 text-[13px] font-medium text-gray-700 dark:text-gray-300">{p.name}</Text>
+                  <Text className="flex-1 text-[13px] font-medium text-foreground">{p.name}</Text>
                   <Text className="mr-2 text-xs text-emerald-500">+{formatMAD(p.totalIncome)}</Text>
                   <Text className="mr-2 text-xs text-red-500">-{formatMAD(p.totalExpenses + p.totalGas + p.totalCooperative)}</Text>
                   <Text className="text-[13px] font-semibold" style={{ color: p.netProfit >= 0 ? '#10B981' : '#EF4444' }}>

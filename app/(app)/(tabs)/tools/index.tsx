@@ -22,7 +22,7 @@ export default function MoreScreen() {
 
   return (
     <SafeAreaView className="flex-1" edges={['top']}>
-      <ScrollView className="flex-1 bg-white dark:bg-gray-900" contentContainerStyle={{ padding: 16, maxWidth: 480, alignSelf: 'center', width: '100%' }}>
+      <ScrollView className="flex-1 bg-background" contentContainerStyle={{ padding: 16, maxWidth: 480, alignSelf: 'center', width: '100%' }}>
         <HeaderBar title={t.more} />
 
         <View className="mt-2 gap-3">
@@ -30,12 +30,12 @@ export default function MoreScreen() {
             <TouchableOpacity
               key={item.route}
               onPress={() => router.push(item.route as any)}
-              className="flex-row items-center gap-3.5 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-5 py-4"
+              className="flex-row items-center gap-3.5 rounded-2xl border border-border bg-card px-5 py-4"
             >
               <View className={`h-10 w-12 items-center justify-center rounded-xl ${item.bg}`}>
                 {item.icon}
               </View>
-              <Text className="flex-1 text-base font-semibold text-gray-900 dark:text-gray-100">{item.label}</Text>
+              <Text className="flex-1 text-base font-semibold text-foreground">{item.label}</Text>
               <ChevronRight size={18} color="#D1D5DB" />
             </TouchableOpacity>
           ))}

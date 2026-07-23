@@ -1,6 +1,9 @@
-import React from 'react'
-import { Modal, View, TouchableWithoutFeedback, ScrollView, StyleSheet } from 'react-native'
+import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import { View, StyleSheet, Platform, Keyboard } from 'react-native'
+import BottomSheetLib, { BottomSheetBackdrop, BottomSheetView, type BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { useColorScheme } from 'nativewind'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 
 interface BottomSheetProps {
   visible: boolean
@@ -11,55 +14,68 @@ interface BottomSheetProps {
 export function BottomSheet({ visible, onClose, children }: BottomSheetProps) {
   const { colorScheme } = useColorScheme()
   const isDark = colorScheme === 'dark'
+  const { bottom } = useSafeAreaInsets()
+  const ref = useRef<BottomSheetLib>(null)
+    const snapPoints = useMemo(() => ['96%'], [])
+
+  useEffect(() => {
+    if (visible) {
+      Keyboard.dismiss()
+      ref.current?.expand()
+    } else {
+      ref.current?.close()
+    }
+  }, [visible])
+
+  const renderBackdrop = useCallback(
+    (props: BottomSheetBackdropProps) => (
+      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.4} />
+    ),
+    []
+  )
+
+  const handleClose = useCallback(() => {
+    onClose()
+  }, [onClose])
+
+  if (!visible) return null
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.overlay}>
-          <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
-            <View style={[styles.sheet, isDark && styles.sheetDark]}>
-              <View style={[styles.handle, isDark && styles.handleDark]} />
-              <ScrollView
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
-                keyboardDismissMode="interactive"
-              >
-                {children}
-              </ScrollView>
-            </View>
-          </TouchableWithoutFeedback>
-        </View>
-      </TouchableWithoutFeedback>
-    </Modal>
+    <GestureHandlerRootView style={StyleSheet.absoluteFill}>
+      <BottomSheetLib
+        ref={ref}
+        index={0}
+        snapPoints={snapPoints}
+        enablePanDownToClose
+        onClose={handleClose}
+        keyboardBehavior="extend"
+        keyboardBlurBehavior="restore"
+        android_keyboardInputMode="adjustResize"
+        backgroundStyle={{
+          backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
+        }}
+        handleIndicatorStyle={{
+          backgroundColor: isDark ? '#4B5563' : '#D1D5DB',
+          width: 40,
+        }}
+        handleStyle={styles.handle}
+        backdropComponent={renderBackdrop}
+      >
+        <BottomSheetView style={styles.content}>
+          {children}
+        </BottomSheetView>
+      </BottomSheetLib>
+    </GestureHandlerRootView>
   )
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  sheet: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '92%',
-    paddingBottom: 34,
-  },
-  sheetDark: {
-    backgroundColor: '#111827',
-  },
   handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#D1D5DB',
     alignSelf: 'center',
-    marginTop: 10,
-    marginBottom: 6,
   },
-  handleDark: {
-    backgroundColor: '#4B5563',
+  content: {
+    paddingHorizontal: 20,
   },
 })
