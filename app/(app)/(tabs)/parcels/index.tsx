@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, ActivityIndicator, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/lib/auth-context'
 import { useFarm } from '@/lib/farm-context'
@@ -7,12 +7,13 @@ import { useI18n } from '@/lib/i18n-context'
 import { getParcels, createParcel, updateParcel, deleteParcel, getFinancialSummary } from '@/lib/api'
 import { getLastParcelId } from '@/hooks/useDraft'
 import { formatMAD, filterNumeric } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import type { Parcel, FinancialSummary } from '@/lib/types'
 import Toast from 'react-native-toast-message'
 import { HeaderBar } from '@/components/HeaderBar'
 import {
   MapPin, Plus, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight,
-  ChevronRight, Archive, X, Check,
+  ChevronRight, Archive, X, Check, AlertCircle, RefreshCw,
 } from 'lucide-react-native'
 
 export default function ParcelsScreen() {
@@ -21,6 +22,8 @@ export default function ParcelsScreen() {
   const { t } = useI18n()
   const [parcels, setParcels] = useState<Parcel[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [financials, setFinancials] = useState<Record<string, FinancialSummary>>({})
   const [selectedParcel, setSelectedParcel] = useState<Parcel | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -28,22 +31,34 @@ export default function ParcelsScreen() {
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({ name: '', area_hectares: '', location: '', notes: '' })
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (isRefresh = false) => {
     if (!user || !currentFarmId) return
-    setLoading(true)
-    const { data } = await getParcels(currentFarmId)
-    const lastId = await getLastParcelId()
-    const sorted = [...data].sort((a, b) => {
-      if (a.id === lastId) return -1
-      if (b.id === lastId) return 1
-      return 0
-    })
-    setParcels(sorted)
-    const finMap: Record<string, FinancialSummary> = {}
-    await Promise.all(data.map(async (p) => { finMap[p.id] = await getFinancialSummary(currentFarmId!, p.id) }))
-    setFinancials(finMap)
-    setLoading(false)
-  }, [user, currentFarmId])
+    if (isRefresh) setRefreshing(true)
+    else setLoading(true)
+    setError(null)
+    try {
+      const { data, error: loadError } = await getParcels(currentFarmId)
+      if (loadError) {
+        setError(t.failedToLoad)
+        return
+      }
+      const lastId = await getLastParcelId()
+      const sorted = [...data].sort((a, b) => {
+        if (a.id === lastId) return -1
+        if (b.id === lastId) return 1
+        return 0
+      })
+      setParcels(sorted)
+      const finMap: Record<string, FinancialSummary> = {}
+      await Promise.all(data.map(async (p) => { finMap[p.id] = await getFinancialSummary(currentFarmId!, p.id) }))
+      setFinancials(finMap)
+    } catch {
+      setError(t.failedToLoad)
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }, [user, currentFarmId, t.failedToLoad])
 
   useEffect(() => { load() }, [load])
 
@@ -77,27 +92,29 @@ export default function ParcelsScreen() {
     const fin = financials[p.id]
     const isProfit = (fin?.netProfit ?? 0) >= 0
     return (
-      <TouchableOpacity key={p.id} onPress={() => setSelectedParcel(p)} activeOpacity={0.7} style={{ padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#FFFFFF', marginBottom: 10 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}>
+      <TouchableOpacity key={p.id} onPress={() => setSelectedParcel(p)} activeOpacity={0.7} className="p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 mb-2.5">
+        <View className="flex-row justify-between items-start">
+          <View className="flex-1 min-w-0">
+            <View className="flex-row items-center gap-2 mb-1.5">
+              <View className="w-8 h-8 rounded-[10px] bg-blue-50 dark:bg-blue-950 items-center justify-center">
                 <MapPin size={16} color="#3B82F6" />
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: '#111827' }} numberOfLines={1}>{p.name}</Text>
-                {p.location ? <Text style={{ fontSize: 11, color: '#9CA3AF' }} numberOfLines={1}>{p.location}</Text> : null}
+              <View className="flex-1">
+                <Text className="text-sm font-semibold text-gray-900 dark:text-gray-100" numberOfLines={1}>{p.name}</Text>
+                {p.location ? <Text className="text-[11px] text-gray-400 dark:text-gray-500" numberOfLines={1}>{p.location}</Text> : null}
               </View>
             </View>
-            <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+            <View className="flex-row gap-1.5 flex-wrap mt-1.5">
               {p.areaHectares ? (
-                <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, backgroundColor: '#F3F4F6' }}>
-                  <Text style={{ fontSize: 11, fontWeight: '500', color: '#6B7280' }}>{p.areaHectares} ha</Text>
+                <View className="px-2 py-[3px] rounded-2xl bg-gray-100 dark:bg-gray-800">
+                  <Text className="text-[11px] font-medium text-gray-500 dark:text-gray-400">{p.areaHectares} ha</Text>
                 </View>
               ) : null}
               {fin ? (
-                <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, backgroundColor: isProfit ? '#ECFDF5' : '#FEF2F2', borderWidth: 1, borderColor: isProfit ? '#A7F3D0' : '#FECACA' }}>
-                  <Text style={{ fontSize: 11, fontWeight: '600', color: isProfit ? '#10B981' : '#EF4444' }}>
+                <View className={cn("px-2 py-[3px] rounded-2xl border",
+                  isProfit ? "bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800" : "bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800"
+                )}>
+                  <Text className={cn("text-[11px] font-semibold", isProfit ? "text-emerald-500 dark:text-emerald-400" : "text-red-500 dark:text-red-400")}>
                     {isProfit ? '+' : '-'}{formatMAD(fin.netProfit)} MAD
                   </Text>
                 </View>
@@ -113,30 +130,41 @@ export default function ParcelsScreen() {
   if (!currentFarmId) return null
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-      <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-        {/* Header */}
+    <SafeAreaView className="flex-1" edges={['top']}>
+      <View className="flex-1 bg-white dark:bg-gray-900">
         <HeaderBar
           title={t.parcels}
           right={
             canManageParcels ? (
-              <TouchableOpacity onPress={openAdd} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#16A34A', alignItems: 'center', justifyContent: 'center' }}>
+              <TouchableOpacity onPress={openAdd} className="w-9 h-9 rounded-[10px] bg-green-600 dark:bg-green-500 items-center justify-center">
                 <Plus size={20} color="#FFFFFF" />
               </TouchableOpacity>
             ) : undefined
           }
         />
 
-        <ScrollView contentContainerStyle={{ padding: 16 }}>
+        <ScrollView contentContainerClassName="p-4" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor="#6B7280" />}>
           {loading ? (
-            [1, 2, 3].map(i => <View key={i} style={{ height: 96, borderRadius: 12, backgroundColor: '#F3F4F6', marginBottom: 10 }} />)
+            [1, 2, 3].map(i => <View key={i} className="h-24 rounded-xl bg-gray-100 dark:bg-gray-800 mb-2.5 animate-pulse" />)
+          ) : error ? (
+            <View className="items-center py-16 px-6">
+              <View className="w-14 h-14 rounded-full bg-red-50 dark:bg-red-950 items-center justify-center mb-4">
+                <AlertCircle size={28} color="#EF4444" />
+              </View>
+              <Text className="text-[15px] font-semibold text-gray-900 dark:text-gray-100 mb-1">{t.failedToLoad}</Text>
+              <Text className="text-[13px] text-gray-400 dark:text-gray-500 mb-5 text-center">{error}</Text>
+              <TouchableOpacity onPress={() => load()} className="flex-row items-center gap-2 px-5 py-2.5 rounded-[10px] bg-gray-100 dark:bg-gray-800">
+                <RefreshCw size={16} color="#6B7280" />
+                <Text className="text-[13px] font-semibold text-gray-600 dark:text-gray-300">{t.retry}</Text>
+              </TouchableOpacity>
+            </View>
           ) : activeParcels.length === 0 ? (
-            <View style={{ alignItems: 'center', paddingVertical: 64 }}>
+            <View className="items-center py-16">
               <MapPin size={48} color="#D1D5DB" />
-              <Text style={{ color: '#9CA3AF', marginTop: 12 }}>{t.noParcels}</Text>
-              <TouchableOpacity onPress={openAdd} style={{ marginTop: 16, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, backgroundColor: '#16A34A' }}>
+              <Text className="text-gray-400 dark:text-gray-500 mt-3">{t.noParcels}</Text>
+              <TouchableOpacity onPress={openAdd} className="mt-4 flex-row items-center gap-1.5 px-4 py-2.5 rounded-[10px] bg-green-600 dark:bg-green-500">
                 <Plus size={16} color="#FFFFFF" />
-                <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>{t.addParcel}</Text>
+                <Text className="text-white font-semibold">{t.addParcel}</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -144,85 +172,86 @@ export default function ParcelsScreen() {
           )}
 
           {archivedParcels.length > 0 && (
-            <View style={{ marginTop: 16 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+            <View className="mt-4">
+              <View className="flex-row items-center gap-1.5 mb-2">
                 <Archive size={16} color="#9CA3AF" />
-                <Text style={{ fontSize: 13, fontWeight: '500', color: '#9CA3AF' }}>{t.archived}</Text>
+                <Text className="text-[13px] font-medium text-gray-400 dark:text-gray-500">{t.archived}</Text>
               </View>
-              <View style={{ opacity: 0.6 }}>{archivedParcels.map(renderParcelCard)}</View>
+              <View className="opacity-60">{archivedParcels.map(renderParcelCard)}</View>
             </View>
           )}
         </ScrollView>
 
-        {/* Detail Modal */}
         <Modal visible={!!selectedParcel} transparent animationType="slide" onRequestClose={() => setSelectedParcel(null)}>
-          <TouchableOpacity activeOpacity={1} onPress={() => setSelectedParcel(null)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }}>
-            <TouchableOpacity activeOpacity={1} style={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '85%', padding: 20, paddingBottom: 34 }}>
+          <TouchableOpacity activeOpacity={1} onPress={() => setSelectedParcel(null)} className="flex-1 bg-black/40 justify-end">
+            <TouchableOpacity activeOpacity={1} className="bg-white dark:bg-gray-900 rounded-tl-[20px] rounded-tr-[20px] max-h-[85%] p-5 pb-[34px]">
               {selectedParcel && (() => {
                 const fin = financials[selectedParcel.id]
                 const isProfit = (fin?.netProfit ?? 0) >= 0
                 return (
                   <>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View className="flex-row justify-between items-center mb-4">
+                      <View className="flex-row items-center gap-2">
                         <MapPin size={20} color="#3B82F6" />
-                        <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>{selectedParcel.name}</Text>
+                        <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">{selectedParcel.name}</Text>
                       </View>
                       <TouchableOpacity onPress={() => setSelectedParcel(null)}><X size={20} color="#9CA3AF" /></TouchableOpacity>
                     </View>
-                    <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
-                      {selectedParcel.areaHectares ? <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, backgroundColor: '#F3F4F6' }}><Text style={{ fontSize: 12 }}>{selectedParcel.areaHectares} ha</Text></View> : null}
-                      {selectedParcel.location ? <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB' }}><Text style={{ fontSize: 12 }}>{selectedParcel.location}</Text></View> : null}
-                      <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, backgroundColor: selectedParcel.status === 'active' ? '#ECFDF5' : '#F3F4F6' }}>
-                        <Text style={{ fontSize: 12, fontWeight: '500', color: selectedParcel.status === 'active' ? '#059669' : '#6B7280' }}>{selectedParcel.status === 'active' ? t.active : t.archived}</Text>
+                    <View className="flex-row gap-1.5 flex-wrap mb-4">
+                      {selectedParcel.areaHectares ? <View className="px-2.5 py-1 rounded-2xl bg-gray-100 dark:bg-gray-800"><Text className="text-xs text-gray-900 dark:text-gray-100">{selectedParcel.areaHectares} ha</Text></View> : null}
+                      {selectedParcel.location ? <View className="px-2.5 py-1 rounded-2xl border border-gray-200 dark:border-gray-700"><Text className="text-xs text-gray-900 dark:text-gray-100">{selectedParcel.location}</Text></View> : null}
+                      <View className={cn("px-2.5 py-1 rounded-2xl", selectedParcel.status === 'active' ? "bg-emerald-50 dark:bg-emerald-950" : "bg-gray-100 dark:bg-gray-800")}>
+                        <Text className={cn("text-xs font-medium", selectedParcel.status === 'active' ? "text-emerald-600 dark:text-emerald-400" : "text-gray-500 dark:text-gray-400")}>{selectedParcel.status === 'active' ? t.active : t.archived}</Text>
                       </View>
                     </View>
 
                     {fin ? (
-                      <View style={{ marginBottom: 16 }}>
-                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8 }}>{t.parcelDetail}</Text>
-                        <View style={{ padding: 16, borderRadius: 12, borderWidth: 2, borderColor: isProfit ? '#A7F3D0' : '#FECACA', backgroundColor: isProfit ? '#ECFDF5' : '#FEF2F2', marginBottom: 10 }}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                      <View className="mb-4">
+                        <Text className="text-[13px] font-semibold text-gray-700 dark:text-gray-300 mb-2">{t.parcelDetail}</Text>
+                        <View className={cn("p-4 rounded-xl border-2 mb-2.5",
+                          isProfit ? "border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950" : "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950"
+                        )}>
+                          <View className="flex-row items-center gap-1.5 mb-1">
                             {isProfit ? <ArrowUpRight size={18} color="#10B981" /> : <ArrowDownRight size={18} color="#EF4444" />}
-                            <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t.netProfitLoss}</Text>
+                            <Text className="text-xs text-gray-400 dark:text-gray-500">{t.netProfitLoss}</Text>
                           </View>
-                          <Text style={{ fontSize: 22, fontWeight: '700', color: isProfit ? '#10B981' : '#EF4444' }}>{isProfit ? '+' : '-'}{formatMAD(fin.netProfit)} MAD</Text>
+                          <Text className={cn("text-[22px] font-bold", isProfit ? "text-emerald-500 dark:text-emerald-400" : "text-red-500 dark:text-red-400")}>{isProfit ? '+' : '-'}{formatMAD(fin.netProfit)} MAD</Text>
                         </View>
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                          <View style={{ flex: 1, minWidth: '45%', padding: 12, borderRadius: 10, backgroundColor: '#ECFDF5' }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 }}><TrendingUp size={12} color="#10B981" /><Text style={{ fontSize: 11, color: '#9CA3AF' }}>{t.totalIncome}</Text></View>
-                            <Text style={{ fontSize: 15, fontWeight: '700', color: '#10B981' }}>+{formatMAD(fin.totalIncome)} MAD</Text>
+                        <View className="flex-row flex-wrap gap-2">
+                          <View className="flex-1 min-w-[45%] p-3 rounded-[10px] bg-emerald-50 dark:bg-emerald-950">
+                            <View className="flex-row items-center gap-1 mb-1"><TrendingUp size={12} color="#10B981" /><Text className="text-[11px] text-gray-400 dark:text-gray-500">{t.totalIncome}</Text></View>
+                            <Text className="text-[15px] font-bold text-emerald-500 dark:text-emerald-400">+{formatMAD(fin.totalIncome)} MAD</Text>
                           </View>
-                          <View style={{ flex: 1, minWidth: '45%', padding: 12, borderRadius: 10, backgroundColor: '#FEF2F2' }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 }}><TrendingDown size={12} color="#EF4444" /><Text style={{ fontSize: 11, color: '#9CA3AF' }}>{t.totalExpenses}</Text></View>
-                            <Text style={{ fontSize: 15, fontWeight: '700', color: '#EF4444' }}>-{formatMAD(fin.totalExpenses)} MAD</Text>
+                          <View className="flex-1 min-w-[45%] p-3 rounded-[10px] bg-red-50 dark:bg-red-950">
+                            <View className="flex-row items-center gap-1 mb-1"><TrendingDown size={12} color="#EF4444" /><Text className="text-[11px] text-gray-400 dark:text-gray-500">{t.totalExpenses}</Text></View>
+                            <Text className="text-[15px] font-bold text-red-500 dark:text-red-400">-{formatMAD(fin.totalExpenses)} MAD</Text>
                           </View>
-                          <View style={{ flex: 1, minWidth: '45%', padding: 12, borderRadius: 10, backgroundColor: '#FFF7ED' }}>
-                            <Text style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>{t.totalGas}</Text>
-                            <Text style={{ fontSize: 15, fontWeight: '700', color: '#F97316' }}>-{formatMAD(fin.totalGas)} MAD</Text>
+                          <View className="flex-1 min-w-[45%] p-3 rounded-[10px] bg-orange-50 dark:bg-orange-950">
+                            <Text className="text-[11px] text-gray-400 dark:text-gray-500 mb-1">{t.totalGas}</Text>
+                            <Text className="text-[15px] font-bold text-orange-500 dark:text-orange-400">-{formatMAD(fin.totalGas)} MAD</Text>
                           </View>
-                          <View style={{ flex: 1, minWidth: '45%', padding: 12, borderRadius: 10, backgroundColor: '#F5F3FF' }}>
-                            <Text style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>{t.totalCooperative}</Text>
-                            <Text style={{ fontSize: 15, fontWeight: '700', color: '#8B5CF6' }}>-{formatMAD(fin.totalCooperative)} MAD</Text>
+                          <View className="flex-1 min-w-[45%] p-3 rounded-[10px] bg-violet-50 dark:bg-violet-950">
+                            <Text className="text-[11px] text-gray-400 dark:text-gray-500 mb-1">{t.totalCooperative}</Text>
+                            <Text className="text-[15px] font-bold text-violet-500 dark:text-violet-400">-{formatMAD(fin.totalCooperative)} MAD</Text>
                           </View>
                         </View>
                       </View>
                     ) : null}
 
                     {selectedParcel.notes ? (
-                      <View style={{ marginBottom: 16 }}>
-                        <Text style={{ fontSize: 12, fontWeight: '500', color: '#9CA3AF', marginBottom: 4 }}>{t.notes}</Text>
-                        <View style={{ padding: 12, borderRadius: 8, backgroundColor: '#F3F4F6' }}><Text style={{ fontSize: 13 }}>{selectedParcel.notes}</Text></View>
+                      <View className="mb-4">
+                        <Text className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-1">{t.notes}</Text>
+                        <View className="p-3 rounded-2xl bg-gray-100 dark:bg-gray-800"><Text className="text-[13px] text-gray-900 dark:text-gray-100">{selectedParcel.notes}</Text></View>
                       </View>
                     ) : null}
 
                     {canManageParcels && (
-                      <View style={{ gap: 8 }}>
-                        <TouchableOpacity onPress={() => openEdit(selectedParcel)} style={{ height: 44, borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' }}>
-                          <Text style={{ fontWeight: '600', color: '#374151' }}>{t.edit}</Text>
+                      <View className="gap-2">
+                        <TouchableOpacity onPress={() => openEdit(selectedParcel)} className="h-11 rounded-[10px] border border-gray-200 dark:border-gray-700 items-center justify-center">
+                          <Text className="font-semibold text-gray-700 dark:text-gray-300">{t.edit}</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => handleArchive(selectedParcel)} style={{ height: 44, borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' }}>
-                          <Text style={{ fontWeight: '600', color: '#F97316' }}>{t.archiveParcel}</Text>
+                        <TouchableOpacity onPress={() => handleArchive(selectedParcel)} className="h-11 rounded-[10px] border border-gray-200 dark:border-gray-700 items-center justify-center">
+                          <Text className="font-semibold text-orange-500 dark:text-orange-400">{t.archiveParcel}</Text>
                         </TouchableOpacity>
                       </View>
                     )}
@@ -233,34 +262,33 @@ export default function ParcelsScreen() {
           </TouchableOpacity>
         </Modal>
 
-        {/* Add/Edit Sheet */}
         <Modal visible={sheetOpen} transparent animationType="slide" onRequestClose={() => setSheetOpen(false)}>
-          <TouchableOpacity activeOpacity={1} onPress={() => setSheetOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }}>
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-              <TouchableOpacity activeOpacity={1} style={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 34 }}>
-              <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#D1D5DB', alignSelf: 'center', marginBottom: 16 }} />
-              <Text style={{ fontSize: 17, fontWeight: '700', color: '#111827', marginBottom: 16 }}>{editingParcel ? t.editParcel : t.addParcel}</Text>
-              <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.parcelName} *</Text>
-              <TextInput value={form.name} onChangeText={v => setForm(p => ({ ...p, name: v }))} placeholder="Parcelle A" placeholderTextColor="#9CA3AF" style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827', marginBottom: 12 }} />
-              <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.areaHectares}</Text>
-                  <TextInput value={form.area_hectares} onChangeText={v => setForm(p => ({ ...p, area_hectares: filterNumeric(v) }))} placeholder="2.5" placeholderTextColor="#9CA3AF" keyboardType="decimal-pad" style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }} />
+          <TouchableOpacity activeOpacity={1} onPress={() => setSheetOpen(false)} className="flex-1 bg-black/40 justify-end">
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+              <TouchableOpacity activeOpacity={1} className="bg-white dark:bg-gray-900 rounded-tl-[20px] rounded-tr-[20px] p-5 pb-[34px]">
+              <View className="w-10 h-1 rounded-[2px] bg-gray-300 dark:bg-gray-600 self-center mb-4" />
+              <Text className="text-[17px] font-bold text-gray-900 dark:text-gray-100 mb-4">{editingParcel ? t.editParcel : t.addParcel}</Text>
+              <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t.parcelName} *</Text>
+              <TextInput value={form.name} onChangeText={v => setForm(p => ({ ...p, name: v }))} placeholder="Parcelle A" placeholderTextColor="#9CA3AF" className="h-12 border border-gray-200 dark:border-gray-700 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-gray-100 mb-3" />
+              <View className="flex-row gap-3 mb-3">
+                <View className="flex-1">
+                  <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t.areaHectares}</Text>
+                  <TextInput value={form.area_hectares} onChangeText={v => setForm(p => ({ ...p, area_hectares: filterNumeric(v) }))} placeholder="2.5" placeholderTextColor="#9CA3AF" keyboardType="decimal-pad" className="h-12 border border-gray-200 dark:border-gray-700 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-gray-100" />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.location}</Text>
-                  <TextInput value={form.location} onChangeText={v => setForm(p => ({ ...p, location: v }))} placeholder="Douar..." placeholderTextColor="#9CA3AF" style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }} />
+                <View className="flex-1">
+                  <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t.location}</Text>
+                  <TextInput value={form.location} onChangeText={v => setForm(p => ({ ...p, location: v }))} placeholder="Douar..." placeholderTextColor="#9CA3AF" className="h-12 border border-gray-200 dark:border-gray-700 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-gray-100" />
                 </View>
               </View>
-              <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.notes}</Text>
-              <TextInput value={form.notes} onChangeText={v => setForm(p => ({ ...p, notes: v }))} placeholder={t.notes} placeholderTextColor="#9CA3AF" multiline numberOfLines={2} style={{ borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, color: '#111827', marginBottom: 16, minHeight: 60, textAlignVertical: 'top' }} />
-              <View style={{ flexDirection: 'row', gap: 12 }}>
-                <TouchableOpacity onPress={() => setSheetOpen(false)} style={{ flex: 1, height: 48, borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ fontWeight: '600', color: '#6B7280' }}>{t.cancel}</Text>
+              <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t.notes}</Text>
+              <TextInput value={form.notes} onChangeText={v => setForm(p => ({ ...p, notes: v }))} placeholder={t.notes} placeholderTextColor="#9CA3AF" multiline numberOfLines={2} className="border border-gray-200 dark:border-gray-700 rounded-[10px] px-4 py-2.5 text-[15px] text-gray-900 dark:text-gray-100 mb-4 min-h-[60px]" style={{ textAlignVertical: 'top' }} />
+              <View className="flex-row gap-3">
+                <TouchableOpacity onPress={() => setSheetOpen(false)} className="flex-1 h-12 rounded-[10px] border border-gray-200 dark:border-gray-700 items-center justify-center">
+                  <Text className="font-semibold text-gray-500 dark:text-gray-400">{t.cancel}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={handleSave} disabled={!form.name.trim() || saving} style={{ flex: 1, height: 48, borderRadius: 10, backgroundColor: !form.name.trim() || saving ? '#93C5FD' : '#16A34A', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}>
+                <TouchableOpacity onPress={handleSave} disabled={!form.name.trim() || saving} className={cn("flex-1 h-12 rounded-[10px] items-center justify-center flex-row gap-1.5", !form.name.trim() || saving ? "bg-blue-300 dark:bg-blue-800" : "bg-green-600 dark:bg-green-500")}>
                   {saving ? <ActivityIndicator color="#FFFFFF" /> : <Check size={18} color="#FFFFFF" />}
-                  <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>{t.save}</Text>
+                  <Text className="text-white font-semibold">{t.save}</Text>
                 </TouchableOpacity>
               </View>
             </TouchableOpacity>

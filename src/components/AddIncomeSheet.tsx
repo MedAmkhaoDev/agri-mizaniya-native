@@ -92,120 +92,83 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
 
   return (
     <BottomSheet visible={visible} onClose={onClose}>
-      <View style={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 10 }}>
-        {/* Header */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <Text style={{ fontSize: 17, fontWeight: '700', color: '#10B981' }}>{t.addIncome}</Text>
+      <View className="px-5 pt-1 pb-2.5">
+        <View className="flex-row justify-between items-center mb-4">
+          <Text className="text-[17px] font-bold text-emerald-500 dark:text-emerald-500">{t.addIncome}</Text>
           {draft.product_name ? (
-            <TouchableOpacity onPress={reset} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <TouchableOpacity onPress={reset} className="flex-row items-center gap-1">
               <X size={14} color="#9CA3AF" />
-              <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t.clear}</Text>
+              <Text className="text-xs text-gray-400 dark:text-gray-400">{t.clear}</Text>
             </TouchableOpacity>
           ) : null}
         </View>
 
-        {/* Product name input */}
         <TextInput
           value={draft.product_name || ''}
           onChangeText={(v) => update({ product_name: v })}
           placeholder={t.productName}
           placeholderTextColor="#9CA3AF"
-          style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, fontWeight: '500', color: '#111827' }}
+          className="h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] font-medium text-gray-900 dark:text-white"
         />
 
-        {/* Recent products */}
         {recentProducts.length > 0 ? (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+          <View className="flex-row flex-wrap gap-1.5 mt-2">
             {recentProducts.map((p) => (
               <TouchableOpacity
                 key={p}
                 onPress={() => update({ product_name: p })}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 4,
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 20,
-                  borderWidth: 1,
-                  borderColor: draft.product_name === p ? '#10B981' : '#E5E7EB',
-                  backgroundColor: draft.product_name === p ? '#ECFDF5' : '#FFFFFF',
-                }}
+                className={`flex-row items-center gap-1 px-3 py-1.5 rounded-full border ${draft.product_name === p ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30' : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800'}`}
               >
                 <Package size={12} color={draft.product_name === p ? '#10B981' : '#9CA3AF'} />
-                <Text style={{ fontSize: 12, fontWeight: '500', color: draft.product_name === p ? '#10B981' : '#374151' }}>{p}</Text>
+                <Text className={`text-[12px] font-medium ${draft.product_name === p ? 'text-emerald-500' : 'text-gray-700 dark:text-gray-300'}`}>{p}</Text>
               </TouchableOpacity>
             ))}
           </View>
         ) : null}
 
-        {/* Quantity */}
-        <View style={{ marginTop: 16 }}>
-          <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.quantity}</Text>
+        <View className="mt-4">
+          <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t.quantity}</Text>
           <TextInput
             keyboardType="decimal-pad"
             value={draft.quantity || ''}
             onChangeText={(v) => update({ quantity: filterNumeric(v) })}
             placeholder={t.quantity}
             placeholderTextColor="#9CA3AF"
-            style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }}
+            className="h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-white"
           />
         </View>
 
-        {/* Unit selector */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, marginTop: 8 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-1.5 mt-2">
           {UNITS.map((u) => (
             <TouchableOpacity
               key={u}
               onPress={() => update({ unit: u })}
-              style={{
-                paddingHorizontal: 14,
-                height: 38,
-                borderRadius: 10,
-                borderWidth: 1,
-                borderColor: draft.unit === u ? '#10B981' : '#E5E7EB',
-                backgroundColor: draft.unit === u ? '#ECFDF5' : '#FFFFFF',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+              className={`px-3.5 h-[38px] rounded-[10px] border items-center justify-center ${draft.unit === u ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30' : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800'}`}
             >
-              <Text style={{ fontSize: 12, fontWeight: '600', color: draft.unit === u ? '#10B981' : '#6B7280' }}>{u}</Text>
+              <Text className={`text-xs font-semibold ${draft.unit === u ? 'text-emerald-500' : 'text-gray-500 dark:text-gray-400'}`}>{u}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
-        {/* Total amount - big input */}
         <TextInput
           keyboardType="decimal-pad"
           value={draft.total_amount || ''}
           onChangeText={(v) => update({ total_amount: filterNumeric(v) })}
           placeholder={t.totalAmount}
           placeholderTextColor="#9CA3AF"
-          style={{
-            height: 64,
-            fontSize: 30,
-            fontWeight: '700',
-            textAlign: 'center',
-            borderWidth: 2,
-            borderColor: '#6EE7B7',
-            borderRadius: 12,
-            color: '#10B981',
-            marginTop: 16,
-          }}
+          className="h-16 text-[30px] font-bold text-center border-2 border-emerald-300 dark:border-emerald-700 rounded-xl text-emerald-500 mt-4"
         />
 
-        {/* Auto-calculated unit price */}
         {unitPrice && unitPrice > 0 ? (
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderRadius: 12, backgroundColor: '#ECFDF5', borderWidth: 1, borderColor: '#A7F3D0', marginTop: 12 }}>
-            <Text style={{ fontSize: 13, color: '#6B7280' }}>{t.unitPrice} · {t.autoCalculated}</Text>
-            <Text style={{ fontSize: 17, fontWeight: '700', color: '#10B981' }}>
-              {formatMADDecimal(unitPrice)} <Text style={{ fontSize: 13, fontWeight: '500' }}>MAD/{draft.unit || 'u'}</Text>
+          <View className="flex-row justify-between items-center p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 mt-3">
+            <Text className="text-[13px] text-gray-500 dark:text-gray-400">{t.unitPrice} · {t.autoCalculated}</Text>
+            <Text className="text-[17px] font-bold text-emerald-500">
+              {formatMADDecimal(unitPrice)} <Text className="text-[13px] font-medium">MAD/{draft.unit || 'u'}</Text>
             </Text>
           </View>
         ) : null}
 
-        {/* Parcel list - compact horizontal chips */}
-        <Text style={{ fontSize: 11, fontWeight: '600', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 1, marginTop: 20, marginBottom: 8 }}>
+        <Text className="text-[11px] font-semibold text-gray-400 dark:text-gray-400 uppercase tracking-[1px] mt-5 mb-2">
           {t.parcel}
         </Text>
         <FlatList
@@ -213,35 +176,25 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
           data={parcels}
           keyExtractor={(i) => i.id}
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 6 }}
+          contentContainerClassName="gap-1.5"
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => update({ parcel_id: item.id })} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: draft.parcel_id === item.id ? '#10B981' : '#E5E7EB', backgroundColor: draft.parcel_id === item.id ? '#ECFDF5' : '#FFFFFF' }}>
-              <Text style={{ fontSize: 13, fontWeight: '500', color: draft.parcel_id === item.id ? '#10B981' : '#6B7280' }}>{item.name}</Text>
+            <TouchableOpacity onPress={() => update({ parcel_id: item.id })} className={`px-3.5 py-2 rounded-[10px] border ${draft.parcel_id === item.id ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30' : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800'}`}>
+              <Text className={`text-[13px] font-medium ${draft.parcel_id === item.id ? 'text-emerald-500' : 'text-gray-500 dark:text-gray-400'}`}>{item.name}</Text>
             </TouchableOpacity>
           )}
         />
 
-        {/* Save button */}
         <TouchableOpacity
           onPress={handleSave}
           disabled={!draft.product_name || !draft.total_amount || !draft.parcel_id || saving}
-          style={{
-            height: 56,
-            borderRadius: 12,
-            backgroundColor: !draft.product_name || !draft.total_amount || !draft.parcel_id || saving ? '#A7F3D0' : '#10B981',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexDirection: 'row',
-            gap: 8,
-            marginTop: 16,
-          }}
+          className={`h-14 rounded-xl items-center justify-center flex-row gap-2 mt-4 ${!draft.product_name || !draft.total_amount || !draft.parcel_id || saving ? 'bg-emerald-200 dark:bg-emerald-800' : 'bg-emerald-500 dark:bg-emerald-600'}`}
         >
           {saving ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
             <Check size={20} color="#FFFFFF" />
           )}
-          <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>
+          <Text className="text-white text-base font-bold">
             {t.save} {draft.total_amount ? `· ${draft.total_amount} MAD` : ''}
           </Text>
         </TouchableOpacity>

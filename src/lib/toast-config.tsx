@@ -47,14 +47,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginHorizontal: 16,
     marginTop: 50,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    boxShadow: '0px 2px 8px rgba(0,0,0,0.25)',
   },
   containerDark: {
-    shadowOpacity: 0.4,
+    boxShadow: '0px 2px 12px rgba(0,0,0,0.4)',
   },
   text1: {
     fontSize: 15,

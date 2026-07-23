@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform
 import { useAuth } from '@/lib/auth-context'
 import { useI18n } from '@/lib/i18n-context'
 import { Wheat } from 'lucide-react-native'
+import { cn } from '@/lib/utils'
 
 type Tab = 'signin' | 'signup'
 
@@ -70,59 +71,71 @@ export default function AuthScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={{ flex: 1, backgroundColor: '#FFFFFF' }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      className="flex-1 bg-white dark:bg-gray-900"
     >
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-        <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 48 }}>
+        <View className="flex-1 justify-center px-6 py-12">
           {/* Header */}
-          <View style={{ alignItems: 'center', marginBottom: 32 }}>
-            <View style={{ width: 64, height: 64, borderRadius: 16, backgroundColor: '#16A34A', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+          <View className="items-center mb-8">
+            <View className="w-16 h-16 rounded-2xl bg-green-600 items-center justify-center mb-4">
               <Wheat size={36} color="#FFFFFF" />
             </View>
-            <Text style={{ fontSize: 28, fontWeight: '700', color: '#111827', letterSpacing: -0.5 }}>{t.appName}</Text>
-            <Text style={{ fontSize: 14, color: '#9CA3AF', marginTop: 4 }}>{t.appTagline}</Text>
+            <Text className="text-[28px] font-bold text-gray-900 dark:text-gray-100 tracking-tight">{t.appName}</Text>
+            <Text className="text-sm text-gray-400 dark:text-gray-500 mt-1">{t.appTagline}</Text>
           </View>
 
           {/* Card */}
-          <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E5E7EB', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 4 }}>
+          <View className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700" style={{ boxShadow: '0px 1px 3px rgba(0,0,0,0.06), 0px 4px 12px rgba(0,0,0,0.04)' }}>
             {/* Tabs */}
-            <View style={{ flexDirection: 'row', padding: 16, paddingBottom: 0 }}>
+            <View className="flex-row p-4 pb-0">
               <TouchableOpacity
                 onPress={() => switchTab('signin')}
-                style={{ flex: 1, paddingVertical: 10, borderRadius: 8, backgroundColor: tab === 'signin' ? '#16A34A' : '#F3F4F6' }}
+                className={cn(
+                  'flex-1 py-2.5 rounded-lg items-center',
+                  tab === 'signin' ? 'bg-green-600' : 'bg-gray-100 dark:bg-gray-700'
+                )}
               >
-                <Text style={{ textAlign: 'center', fontSize: 14, fontWeight: '600', color: tab === 'signin' ? '#FFFFFF' : '#6B7280' }}>
+                <Text className={cn(
+                  'text-sm font-semibold text-center',
+                  tab === 'signin' ? 'text-white' : 'text-gray-500 dark:text-gray-400'
+                )}>
                   {t.signIn}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => switchTab('signup')}
-                style={{ flex: 1, paddingVertical: 10, borderRadius: 8, backgroundColor: tab === 'signup' ? '#16A34A' : '#F3F4F6', marginLeft: 8 }}
+                className={cn(
+                  'flex-1 py-2.5 rounded-lg items-center ml-2',
+                  tab === 'signup' ? 'bg-green-600' : 'bg-gray-100 dark:bg-gray-700'
+                )}
               >
-                <Text style={{ textAlign: 'center', fontSize: 14, fontWeight: '600', color: tab === 'signup' ? '#FFFFFF' : '#6B7280' }}>
+                <Text className={cn(
+                  'text-sm font-semibold text-center',
+                  tab === 'signup' ? 'text-white' : 'text-gray-500 dark:text-gray-400'
+                )}>
                   {t.signUp}
                 </Text>
               </TouchableOpacity>
             </View>
 
             {/* Form */}
-            <View style={{ padding: 24 }}>
+            <View className="p-6">
               {/* Error/Success messages */}
               {error ? (
-                <View style={{ backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', borderRadius: 8, padding: 10, marginBottom: 16 }}>
-                  <Text style={{ fontSize: 13, color: '#EF4444' }}>{error}</Text>
+                <View className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-2.5 mb-4">
+                  <Text className="text-[13px] text-red-500 dark:text-red-400">{error}</Text>
                 </View>
               ) : null}
               {success ? (
-                <View style={{ backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#BBF7D0', borderRadius: 8, padding: 10, marginBottom: 16 }}>
-                  <Text style={{ fontSize: 13, color: '#16A34A' }}>{success}</Text>
+                <View className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg p-2.5 mb-4">
+                  <Text className="text-[13px] text-green-600 dark:text-green-400">{success}</Text>
                 </View>
               ) : null}
 
               {tab === 'signin' ? (
                 <>
-                  <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.email}</Text>
+                  <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t.email}</Text>
                   <TextInput
                     value={email}
                     onChangeText={setEmail}
@@ -130,36 +143,39 @@ export default function AuthScreen() {
                     placeholderTextColor="#9CA3AF"
                     keyboardType="email-address"
                     autoCapitalize="none"
-                    style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827', marginBottom: 16 }}
+                    className="h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 mb-4"
                   />
-                  <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.password}</Text>
+                  <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t.password}</Text>
                   <TextInput
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
-                    style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827', marginBottom: 20 }}
+                    className="h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 mb-5"
                   />
                   <TouchableOpacity
                     onPress={handleSignIn}
                     disabled={loading}
-                    style={{ height: 48, borderRadius: 10, backgroundColor: '#16A34A', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: loading ? 0.6 : 1 }}
+                    className={cn(
+                      'h-12 rounded-lg bg-green-600 items-center justify-center flex-row gap-2',
+                      loading && 'opacity-60'
+                    )}
                   >
                     {loading ? <ActivityIndicator color="#FFFFFF" /> : null}
-                    <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>{t.signIn}</Text>
+                    <Text className="text-white text-base font-semibold">{t.signIn}</Text>
                   </TouchableOpacity>
                 </>
               ) : (
                 <>
-                  <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.fullName}</Text>
+                  <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t.fullName}</Text>
                   <TextInput
                     value={fullName}
                     onChangeText={setFullName}
                     placeholder="Ahmed Benali"
                     placeholderTextColor="#9CA3AF"
                     autoCapitalize="words"
-                    style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827', marginBottom: 16 }}
+                    className="h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 mb-4"
                   />
-                  <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.email}</Text>
+                  <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t.email}</Text>
                   <TextInput
                     value={email}
                     onChangeText={setEmail}
@@ -167,58 +183,70 @@ export default function AuthScreen() {
                     placeholderTextColor="#9CA3AF"
                     keyboardType="email-address"
                     autoCapitalize="none"
-                    style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827', marginBottom: 16 }}
+                    className="h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 mb-4"
                   />
-                  <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.password}</Text>
+                  <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t.password}</Text>
                   <TextInput
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
-                    style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827', marginBottom: 20 }}
+                    className="h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 mb-5"
                   />
                   <TouchableOpacity
                     onPress={handleSignUp}
                     disabled={loading}
-                    style={{ height: 48, borderRadius: 10, backgroundColor: '#16A34A', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, opacity: loading ? 0.6 : 1 }}
+                    className={cn(
+                      'h-12 rounded-lg bg-green-600 items-center justify-center flex-row gap-2',
+                      loading && 'opacity-60'
+                    )}
                   >
                     {loading ? <ActivityIndicator color="#FFFFFF" /> : null}
-                    <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>{t.createAccount}</Text>
+                    <Text className="text-white text-base font-semibold">{t.createAccount}</Text>
                   </TouchableOpacity>
                 </>
               )}
 
               {/* Divider */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 20 }}>
-                <View style={{ flex: 1, height: 1, backgroundColor: '#E5E7EB' }} />
-                <Text style={{ marginHorizontal: 12, fontSize: 13, color: '#9CA3AF' }}>{t.or}</Text>
-                <View style={{ flex: 1, height: 1, backgroundColor: '#E5E7EB' }} />
+              <View className="flex-row items-center my-5">
+                <View className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+                <Text className="mx-3 text-[13px] text-gray-400 dark:text-gray-500">{t.or}</Text>
+                <View className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
               </View>
 
               {/* Google Sign-In */}
               <TouchableOpacity
                 onPress={handleGoogleSignIn}
                 disabled={googleLoading}
-                style={{ height: 48, borderRadius: 10, borderWidth: 1, borderColor: '#D1D5DB', backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 10, opacity: googleLoading ? 0.6 : 1 }}
+                className={cn(
+                  'h-12 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 items-center justify-center flex-row gap-2.5',
+                  googleLoading && 'opacity-60'
+                )}
               >
                 {googleLoading ? (
                   <ActivityIndicator color="#6B7280" />
                 ) : (
-                  <Text style={{ fontSize: 18, fontWeight: '700', color: '#4285F4' }}>G</Text>
+                  <Text className="text-lg font-bold text-[#4285F4]">G</Text>
                 )}
-                <Text style={{ color: '#374151', fontSize: 15, fontWeight: '500' }}>{t.continueWithGoogle}</Text>
+                <Text className="text-gray-700 dark:text-gray-300 text-[15px] font-medium">{t.continueWithGoogle}</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Language Switcher */}
-          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: 32 }}>
+          <View className="flex-row justify-center gap-2 mt-8">
             {(['fr', 'en', 'ar'] as const).map((lang) => (
               <TouchableOpacity
                 key={lang}
                 onPress={() => setLanguage(lang)}
-                style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: language === lang ? '#16A34A' : '#F3F4F6' }}
+                className={cn(
+                  'px-4 py-2 rounded-lg',
+                  language === lang ? 'bg-green-600' : 'bg-gray-100 dark:bg-gray-700'
+                )}
               >
-                <Text style={{ fontSize: 13, fontWeight: '600', color: language === lang ? '#FFFFFF' : '#6B7280' }}>
+                <Text className={cn(
+                  'text-[13px] font-semibold',
+                  language === lang ? 'text-white' : 'text-gray-500 dark:text-gray-400'
+                )}>
                   {lang === 'fr' ? '🇫🇷 FR' : lang === 'en' ? '🇬🇧 EN' : '🇲🇦 AR'}
                 </Text>
               </TouchableOpacity>

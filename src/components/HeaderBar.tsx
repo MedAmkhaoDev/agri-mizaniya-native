@@ -24,29 +24,29 @@ export function HeaderBar({ title, right, showFarmSwitcher = true, showBack = fa
 
   return (
     <>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
+      <View className="flex-row items-center px-4 py-3 border-b border-gray-100 dark:border-gray-700">
         {showBack && (
-          <TouchableOpacity onPress={() => router.back()} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+          <TouchableOpacity onPress={() => router.back()} className="w-9 h-9 rounded-[10px] bg-gray-100 dark:bg-gray-700 items-center justify-center mr-2.5">
             <ChevronLeft size={20} color="#374151" />
           </TouchableOpacity>
         )}
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>{title}</Text>
+        <View className="flex-1">
+          <Text className="text-lg font-bold text-gray-900 dark:text-white">{title}</Text>
           {showFarmSwitcher && currentFarm && userFarms.length > 1 && (
-            <TouchableOpacity onPress={() => setFarmSwitcherVisible(true)} style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 }}>
-              <Text style={{ fontSize: 12, color: '#16A34A', fontWeight: '500' }}>{currentFarm.name}</Text>
+            <TouchableOpacity onPress={() => setFarmSwitcherVisible(true)} className="flex-row items-center gap-0.5 mt-0.5">
+              <Text className="text-xs text-green-600 dark:text-emerald-500 font-medium">{currentFarm.name}</Text>
               <ChevronDown size={12} color="#16A34A" />
             </TouchableOpacity>
           )}
           {showFarmSwitcher && currentFarm && userFarms.length <= 1 && (
-            <Text style={{ fontSize: 12, color: '#16A34A', fontWeight: '500', marginTop: 2 }}>{currentFarm.name}</Text>
+            <Text className="text-xs text-green-600 dark:text-emerald-500 font-medium mt-0.5">{currentFarm.name}</Text>
           )}
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View className="flex-row items-center gap-2">
           {right}
           {showNotifications && <NotificationBell />}
           {showSettings && (
-            <TouchableOpacity onPress={() => router.push('/(app)/settings')} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}>
+            <TouchableOpacity onPress={() => router.push('/(app)/settings')} className="w-9 h-9 rounded-[10px] bg-gray-100 dark:bg-gray-700 items-center justify-center">
               <Settings size={18} color="#6B7280" />
             </TouchableOpacity>
           )}

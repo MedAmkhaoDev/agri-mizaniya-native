@@ -76,12 +76,11 @@ export default function FarmSettingsScreen() {
   if (!currentFarmId) return null
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F3F4F6' }} edges={['top']}>
+    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900" edges={['top']}>
       <HeaderBar title={t.farmSettings} showBack showSettings={false} />
-      <ScrollView style={{ flex: 1, padding: 16 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
-        {/* Farm Info */}
-        <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E5E7EB', padding: 20, marginBottom: 16 }}>
-          <Text style={{ fontSize: 15, fontWeight: '600', color: '#374151', marginBottom: 12 }}>{t.farmInformation}</Text>
+      <ScrollView className="flex-1 p-4" keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
+        <View className="mb-4 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
+          <Text className="mb-3 text-[15px] font-semibold text-gray-700 dark:text-gray-300">{t.farmInformation}</Text>
           <TextInput
             value={farmName}
             onChangeText={setFarmName}
@@ -89,7 +88,7 @@ export default function FarmSettingsScreen() {
             placeholderTextColor="#9CA3AF"
             autoCapitalize="words"
             returnKeyType="next"
-            style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827', marginBottom: 12 }}
+            className="mb-3 h-12 rounded-[10px] border border-gray-200 dark:border-gray-700 px-4 text-[15px] text-gray-900 dark:text-gray-100"
           />
           <TextInput
             value={farmDesc}
@@ -99,27 +98,27 @@ export default function FarmSettingsScreen() {
             returnKeyType="done"
             multiline
             numberOfLines={3}
-            style={{ height: 80, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, color: '#111827', marginBottom: 16, textAlignVertical: 'top' }}
+            className="mb-4 h-20 rounded-[10px] border border-gray-200 dark:border-gray-700 px-4 py-2.5 text-[15px] text-gray-900 dark:text-gray-100"
+            style={{ textAlignVertical: 'top' }}
           />
           <TouchableOpacity
             onPress={handleSave}
             disabled={saving || !farmName.trim() || !canManageFarmSettings}
-            style={{ backgroundColor: farmName.trim() && canManageFarmSettings ? '#16A34A' : '#D1D5DB', borderRadius: 10, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+            className={`flex-row items-center justify-center gap-2 rounded-[10px] py-3.5 ${farmName.trim() && canManageFarmSettings ? 'bg-green-600' : 'bg-gray-300 dark:bg-gray-600'}`}
           >
             {saving ? <ActivityIndicator color="#FFF" size="small" /> : <Save size={16} color="#FFFFFF" />}
-            <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFFFFF' }}>{saving ? t.saving : t.save}</Text>
+            <Text className="text-[15px] font-bold text-white">{saving ? t.saving : t.save}</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Share Codes */}
         {canManageFarmSettings && (
-          <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E5E7EB', padding: 20, marginBottom: 16 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <Text style={{ fontSize: 15, fontWeight: '600', color: '#374151' }}>{t.shareCodes}</Text>
+          <View className="mb-4 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
+            <View className="mb-3 flex-row items-center justify-between">
+              <Text className="text-[15px] font-semibold text-gray-700 dark:text-gray-300">{t.shareCodes}</Text>
               <TouchableOpacity
                 onPress={handleGenerateCode}
                 disabled={generating}
-                style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}
+                className="h-9 w-9 items-center justify-center rounded-[10px] bg-gray-100 dark:bg-gray-700"
               >
                 {generating ? <ActivityIndicator size="small" /> : <Plus size={16} color="#374151" />}
               </TouchableOpacity>
@@ -127,13 +126,13 @@ export default function FarmSettingsScreen() {
             {loading ? (
               <ActivityIndicator size="small" color="#16A34A" />
             ) : shareCodes.length === 0 ? (
-              <Text style={{ fontSize: 13, color: '#9CA3AF' }}>{t.noShareCodes}</Text>
+              <Text className="text-[13px] text-gray-400 dark:text-gray-500">{t.noShareCodes}</Text>
             ) : (
               shareCodes.map(code => (
-                <View key={code.code} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
-                  <Text style={{ flex: 1, fontSize: 14, fontFamily: 'monospace', color: '#111827' }}>{code.code}</Text>
-                  <Text style={{ fontSize: 11, color: '#9CA3AF', marginRight: 12 }}>{code.useCount}/{code.maxUses || '∞'}</Text>
-                  <TouchableOpacity onPress={() => handleCopyCode(code.code)} style={{ padding: 4 }}>
+                <View key={code.code} className="flex-row items-center border-b border-gray-100 dark:border-gray-800 py-2.5">
+                  <Text className="flex-1 text-sm font-mono text-gray-900 dark:text-gray-100">{code.code}</Text>
+                  <Text className="mr-3 text-[11px] text-gray-400 dark:text-gray-500">{code.useCount}/{code.maxUses || '∞'}</Text>
+                  <TouchableOpacity onPress={() => handleCopyCode(code.code)} className="p-1">
                     <Copy size={14} color="#6B7280" />
                   </TouchableOpacity>
                 </View>

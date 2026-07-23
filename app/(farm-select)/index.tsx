@@ -1,17 +1,21 @@
 import { useState, useEffect } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Modal, TextInput, Pressable, Alert, KeyboardAvoidingView, Platform } from 'react-native'
-import { useRouter } from 'expo-router'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useFarm } from '@/lib/farm-context'
 import { useAuth } from '@/lib/auth-context'
 import { useI18n } from '@/lib/i18n-context'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/config/firebase'
 import { joinByShareCode } from '@/lib/api'
-import { Wheat, Plus, Users, ArrowRight, X } from 'lucide-react-native'
+import { QRScanner } from '@/components/QRScanner'
+import { Wheat, Plus, Users, ArrowRight, X, ScanLine } from 'lucide-react-native'
 import type { FarmRole } from '@/lib/types'
+import { cn } from '@/lib/utils'
 
 export default function FarmSelectScreen() {
   const router = useRouter()
+  const { code: deepLinkCode } = useLocalSearchParams<{ code?: string }>()
   const { userFarms, switchFarm, loading: farmLoading } = useFarm()
   const { user } = useAuth()
   const { t } = useI18n()
@@ -21,9 +25,12 @@ export default function FarmSelectScreen() {
   const [joinModalVisible, setJoinModalVisible] = useState(false)
   const [joinCode, setJoinCode] = useState('')
   const [joining, setJoining] = useState(false)
+  const [scannerVisible, setScannerVisible] = useState(false)
 
   useEffect(() => {
-    if (farmLoading || !user) return
+    if (!user) return
+    if (farmLoading) return
+
     if (userFarms.length === 0) {
       setLoading(false)
       return
@@ -47,6 +54,14 @@ export default function FarmSelectScreen() {
 
     loadRoles()
   }, [userFarms, farmLoading, user])
+
+  // Handle deep link via expo-router search params: agri-mizaniya://join?code=XXXXXX
+  useEffect(() => {
+    if (deepLinkCode) {
+      setJoinCode(deepLinkCode.toUpperCase())
+      setJoinModalVisible(true)
+    }
+  }, [deepLinkCode])
 
   const handleSelectFarm = async (farmId: string) => {
     await switchFarm(farmId)
@@ -75,6 +90,12 @@ export default function FarmSelectScreen() {
     }
   }
 
+  const handleQRScanned = (code: string) => {
+    setScannerVisible(false)
+    const cleaned = code.replace(/[^A-Za-z0-9]/g, '').toUpperCase()
+    setJoinCode(cleaned)
+  }
+
   const roleLabel = (role: FarmRole) => {
     switch (role) {
       case 'owner': return t.roleOwner
@@ -95,31 +116,43 @@ export default function FarmSelectScreen() {
 
   if (farmLoading || loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#16A34A" />
-        <Text style={{ marginTop: 12, fontSize: 14, color: '#6B7280' }}>{t.loading}</Text>
+      <SafeAreaView className="flex-1">
+      <View className="flex-1 bg-white dark:bg-gray-900 px-6 pt-16">
+        <View className="items-center mb-10">
+          <View className="w-14 h-14 rounded-[14px] bg-green-600 items-center justify-center mb-4">
+            <Wheat size={30} color="#FFFFFF" />
+          </View>
+          <View className="w-40 h-5 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse mb-2" />
+          <View className="w-28 h-3.5 rounded-md bg-gray-100 dark:bg-gray-800 animate-pulse" />
+        </View>
+        <Text className="text-[13px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">{t.farms}</Text>
+        {[1, 2, 3].map(i => (
+          <View key={i} className="h-[72px] rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse mb-3" />
+        ))}
       </View>
+      </SafeAreaView>
     )
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#FFFFFF' }} contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-      <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 64, paddingBottom: 48 }}>
+    <SafeAreaView className="flex-1">
+    <ScrollView className="flex-1 bg-white dark:bg-gray-900" contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+      <View className="flex-1 px-6 pt-16 pb-12">
         {/* Header */}
-        <View style={{ alignItems: 'center', marginBottom: 40 }}>
-          <View style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: '#16A34A', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+        <View className="items-center mb-10">
+          <View className="w-14 h-14 rounded-[14px] bg-green-600 items-center justify-center mb-4">
             <Wheat size={30} color="#FFFFFF" />
           </View>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: '#111827', marginBottom: 4 }}>
+          <Text className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
             {t.welcome}, {user?.displayName || user?.email?.split('@')[0] || ''}
           </Text>
-          <Text style={{ fontSize: 13, color: '#9CA3AF' }}>{t.appTagline}</Text>
+          <Text className="text-[13px] text-gray-400 dark:text-gray-500">{t.appTagline}</Text>
         </View>
 
         {userFarms.length > 0 ? (
           <>
             {/* Farm list */}
-            <Text style={{ fontSize: 13, fontWeight: '600', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 }}>
+            <Text className="text-[13px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
               {t.farms}
             </Text>
             {userFarms.map((farm) => {
@@ -129,39 +162,25 @@ export default function FarmSelectScreen() {
                   key={farm.id}
                   onPress={() => handleSelectFarm(farm.id)}
                   activeOpacity={0.7}
-                  style={{
-                    backgroundColor: '#FFFFFF',
-                    borderWidth: 1,
-                    borderColor: '#E5E7EB',
-                    borderRadius: 12,
-                    padding: 16,
-                    marginBottom: 12,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 8,
-                    elevation: 3,
-                  }}
+                  className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-3 flex-row items-center justify-between"
+                  style={{ boxShadow: '0px 1px 3px rgba(0,0,0,0.06), 0px 4px 12px rgba(0,0,0,0.04)' }}
                 >
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <Text style={{ fontSize: 16, fontWeight: '600', color: '#111827' }} numberOfLines={1}>
+                  <View className="flex-1">
+                    <View className="flex-row items-center gap-2 mb-1.5">
+                      <Text className="text-base font-semibold text-gray-900 dark:text-gray-100" numberOfLines={1}>
                         {farm.name}
                       </Text>
                       {role ? (
-                        <View style={{ backgroundColor: roleBadgeColor(role) + '18', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
-                          <Text style={{ fontSize: 11, fontWeight: '600', color: roleBadgeColor(role) }}>
+                        <View style={{ backgroundColor: roleBadgeColor(role) + '18' }} className="px-2 py-0.5 rounded-md">
+                          <Text style={{ color: roleBadgeColor(role) }} className="text-[11px] font-semibold">
                             {roleLabel(role)}
                           </Text>
                         </View>
                       ) : null}
                     </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <View className="flex-row items-center gap-1">
                       <Users size={13} color="#9CA3AF" />
-                      <Text style={{ fontSize: 13, color: '#9CA3AF' }}>
+                      <Text className="text-[13px] text-gray-400 dark:text-gray-500">
                         {farm.memberCount} {t.memberCount}
                       </Text>
                     </View>
@@ -174,30 +193,20 @@ export default function FarmSelectScreen() {
             <TouchableOpacity
               onPress={() => setJoinModalVisible(true)}
               activeOpacity={0.7}
-              style={{
-                width: '100%',
-                height: 44,
-                borderRadius: 10,
-                borderWidth: 1,
-                borderColor: '#D1D5DB',
-                borderStyle: 'dashed',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginTop: 4,
-              }}
+              className="w-full h-11 rounded-[10px] border border-gray-300 dark:border-gray-600 border-dashed items-center justify-center mt-1"
             >
-              <Text style={{ color: '#6B7280', fontSize: 14, fontWeight: '500' }}>
+              <Text className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                 {t.joinExistingFarm}
               </Text>
             </TouchableOpacity>
           </>
         ) : (
           /* Empty state */
-          <View style={{ alignItems: 'center', paddingTop: 32 }}>
-            <Text style={{ fontSize: 16, fontWeight: '600', color: '#111827', marginBottom: 8, textAlign: 'center' }}>
+          <View className="items-center pt-8">
+            <Text className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2 text-center">
               {t.noFarms}
             </Text>
-            <Text style={{ fontSize: 13, color: '#9CA3AF', marginBottom: 32, textAlign: 'center', paddingHorizontal: 16 }}>
+            <Text className="text-[13px] text-gray-400 dark:text-gray-500 mb-8 text-center px-4">
               {t.createFirstFarm}
             </Text>
 
@@ -205,20 +214,10 @@ export default function FarmSelectScreen() {
             <TouchableOpacity
               onPress={() => router.push('/(farm-select)/create')}
               activeOpacity={0.7}
-              style={{
-                width: '100%',
-                height: 52,
-                borderRadius: 12,
-                backgroundColor: '#16A34A',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexDirection: 'row',
-                gap: 8,
-                marginBottom: 12,
-              }}
+              className="w-full h-[52px] rounded-xl bg-green-600 items-center justify-center flex-row gap-2 mb-3"
             >
               <Plus size={20} color="#FFFFFF" />
-              <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600' }}>
+              <Text className="text-white text-[15px] font-semibold">
                 {t.createFirstFarm}
               </Text>
             </TouchableOpacity>
@@ -227,18 +226,9 @@ export default function FarmSelectScreen() {
             <TouchableOpacity
               onPress={() => setJoinModalVisible(true)}
               activeOpacity={0.7}
-              style={{
-                width: '100%',
-                height: 52,
-                borderRadius: 12,
-                backgroundColor: '#F3F4F6',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexDirection: 'row',
-                gap: 8,
-              }}
+              className="w-full h-[52px] rounded-xl bg-gray-100 dark:bg-gray-700 items-center justify-center flex-row gap-2"
             >
-              <Text style={{ color: '#374151', fontSize: 15, fontWeight: '600' }}>
+              <Text className="text-gray-700 dark:text-gray-300 text-[15px] font-semibold">
                 {t.joinExistingFarm}
               </Text>
             </TouchableOpacity>
@@ -248,38 +238,60 @@ export default function FarmSelectScreen() {
 
       {/* Join Farm Modal */}
       <Modal visible={joinModalVisible} animationType="slide" transparent>
-        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'flex-end' }} onPress={() => setJoinModalVisible(false)}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-            <Pressable onPress={(e: any) => e.stopPropagation()} style={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>{t.joinFarm}</Text>
+        <Pressable className="flex-1 bg-black/30 justify-end" onPress={() => setJoinModalVisible(false)}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+            <Pressable onPress={(e: any) => e.stopPropagation()} className="bg-white dark:bg-gray-800 rounded-t-[20px] p-5">
+            <View className="flex-row justify-between items-center mb-5">
+              <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">{t.joinFarm}</Text>
               <TouchableOpacity onPress={() => setJoinModalVisible(false)}>
                 <X size={20} color="#6B7280" />
               </TouchableOpacity>
             </View>
-            <Text style={{ fontSize: 13, color: '#6B7280', marginBottom: 12 }}>
-              {t.enterShareCode || 'Enter a share code to join an existing farm'}
+            <Text className="text-[13px] text-gray-500 dark:text-gray-400 mb-3">
+              {t.orEnterCodeManually}
             </Text>
+
+            {/* QR scan button */}
+            <TouchableOpacity
+              onPress={() => setScannerVisible(true)}
+              className="mb-3 flex-row items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-gray-600 border-dashed py-3"
+            >
+              <ScanLine size={18} color="#16A34A" />
+              <Text className="text-[14px] font-semibold text-green-600">{t.scanQRToJoin}</Text>
+            </TouchableOpacity>
+
             <TextInput
               value={joinCode}
               onChangeText={(text) => setJoinCode(text.toUpperCase())}
-              placeholder="XXXX-XXXX"
+              placeholder="XXXXXX"
               autoCapitalize="characters"
               autoCorrect={false}
-              style={{ borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, fontFamily: 'monospace', letterSpacing: 2, marginBottom: 16 }}
+              className="border border-gray-200 dark:border-gray-600 rounded-[10px] px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 mb-4"
+              style={{ fontFamily: 'monospace', letterSpacing: 2 }}
             />
             <TouchableOpacity
               onPress={handleJoin}
               disabled={!joinCode.trim() || joining}
-              style={{ backgroundColor: joinCode.trim() && !joining ? '#16A34A' : '#D1D5DB', borderRadius: 10, paddingVertical: 14, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}
+              className={cn(
+                'rounded-[10px] py-3.5 items-center flex-row justify-center gap-2',
+                joinCode.trim() && !joining ? 'bg-green-600' : 'bg-gray-300 dark:bg-gray-600'
+              )}
             >
               {joining && <ActivityIndicator color="#FFF" size="small" />}
-              <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFFFFF' }}>{t.joinFarm}</Text>
+              <Text className="text-[15px] font-bold text-white">{t.joinFarm}</Text>
             </TouchableOpacity>
           </Pressable>
           </KeyboardAvoidingView>
         </Pressable>
       </Modal>
+
+      {/* QR Scanner */}
+      <QRScanner
+        visible={scannerVisible}
+        onClose={() => setScannerVisible(false)}
+        onScanned={handleQRScanned}
+      />
     </ScrollView>
+    </SafeAreaView>
   )
 }

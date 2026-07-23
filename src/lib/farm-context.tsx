@@ -50,7 +50,7 @@ interface FarmContextType {
 const FarmContext = createContext<FarmContextType | null>(null)
 
 export function FarmProvider({ children }: { children: React.ReactNode }) {
-  const { user, profile, loading: authLoading, migrating, refreshProfile } = useAuth()
+  const { user, loading: authLoading, migrating, refreshProfile } = useAuth()
   const store = useFarmStore()
   const [initialized, setInitialized] = useState(false)
 
@@ -71,10 +71,9 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (farmIds.length === 0) {
-      store.setUserFarms([])
+      store.setFarmsAndLoading([], false)
       store.setCurrentFarm(null)
       store.setCurrentRole(null)
-      store.setLoading(false)
       setInitialized(true)
       return
     }
@@ -106,27 +105,27 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // Update store once with all data
-      store.setUserFarms(farms)
+      // Update store once with all data — farms + loading in one Zustand set()
+      store.setFarmsAndLoading(farms, false)
       store.setCurrentFarm(targetFarm)
       store.setCurrentRole(targetRole)
     } catch (e) {
       console.error('loadUserFarms error:', e)
+      store.setFarmsAndLoading(store.userFarms, false)
     } finally {
-      store.setLoading(false)
       setInitialized(true)
     }
   }, [user])
 
   useEffect(() => {
-    if (user && profile && !authLoading && !migrating && !initialized) {
+    if (user && !authLoading && !migrating && !initialized) {
       loadUserFarms()
     }
     if (!user) {
       store.clear()
       setInitialized(false)
     }
-  }, [user, profile, authLoading, migrating, initialized, loadUserFarms])
+  }, [user, authLoading, migrating, initialized, loadUserFarms])
 
   const switchFarm = useCallback(async (farmId: string) => {
     const farm = store.userFarms.find((f) => f.id === farmId)

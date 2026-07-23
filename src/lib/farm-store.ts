@@ -12,6 +12,7 @@ interface FarmStore {
   setCurrentRole: (role: FarmRole | null) => void
   setUserFarms: (farms: Farm[]) => void
   setLoading: (loading: boolean) => void
+  setFarmsAndLoading: (farms: Farm[], loading: boolean) => void
   clear: () => void
 }
 
@@ -31,12 +32,14 @@ export const useFarmStore = create<FarmStore>((set) => ({
 
   setLoading: (loading) => set({ loading }),
 
+  setFarmsAndLoading: (farms, loading) => set({ userFarms: farms, loading }),
+
   clear: () =>
     set({
       currentFarmId: null,
       currentFarm: null,
       currentRole: null,
       userFarms: [],
-      loading: false,
+      loading: true,
     }),
 }))

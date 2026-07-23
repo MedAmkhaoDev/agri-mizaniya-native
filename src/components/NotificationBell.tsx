@@ -10,23 +10,12 @@ export function NotificationBell() {
   return (
     <TouchableOpacity
       onPress={() => router.push('/notifications')}
-      style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}
+      className="w-9 h-9 rounded-[10px] bg-gray-100 dark:bg-gray-700 items-center justify-center"
     >
       <Bell size={18} color="#6B7280" />
       {unreadCount > 0 && (
-        <View style={{
-          position: 'absolute',
-          top: 2,
-          right: 2,
-          minWidth: 16,
-          height: 16,
-          borderRadius: 8,
-          backgroundColor: '#EF4444',
-          alignItems: 'center',
-          justifyContent: 'center',
-          paddingHorizontal: 4,
-        }}>
-          <Text style={{ fontSize: 9, fontWeight: '700', color: '#FFFFFF' }}>
+        <View className="absolute top-0.5 right-0.5 min-w-4 h-4 rounded-full bg-red-500 items-center justify-center px-1">
+          <Text className="text-[9px] font-bold text-white">
             {unreadCount > 99 ? '99+' : unreadCount}
           </Text>
         </View>

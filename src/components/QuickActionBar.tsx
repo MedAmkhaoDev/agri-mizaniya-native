@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { View, Text, TouchableOpacity, Animated, StyleSheet } from 'react-native'
+import { View, Text, TouchableOpacity, Animated } from 'react-native'
 import { useI18n } from '@/lib/i18n-context'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { TrendingDown, TrendingUp, Flame, HandCoins, Plus } from 'lucide-react-native'
@@ -39,7 +39,7 @@ export function QuickActionBar({ onAddExpense, onAddIncome, onAddGas, onAddCoope
   ]
 
   return (
-    <View style={[styles.container, { bottom: 80 + bottom }]}>
+    <View pointerEvents="box-none" className="absolute bottom-20 right-5 items-end gap-3.5 z-50">
       {actions.map((action, i) => {
         const delay = (actions.length - 1 - i) * 0.04
         const opacity = anim.interpolate({
@@ -49,18 +49,18 @@ export function QuickActionBar({ onAddExpense, onAddIncome, onAddGas, onAddCoope
         const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [24, 0] })
 
         return (
-          <Animated.View key={action.key} pointerEvents={open ? 'auto' : 'none'} style={[styles.childRow, { opacity, transform: [{ translateY }] }]}>
-            <View style={styles.label}>
-              <Text style={styles.labelText}>{action.label}</Text>
+          <Animated.View key={action.key} pointerEvents={open ? 'auto' : 'none'} className="flex-row items-center gap-3" style={{ opacity, transform: [{ translateY }] }}>
+            <View className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-[20px] px-3.5 py-1.5" style={{ boxShadow: '0px 1px 3px rgba(0,0,0,0.08)' }}>
+              <Text className="text-[13px] font-semibold text-gray-900 dark:text-white">{action.label}</Text>
             </View>
-            <TouchableOpacity style={[styles.childFab, { backgroundColor: action.color }]} onPress={() => { setOpen(false); action.onPress() }} activeOpacity={0.8}>
+            <TouchableOpacity className="w-[54px] h-[54px] rounded-[27px] items-center justify-center" style={{ backgroundColor: action.color, boxShadow: '0px 2px 8px rgba(0,0,0,0.2)' }} onPress={() => { setOpen(false); action.onPress() }} activeOpacity={0.8}>
               {action.icon}
             </TouchableOpacity>
           </Animated.View>
         )
       })}
 
-      <TouchableOpacity style={styles.mainFab} onPress={() => setOpen((v) => !v)} activeOpacity={0.8}>
+      <TouchableOpacity className="w-[60px] h-[60px] rounded-full bg-green-600 dark:bg-emerald-500 items-center justify-center" style={{ boxShadow: '0px 4px 16px rgba(22,163,74,0.35)' }} onPress={() => setOpen((v) => !v)} activeOpacity={0.8}>
         <Animated.View style={{ transform: [{ rotate: plusRotation }] }}>
           <Plus size={28} color="#FFFFFF" />
         </Animated.View>
@@ -68,63 +68,3 @@ export function QuickActionBar({ onAddExpense, onAddIncome, onAddGas, onAddCoope
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    bottom: 80,
-    right: 20,
-    alignItems: 'flex-end',
-    gap: 14,
-    zIndex: 50,
-    pointerEvents: 'box-none',
-  },
-  childRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  label: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  labelText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  childFab: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 6,
-  },
-  mainFab: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#16A34A',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-})

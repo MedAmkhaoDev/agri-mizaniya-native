@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth-context'
 import { useI18n } from '@/lib/i18n-context'
 import { createFarm } from '@/lib/api'
 import { ArrowLeft } from 'lucide-react-native'
+import { cn } from '@/lib/utils'
 
 export default function CreateFarmScreen() {
   const router = useRouter()
@@ -48,34 +49,34 @@ export default function CreateFarmScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={{ flex: 1, backgroundColor: '#FFFFFF' }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      className="flex-1 bg-white dark:bg-gray-900"
     >
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-        <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 56, paddingBottom: 48 }}>
+        <View className="flex-1 px-6 pt-14 pb-12">
           {/* Back button */}
           <TouchableOpacity
             onPress={() => router.back()}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 24 }}
+            className="flex-row items-center gap-1 mb-6"
           >
             <ArrowLeft size={20} color="#374151" />
-            <Text style={{ fontSize: 14, fontWeight: '500', color: '#374151' }}>{t.back}</Text>
+            <Text className="text-sm font-medium text-gray-700 dark:text-gray-300">{t.back}</Text>
           </TouchableOpacity>
 
           {/* Title */}
-          <Text style={{ fontSize: 24, fontWeight: '700', color: '#111827', marginBottom: 24 }}>
+          <Text className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
             {t.createFarm}
           </Text>
 
           {/* Error */}
           {error ? (
-            <View style={{ backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', borderRadius: 8, padding: 12, marginBottom: 16 }}>
-              <Text style={{ fontSize: 13, color: '#EF4444' }}>{error}</Text>
+            <View className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
+              <Text className="text-[13px] text-red-500 dark:text-red-400">{error}</Text>
             </View>
           ) : null}
 
           {/* Farm name */}
-          <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>
+          <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">
             {t.farmName}
           </Text>
           <TextInput
@@ -83,24 +84,15 @@ export default function CreateFarmScreen() {
             onChangeText={setName}
             placeholder={t.farmName}
             placeholderTextColor="#9CA3AF"
-            style={{
-              height: 48,
-              borderWidth: 1,
-              borderColor: '#E5E7EB',
-              borderRadius: 10,
-              paddingHorizontal: 16,
-              fontSize: 15,
-              color: '#111827',
-              marginBottom: 16,
-            }}
+            className="h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 mb-4"
           />
 
           {/* Description */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-            <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151' }}>
+          <View className="flex-row items-center gap-1.5 mb-1.5">
+            <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300">
               {t.farmDescription}
             </Text>
-            <Text style={{ fontSize: 12, color: '#9CA3AF' }}>
+            <Text className="text-xs text-gray-400 dark:text-gray-500">
               ({t.optional})
             </Text>
           </View>
@@ -112,26 +104,16 @@ export default function CreateFarmScreen() {
             multiline
             numberOfLines={3}
             textAlignVertical="top"
-            style={{
-              borderWidth: 1,
-              borderColor: '#E5E7EB',
-              borderRadius: 10,
-              paddingHorizontal: 16,
-              paddingTop: 12,
-              paddingBottom: 12,
-              fontSize: 15,
-              color: '#111827',
-              marginBottom: 16,
-              minHeight: 80,
-            }}
+            className="border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 py-3 text-[15px] text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 mb-4"
+            style={{ minHeight: 80 }}
           />
 
           {/* Location */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-            <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151' }}>
+          <View className="flex-row items-center gap-1.5 mb-1.5">
+            <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300">
               {t.farmLocation}
             </Text>
-            <Text style={{ fontSize: 12, color: '#9CA3AF' }}>
+            <Text className="text-xs text-gray-400 dark:text-gray-500">
               ({t.optional})
             </Text>
           </View>
@@ -140,35 +122,20 @@ export default function CreateFarmScreen() {
             onChangeText={setLocation}
             placeholder={t.farmLocation}
             placeholderTextColor="#9CA3AF"
-            style={{
-              height: 48,
-              borderWidth: 1,
-              borderColor: '#E5E7EB',
-              borderRadius: 10,
-              paddingHorizontal: 16,
-              fontSize: 15,
-              color: '#111827',
-              marginBottom: 32,
-            }}
+            className="h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 mb-8"
           />
 
           {/* Create button */}
           <TouchableOpacity
             onPress={handleCreate}
             disabled={loading || !name.trim()}
-            style={{
-              height: 48,
-              borderRadius: 10,
-              backgroundColor: '#16A34A',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexDirection: 'row',
-              gap: 8,
-              opacity: loading || !name.trim() ? 0.5 : 1,
-            }}
+            className={cn(
+              'h-12 rounded-lg bg-green-600 items-center justify-center flex-row gap-2',
+              (loading || !name.trim()) && 'opacity-50'
+            )}
           >
             {loading ? <ActivityIndicator color="#FFFFFF" /> : null}
-            <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>
+            <Text className="text-white text-base font-semibold">
               {t.createFarm}
             </Text>
           </TouchableOpacity>
@@ -177,17 +144,12 @@ export default function CreateFarmScreen() {
           <TouchableOpacity
             onPress={() => router.back()}
             disabled={loading}
-            style={{
-              height: 48,
-              borderRadius: 10,
-              backgroundColor: '#F3F4F6',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginTop: 12,
-              opacity: loading ? 0.5 : 1,
-            }}
+            className={cn(
+              'h-12 rounded-lg bg-gray-100 dark:bg-gray-700 items-center justify-center mt-3',
+              loading && 'opacity-50'
+            )}
           >
-            <Text style={{ color: '#6B7280', fontSize: 16, fontWeight: '600' }}>
+            <Text className="text-gray-500 dark:text-gray-400 text-base font-semibold">
               {t.cancel}
             </Text>
           </TouchableOpacity>

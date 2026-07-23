@@ -47,40 +47,27 @@ function NotificationItem({ notification, onPress }: { notification: AppNotifica
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        padding: 14,
-        borderBottomWidth: 1,
-        borderBottomColor: '#F3F4F6',
-        backgroundColor: notification.read ? '#FFFFFF' : '#F0FDF4',
-      }}
+      className={`flex-row items-start p-3.5 border-b border-gray-100 dark:border-gray-800 ${notification.read ? 'bg-white dark:bg-gray-900' : 'bg-green-50 dark:bg-green-950'}`}
     >
-      <View style={{
-        width: 36,
-        height: 36,
-        borderRadius: 10,
-        backgroundColor: `${iconColor}15`,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 12,
-        marginTop: 2,
-      }}>
+      <View
+        className="w-9 h-9 rounded-[10px] items-center justify-center mr-3 mt-0.5"
+        style={{ backgroundColor: `${iconColor}15` }}
+      >
         <IconComponent size={18} color={iconColor} />
       </View>
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 13, fontWeight: notification.read ? '500' : '700', color: '#111827' }} numberOfLines={1}>
+      <View className="flex-1">
+        <Text className={`text-[13px] ${notification.read ? 'font-medium' : 'font-bold'} text-gray-900 dark:text-gray-100`} numberOfLines={1}>
           {notification.title}
         </Text>
-        <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }} numberOfLines={2}>
+        <Text className="text-xs text-gray-500 dark:text-gray-400 mt-0.5" numberOfLines={2}>
           {notification.body}
         </Text>
-        <Text style={{ fontSize: 10, color: '#9CA3AF', marginTop: 4 }}>
+        <Text className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
           {notification.farmName} · {getRelativeTime(notification.createdAt, { justNow: 'à l\'instant' })}
         </Text>
       </View>
       {!notification.read && (
-        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#16A34A', marginTop: 6, marginLeft: 8 }} />
+        <View className="w-2 h-2 rounded-full bg-green-600 mt-1.5 ml-2" />
       )}
     </TouchableOpacity>
   )
@@ -100,7 +87,7 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900" edges={['top', 'bottom']}>
       <HeaderBar
         title={t.notifications}
         showBack
@@ -110,25 +97,25 @@ export default function NotificationsScreen() {
           notifications.some((n) => !n.read) ? (
             <TouchableOpacity
               onPress={markAllAsRead}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: '#F3F4F6' }}
+              className="flex-row items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800"
             >
               <CheckCheck size={14} color="#6B7280" />
-              <Text style={{ fontSize: 11, fontWeight: '500', color: '#6B7280' }}>{t.markAllRead}</Text>
+              <Text className="text-[11px] font-medium text-gray-500 dark:text-gray-400">{t.markAllRead}</Text>
             </TouchableOpacity>
           ) : undefined
         }
       />
 
       {loading ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#16A34A" />
         </View>
       ) : notifications.length === 0 ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40 }}>
-          <View style={{ width: 64, height: 64, borderRadius: 16, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+        <View className="flex-1 items-center justify-center px-10">
+          <View className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 items-center justify-center mb-4">
             <Inbox size={28} color="#D1D5DB" />
           </View>
-          <Text style={{ fontSize: 15, fontWeight: '600', color: '#374151', textAlign: 'center' }}>{t.noNotifications}</Text>
+          <Text className="text-[15px] font-semibold text-gray-700 dark:text-gray-300 text-center">{t.noNotifications}</Text>
         </View>
       ) : (
         <FlatList

@@ -1,20 +1,22 @@
 import { Stack, useNavigation } from 'expo-router'
 import { useI18n } from '@/lib/i18n-context'
-import { useLayoutEffect } from 'react'
+import { useEffect } from 'react'
 
 export default function MoreLayout() {
   const { t } = useI18n()
   const navigation = useNavigation()
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const parent = navigation.getParent()
     if (!parent) return
 
     const unsubscribe = parent.addListener('focus', () => {
-      const state = navigation.getState()
-      if (state && state.index > 0) {
-        navigation.navigate('index')
-      }
+      try {
+        const state = navigation.getState()
+        if (state && state.index > 0) {
+          navigation.navigate('index')
+        }
+      } catch {}
     })
 
     return unsubscribe
@@ -29,8 +31,8 @@ export default function MoreLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="gas" options={{ title: t.gasUsage }} />
-      <Stack.Screen name="cooperative" options={{ title: t.cooperative }} />
+      <Stack.Screen name="gas" options={{ headerShown: false }} />
+      <Stack.Screen name="cooperative" options={{ headerShown: false }} />
       <Stack.Screen name="reports" options={{ title: t.reports }} />
       <Stack.Screen name="members" options={{ headerShown: false }} />
       <Stack.Screen name="farm-settings" options={{ headerShown: false }} />

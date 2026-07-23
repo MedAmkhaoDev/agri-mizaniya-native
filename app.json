@@ -27,7 +27,20 @@
         "backgroundColor": "#16A34A",
         "foregroundImage": "./assets/icon.png"
       },
-      "package": "com.agrimizane.mobile"
+      "package": "com.agrimizane.mobile",
+      "softwareKeyboardSoftMode": "adjustResize",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "agri-mizaniya",
+              "pathPrefix": "/join"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",

@@ -81,47 +81,46 @@ export default function AddGasSheet({ visible, onClose, defaultParcelId }: AddGa
 
   return (
     <BottomSheet visible={visible} onClose={onClose}>
-      <View style={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 10 }}>
-        <Text style={{ fontSize: 17, fontWeight: '700', color: '#F97316', marginBottom: 16 }}>{t.addGas}</Text>
+      <View className="px-5 pt-1 pb-2.5">
+        <Text className="text-[17px] font-bold text-orange-500 dark:text-orange-500 mb-4">{t.addGas}</Text>
 
-        {/* Parcel list */}
-        <Text style={{ fontSize: 11, fontWeight: '600', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>{t.parcel}</Text>
+        <Text className="text-[11px] font-semibold text-gray-400 dark:text-gray-400 uppercase tracking-[1px] mb-2">{t.parcel}</Text>
         <FlatList
           horizontal
           data={parcels}
           keyExtractor={(i) => i.id}
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 6, marginBottom: 16 }}
+          contentContainerClassName="gap-1.5 mb-4"
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => setParcelId(item.id)} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: parcelId === item.id ? '#F97316' : '#E5E7EB', backgroundColor: parcelId === item.id ? '#FFF7ED' : '#FFFFFF' }}>
-              <Text style={{ fontSize: 13, fontWeight: '500', color: parcelId === item.id ? '#F97316' : '#6B7280' }}>{item.name}</Text>
+            <TouchableOpacity onPress={() => setParcelId(item.id)} className={`px-3.5 py-2 rounded-[10px] border ${parcelId === item.id ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/30' : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800'}`}>
+              <Text className={`text-[13px] font-medium ${parcelId === item.id ? 'text-orange-500' : 'text-gray-500 dark:text-gray-400'}`}>{item.name}</Text>
             </TouchableOpacity>
           )}
         />
 
-        <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.quantityBottles}</Text>
-            <TextInput value={quantityBottles} onChangeText={v => setQuantityBottles(filterNumeric(v))} keyboardType="decimal-pad" placeholder="5" placeholderTextColor="#9CA3AF" style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }} />
+        <View className="flex-row gap-3 mb-3">
+          <View className="flex-1">
+            <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t.quantityBottles}</Text>
+            <TextInput value={quantityBottles} onChangeText={v => setQuantityBottles(filterNumeric(v))} keyboardType="decimal-pad" placeholder="5" placeholderTextColor="#9CA3AF" className="h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-white" />
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.amount} (MAD)</Text>
-            <TextInput value={totalAmount} onChangeText={v => setTotalAmount(filterNumeric(v))} keyboardType="decimal-pad" placeholder="0" placeholderTextColor="#9CA3AF" style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }} />
+          <View className="flex-1">
+            <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t.amount} (MAD)</Text>
+            <TextInput value={totalAmount} onChangeText={v => setTotalAmount(filterNumeric(v))} keyboardType="decimal-pad" placeholder="0" placeholderTextColor="#9CA3AF" className="h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-white" />
           </View>
         </View>
 
         {pricePerBottle ? (
-          <View style={{ padding: 12, borderRadius: 10, backgroundColor: '#FFF7ED', borderWidth: 1, borderColor: '#FED7AA', marginBottom: 12 }}>
-            <Text style={{ fontSize: 13, color: '#92400E' }}>{t.pricePerBottle}: <Text style={{ fontWeight: '700' }}>{Math.round(pricePerBottle)} MAD</Text></Text>
+          <View className="p-3 rounded-[10px] bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 mb-3">
+            <Text className="text-[13px] text-orange-900 dark:text-orange-200">{t.pricePerBottle}: <Text className="font-bold">{Math.round(pricePerBottle)} MAD</Text></Text>
           </View>
         ) : null}
 
-        <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.notes} ({t.optional})</Text>
-        <TextInput value={notes} onChangeText={setNotes} placeholderTextColor="#9CA3AF" style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827', marginBottom: 16 }} />
+        <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t.notes} ({t.optional})</Text>
+        <TextInput value={notes} onChangeText={setNotes} placeholderTextColor="#9CA3AF" className="h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-white mb-4" />
 
-        <TouchableOpacity onPress={handleSave} disabled={!parcelId || !quantityBottles || !totalAmount || saving} style={{ height: 56, borderRadius: 12, backgroundColor: !parcelId || !quantityBottles || !totalAmount || saving ? '#FED7AA' : '#F97316', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}>
+        <TouchableOpacity onPress={handleSave} disabled={!parcelId || !quantityBottles || !totalAmount || saving} className={`h-14 rounded-xl items-center justify-center flex-row gap-2 ${!parcelId || !quantityBottles || !totalAmount || saving ? 'bg-orange-200 dark:bg-orange-800' : 'bg-orange-500 dark:bg-orange-600'}`}>
           {saving ? <ActivityIndicator color="#FFFFFF" /> : <Check size={20} color="#FFFFFF" />}
-          <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>{t.save}</Text>
+          <Text className="text-white text-base font-bold">{t.save}</Text>
         </TouchableOpacity>
       </View>
     </BottomSheet>

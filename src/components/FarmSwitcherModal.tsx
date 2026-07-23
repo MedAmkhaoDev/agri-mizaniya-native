@@ -26,11 +26,11 @@ export default function FarmSwitcherModal({ visible, onClose, onCreateNew }: Far
 
   return (
     <Modal visible={visible} transparent animationType="fade">
-      <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center', padding: 24 }} onPress={onClose}>
-        <Pressable onPress={(e) => e.stopPropagation()} style={{ backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, width: '100%', maxWidth: 400, maxHeight: '70%', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 8 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>{t.myFarms}</Text>
-            <TouchableOpacity onPress={onClose} style={{ padding: 4 }}>
+      <Pressable className="flex-1 bg-black/30 justify-center items-center p-6" onPress={onClose}>
+        <Pressable onPress={(e) => e.stopPropagation()} className="bg-white dark:bg-gray-800 rounded-[20px] p-5 w-full max-w-[400px] max-h-[70%]" style={{ boxShadow: '0px 8px 32px rgba(0,0,0,0.15)' }}>
+          <View className="flex-row justify-between items-center mb-4">
+            <Text className="text-lg font-bold text-gray-900 dark:text-white">{t.myFarms}</Text>
+            <TouchableOpacity onPress={onClose} className="p-1">
               <X size={20} color="#6B7280" />
             </TouchableOpacity>
           </View>
@@ -41,26 +41,17 @@ export default function FarmSwitcherModal({ visible, onClose, onCreateNew }: Far
               <TouchableOpacity
                 key={farm.id}
                 onPress={() => handleSelectFarm(farm)}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 14,
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: isActive ? '#16A34A' : '#E5E7EB',
-                  backgroundColor: isActive ? '#F0FDF4' : '#FFFFFF',
-                  marginBottom: 8,
-                }}
+                className={`flex-row items-center p-3.5 rounded-xl border mb-2 ${isActive ? 'border-green-600 dark:border-emerald-500 bg-green-50 dark:bg-emerald-900/30' : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700'}`}
               >
-                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: isActive ? '#DCFCE7' : '#F3F4F6', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                  <Text style={{ fontSize: 18, fontWeight: '700', color: isActive ? '#16A34A' : '#6B7280' }}>
+                <View className={`w-10 h-10 rounded-xl items-center justify-center mr-3 ${isActive ? 'bg-green-100 dark:bg-emerald-900/50' : 'bg-gray-100 dark:bg-gray-600'}`}>
+                  <Text className={`text-lg font-bold ${isActive ? 'text-green-600 dark:text-emerald-500' : 'text-gray-500 dark:text-gray-400'}`}>
                     {farm.name[0].toUpperCase()}
                   </Text>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 15, fontWeight: '600', color: '#111827' }}>{farm.name}</Text>
+                <View className="flex-1">
+                  <Text className="text-[15px] font-semibold text-gray-900 dark:text-white">{farm.name}</Text>
                   {farm.description ? (
-                    <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }} numberOfLines={1}>{farm.description}</Text>
+                    <Text className="text-xs text-gray-400 dark:text-gray-400 mt-0.5" numberOfLines={1}>{farm.description}</Text>
                   ) : null}
                 </View>
                 {isActive && <Check size={18} color="#16A34A" />}
@@ -70,10 +61,10 @@ export default function FarmSwitcherModal({ visible, onClose, onCreateNew }: Far
 
           <TouchableOpacity
             onPress={() => { onClose(); onCreateNew() }}
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 14, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', borderColor: '#D1D5DB', marginTop: 4 }}
+            className="flex-row items-center justify-center p-3.5 rounded-xl border border-gray-300 dark:border-gray-500 border-dashed mt-1"
           >
             <Plus size={16} color="#6B7280" />
-            <Text style={{ fontSize: 14, fontWeight: '500', color: '#6B7280', marginLeft: 6 }}>{t.addFarm}</Text>
+            <Text className="text-sm font-medium text-gray-500 dark:text-gray-400 ml-1.5">{t.addFarm}</Text>
           </TouchableOpacity>
         </Pressable>
       </Pressable>

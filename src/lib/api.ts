@@ -117,6 +117,20 @@ async function getUserName(userId: string): Promise<string> {
   }
 }
 
+async function resolveCreatorNames<T extends { createdBy: string; createdByName?: string | null }>(
+  items: T[]
+): Promise<T[]> {
+  const missing = items.filter((i) => !i.createdByName && i.createdBy)
+  if (missing.length === 0) return items
+  const uniqueUids = [...new Set(missing.map((i) => i.createdBy))]
+  const names = await Promise.all(uniqueUids.map((uid) => getUserName(uid)))
+  const nameMap = new Map(uniqueUids.map((uid, idx) => [uid, names[idx]]))
+  return items.map((i) => ({
+    ...i,
+    createdByName: i.createdByName || nameMap.get(i.createdBy) || null,
+  }))
+}
+
 async function notifyFarm(
   farmId: string,
   excludeUserId: string,
@@ -728,6 +742,93 @@ export async function deactivateShareCode(
   }
 }
 
+// ─── Create Member Account ──────────────────────────────────────────────────
+
+function generatePassword(): string {
+  const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  const lower = 'abcdefghijklmnopqrstuvwxyz'
+  const digits = '0123456789'
+  const chars = upper + lower + digits
+  let pw = upper[Math.floor(Math.random() * upper.length)]
+  pw += lower[Math.floor(Math.random() * lower.length)]
+  pw += digits[Math.floor(Math.random() * digits.length)]
+  for (let i = 0; i < 9; i++) {
+    pw += chars[Math.floor(Math.random() * chars.length)]
+  }
+  return pw.split('').sort(() => Math.random() - 0.5).join('')
+}
+
+export async function createMemberAccount(
+  farmId: string,
+  farmName: string,
+  email: string,
+  name: string,
+  role: FarmRole,
+  createdBy: string,
+  createdByName: string,
+  password?: string
+): Promise<{ data: { email: string; password: string } | null; error: Error | null }> {
+  try {
+    const finalPassword = password || generatePassword()
+
+    const response = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${process.env.EXPO_PUBLIC_FIREBASE_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          password: finalPassword,
+          returnSecureToken: true,
+        }),
+      }
+    )
+
+    const result = await response.json()
+    if (!response.ok) {
+      const msg = result?.error?.message || 'Failed to create account'
+      return { data: null, error: new Error(msg) }
+    }
+
+    const newUserId = result.localId
+
+    await setDoc(doc(db, 'users', newUserId), {
+      email,
+      fullName: name,
+      farmIds: [farmId],
+      currentFarmId: farmId,
+      createdAt: new Date().toISOString(),
+    })
+
+    const now = new Date().toISOString()
+    const batch = writeBatch(db)
+
+    batch.set(doc(db, 'farms', farmId, 'members', newUserId), {
+      userId: newUserId,
+      email,
+      fullName: name,
+      avatarUrl: null,
+      role,
+      joinedAt: now,
+      invitedBy: createdBy,
+    })
+
+    batch.update(doc(db, 'farms', farmId), {
+      memberCount: increment(1),
+      updatedAt: now,
+    })
+
+    await batch.commit()
+
+    return {
+      data: { email, password: finalPassword },
+      error: null,
+    }
+  } catch (error) {
+    return { data: null, error: error as Error }
+  }
+}
+
 // ─── Expense Types ──────────────────────────────────────────────────────────
 
 const DEFAULT_EXPENSE_TYPES = [
@@ -855,19 +956,34 @@ export async function deleteParcel(
 
 // ─── Expenses ───────────────────────────────────────────────────────────────
 
+export type ExpenseFilters = {
+  parcelId?: string
+  createdBy?: string
+  dateFrom?: string
+  dateTo?: string
+  amountMin?: number
+  amountMax?: number
+  typeId?: string
+}
+
 export async function getExpenses(
   farmId: string,
-  filters?: { parcelId?: string; createdBy?: string; from?: string; to?: string }
+  filters?: ExpenseFilters
 ): Promise<{ data: Expense[]; error: Error | null }> {
   try {
     let q = query(farmCollection(farmId, 'expenses'), orderBy('date', 'desc'))
-    if (filters?.parcelId) q = query(q, where('parcelId', '==', filters.parcelId))
+    if (filters?.parcelId && filters.parcelId !== 'all') q = query(q, where('parcelId', '==', filters.parcelId))
     if (filters?.createdBy) q = query(q, where('createdBy', '==', filters.createdBy))
+    if (filters?.typeId) q = query(q, where('typeId', '==', filters.typeId))
     const snapshot = await getDocs(q)
     let data = snapshot.docs.map((d) => ({ id: d.id, farmId, ...d.data() } as Expense))
 
-    if (filters?.from) data = data.filter((e) => e.date >= filters.from!)
-    if (filters?.to) data = data.filter((e) => e.date <= filters.to!)
+    if (filters?.dateFrom) data = data.filter((e) => e.date >= filters.dateFrom!)
+    if (filters?.dateTo) data = data.filter((e) => e.date <= filters.dateTo!)
+    if (filters?.amountMin != null) data = data.filter((e) => e.amount >= filters.amountMin!)
+    if (filters?.amountMax != null) data = data.filter((e) => e.amount <= filters.amountMax!)
+
+    data = await resolveCreatorNames(data)
 
     return { data, error: null }
   } catch (error) {
@@ -878,21 +994,22 @@ export async function getExpenses(
 export async function createExpense(
   farmId: string,
   userId: string,
-  expense: Omit<Expense, 'id' | 'farmId' | 'createdBy' | 'createdAt' | 'updatedAt'>
+  expense: Omit<Expense, 'id' | 'farmId' | 'createdBy' | 'createdAt' | 'updatedAt' | 'createdByName'>
 ): Promise<{ data: Expense | null; error: Error | null }> {
   try {
     const now = new Date().toISOString()
+    const userName = await getUserName(userId)
     const docRef = await addDoc(farmCollection(farmId, 'expenses'), {
       ...expense,
       farmId,
       createdBy: userId,
+      createdByName: userName,
       createdAt: now,
       updatedAt: now,
     })
-    const userName = await getUserName(userId)
     const amount = expense.amount.toLocaleString('fr-FR')
     notifyFarm(farmId, userId, 'EXPENSE_CREATED', 'Dépense enregistrée', `${userName} a enregistré une dépense de ${amount} MAD`, { entityId: docRef.id, entityType: 'expense', actionBy: userId, actionByName: userName })
-    return { data: { id: docRef.id, farmId, createdBy: userId, ...expense, createdAt: now, updatedAt: now } as Expense, error: null }
+    return { data: { id: docRef.id, farmId, createdBy: userId, createdByName: userName, ...expense, createdAt: now, updatedAt: now } as Expense, error: null }
   } catch (error) {
     return { data: null, error: error as Error }
   }
@@ -930,17 +1047,19 @@ export async function deleteExpense(
 
 export async function getIncomes(
   farmId: string,
-  filters?: { parcelId?: string; createdBy?: string; from?: string; to?: string }
+  filters?: ExpenseFilters
 ): Promise<{ data: Income[]; error: Error | null }> {
   try {
     let q = query(farmCollection(farmId, 'incomes'), orderBy('date', 'desc'))
-    if (filters?.parcelId) q = query(q, where('parcelId', '==', filters.parcelId))
+    if (filters?.parcelId && filters.parcelId !== 'all') q = query(q, where('parcelId', '==', filters.parcelId))
     if (filters?.createdBy) q = query(q, where('createdBy', '==', filters.createdBy))
     const snapshot = await getDocs(q)
     let data = snapshot.docs.map((d) => ({ id: d.id, farmId, ...d.data() } as Income))
 
-    if (filters?.from) data = data.filter((i) => i.date >= filters.from!)
-    if (filters?.to) data = data.filter((i) => i.date <= filters.to!)
+    if (filters?.dateFrom) data = data.filter((i) => i.date >= filters.dateFrom!)
+    if (filters?.dateTo) data = data.filter((i) => i.date <= filters.dateTo!)
+
+    data = await resolveCreatorNames(data)
 
     return { data, error: null }
   } catch (error) {
@@ -1003,17 +1122,19 @@ export async function deleteIncome(
 
 export async function getGasUsages(
   farmId: string,
-  filters?: { parcelId?: string; createdBy?: string; from?: string; to?: string }
+  filters?: ExpenseFilters
 ): Promise<{ data: GasUsage[]; error: Error | null }> {
   try {
     let q = query(farmCollection(farmId, 'gasUsages'), orderBy('date', 'desc'))
-    if (filters?.parcelId) q = query(q, where('parcelId', '==', filters.parcelId))
+    if (filters?.parcelId && filters.parcelId !== 'all') q = query(q, where('parcelId', '==', filters.parcelId))
     if (filters?.createdBy) q = query(q, where('createdBy', '==', filters.createdBy))
     const snapshot = await getDocs(q)
     let data = snapshot.docs.map((d) => ({ id: d.id, farmId, ...d.data() } as GasUsage))
 
-    if (filters?.from) data = data.filter((g) => g.date >= filters.from!)
-    if (filters?.to) data = data.filter((g) => g.date <= filters.to!)
+    if (filters?.dateFrom) data = data.filter((g) => g.date >= filters.dateFrom!)
+    if (filters?.dateTo) data = data.filter((g) => g.date <= filters.dateTo!)
+
+    data = await resolveCreatorNames(data)
 
     return { data, error: null }
   } catch (error) {
@@ -1076,17 +1197,19 @@ export async function deleteGasUsage(
 
 export async function getCooperativeSupports(
   farmId: string,
-  filters?: { parcelId?: string; createdBy?: string; from?: string; to?: string }
+  filters?: ExpenseFilters
 ): Promise<{ data: CooperativeSupport[]; error: Error | null }> {
   try {
     let q = query(farmCollection(farmId, 'cooperativeSupports'), orderBy('date', 'desc'))
-    if (filters?.parcelId) q = query(q, where('parcelId', '==', filters.parcelId))
+    if (filters?.parcelId && filters.parcelId !== 'all') q = query(q, where('parcelId', '==', filters.parcelId))
     if (filters?.createdBy) q = query(q, where('createdBy', '==', filters.createdBy))
     const snapshot = await getDocs(q)
     let data = snapshot.docs.map((d) => ({ id: d.id, farmId, ...d.data() } as CooperativeSupport))
 
-    if (filters?.from) data = data.filter((c) => c.date >= filters.from!)
-    if (filters?.to) data = data.filter((c) => c.date <= filters.to!)
+    if (filters?.dateFrom) data = data.filter((c) => c.date >= filters.dateFrom!)
+    if (filters?.dateTo) data = data.filter((c) => c.date <= filters.dateTo!)
+
+    data = await resolveCreatorNames(data)
 
     return { data, error: null }
   } catch (error) {

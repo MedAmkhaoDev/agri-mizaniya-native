@@ -6,6 +6,7 @@ import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
 import { getFinancialSummary, getRecentActivity, getParcels } from '@/lib/api'
 import { formatMAD } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import { QuickActionBar } from '@/components/QuickActionBar'
 import FarmSwitcherModal from '@/components/FarmSwitcherModal'
 import AddExpenseSheet from '@/components/AddExpenseSheet'
@@ -92,125 +93,115 @@ export default function DashboardScreen() {
 
   const activityBg = (type: ActivityItem['type']) => {
     switch (type) {
-      case 'income': return '#ECFDF5'
-      case 'expense': return '#FEF2F2'
-      case 'gas': return '#FFF7ED'
-      case 'cooperative': return '#F5F3FF'
-      default: return '#EFF6FF'
+      case 'income': return 'bg-emerald-50 dark:bg-emerald-950'
+      case 'expense': return 'bg-red-50 dark:bg-red-950'
+      case 'gas': return 'bg-orange-50 dark:bg-orange-950'
+      case 'cooperative': return 'bg-violet-50 dark:bg-violet-950'
+      default: return 'bg-blue-50 dark:bg-blue-950'
     }
   }
 
   const stats = [
-    { label: t.totalIncome, value: summary.totalIncome, icon: <TrendingUp size={20} color="#10B981" />, bg: '#ECFDF5', page: 'incomes' },
-    { label: t.totalExpenses, value: summary.totalExpenses, icon: <TrendingDown size={20} color="#EF4444" />, bg: '#FEF2F2', page: 'expenses' },
-    { label: t.totalGas, value: summary.totalGas, icon: <Flame size={20} color="#F97316" />, bg: '#FFF7ED', page: 'gas' },
-    { label: t.totalCooperative, value: summary.totalCooperative, icon: <HandCoins size={20} color="#8B5CF6" />, bg: '#F5F3FF', page: 'cooperative' },
+    { label: t.totalIncome, value: summary.totalIncome, icon: <TrendingUp size={20} color="#10B981" />, bgClass: 'bg-emerald-50 dark:bg-emerald-950', page: 'incomes' },
+    { label: t.totalExpenses, value: summary.totalExpenses, icon: <TrendingDown size={20} color="#EF4444" />, bgClass: 'bg-red-50 dark:bg-red-950', page: 'expenses' },
+    { label: t.totalGas, value: summary.totalGas, icon: <Flame size={20} color="#F97316" />, bgClass: 'bg-orange-50 dark:bg-orange-950', page: 'gas' },
+    { label: t.totalCooperative, value: summary.totalCooperative, icon: <HandCoins size={20} color="#8B5CF6" />, bgClass: 'bg-violet-50 dark:bg-violet-950', page: 'cooperative' },
   ]
 
   if (!currentFarmId) return null
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+    <SafeAreaView className="flex-1" edges={['top']}>
       <ScrollView
-        style={{ flex: 1, backgroundColor: '#FFFFFF' }}
-        contentContainerStyle={{ paddingBottom: 120 }}
+        className="flex-1 bg-white dark:bg-gray-900"
+        contentContainerClassName="pb-[120px]"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        {/* Header */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#16A34A', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFFFFF' }}>🌾</Text>
+        <View className="px-4 pt-4 pb-2">
+          <View className="flex-row items-center gap-2.5">
+            <View className="w-9 h-9 rounded-[10px] bg-green-600 dark:bg-green-500 items-center justify-center">
+              <Text className="text-base font-bold text-white">🌾</Text>
             </View>
-            <TouchableOpacity onPress={() => setFarmSwitcherVisible(true)} style={{ flex: 1 }} activeOpacity={0.7}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>{currentFarm?.name || t.appName}</Text>
+            <TouchableOpacity onPress={() => setFarmSwitcherVisible(true)} className="flex-1" activeOpacity={0.7}>
+              <View className="flex-row items-center gap-1">
+                <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">{currentFarm?.name || t.appName}</Text>
                 <ChevronDown size={16} color="#9CA3AF" />
               </View>
-              <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t.appTagline}</Text>
+              <Text className="text-xs text-gray-400 dark:text-gray-500">{t.appTagline}</Text>
             </TouchableOpacity>
             <NotificationBell />
-            <TouchableOpacity onPress={() => router.push('/(app)/settings')} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}>
+            <TouchableOpacity onPress={() => router.push('/(app)/settings')} className="w-9 h-9 rounded-[10px] bg-gray-100 dark:bg-gray-800 items-center justify-center">
               <Settings size={18} color="#6B7280" />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Net P&L Hero Card */}
-        <View pointerEvents="box-none" style={{
-          marginHorizontal: 16, marginTop: 16, padding: 20, borderRadius: 16, backgroundColor: '#FFFFFF',
-          borderWidth: 2, borderColor: isProfit ? '#A7F3D0' : '#FECACA',
-          shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3,
-        }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View pointerEvents="box-none" className={cn("mx-4 mt-4 p-5 rounded-2xl bg-white dark:bg-gray-900 border-2",
+          isProfit ? "border-emerald-200 dark:border-emerald-800" : "border-red-200 dark:border-red-800"
+        )} style={{ boxShadow: '0px 2px 8px rgba(0,0,0,0.08)' }}>
+          <View className="flex-row justify-between items-center">
             <View>
-              <Text style={{ fontSize: 13, fontWeight: '500', color: '#9CA3AF', marginBottom: 4 }}>{t.netProfitLoss}</Text>
+              <Text className="text-[13px] font-medium text-gray-400 dark:text-gray-500 mb-1">{t.netProfitLoss}</Text>
               {loading ? (
-                <View style={{ width: 160, height: 40, borderRadius: 8, backgroundColor: '#F3F4F6' }} />
+                <View className="w-40 h-10 rounded-lg bg-gray-100 dark:bg-gray-800" />
               ) : (
                 <>
-                  <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-                    <Text style={{ fontSize: 36, fontWeight: '700', color: isProfit ? '#10B981' : '#EF4444', fontVariant: ['tabular-nums'] }}>
+                  <View className="flex-row items-baseline gap-1.5">
+                    <Text className={cn("text-4xl font-bold tabular-nums", isProfit ? "text-emerald-500 dark:text-emerald-400" : "text-red-500 dark:text-red-400")}>
                       {isProfit ? '+' : '-'}{formatMAD(summary.netProfit)}
                     </Text>
-                    <Text style={{ fontSize: 16, fontWeight: '600', color: '#9CA3AF' }}>MAD</Text>
+                    <Text className="text-base font-semibold text-gray-400 dark:text-gray-500">MAD</Text>
                   </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-                    <View style={{
-                      flexDirection: 'row', alignItems: 'center', gap: 2,
-                      paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12,
-                      backgroundColor: isProfit ? '#ECFDF5' : '#FEF2F2',
-                      borderWidth: 1, borderColor: isProfit ? '#A7F3D0' : '#FECACA',
-                    }}>
+                  <View className="flex-row items-center gap-2 mt-2 flex-wrap">
+                    <View className={cn("flex-row items-center gap-0.5 px-2 py-[3px] rounded-xl border",
+                      isProfit ? "bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800" : "bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800"
+                    )}>
                       {isProfit ? <ArrowUpRight size={12} color="#10B981" /> : <ArrowDownRight size={12} color="#EF4444" />}
-                      <Text style={{ fontSize: 11, fontWeight: '600', color: isProfit ? '#10B981' : '#EF4444' }}>
+                      <Text className={cn("text-[11px] font-semibold", isProfit ? "text-emerald-500 dark:text-emerald-400" : "text-red-500 dark:text-red-400")}>
                         {isProfit ? t.profit : t.loss}
                       </Text>
                     </View>
-                    <Text style={{ fontSize: 11, color: '#9CA3AF' }}>
+                    <Text className="text-[11px] text-gray-400 dark:text-gray-500">
                       +{formatMAD(summary.totalIncome)} / -{formatMAD(totalCosts)} MAD
                     </Text>
                   </View>
                 </>
               )}
             </View>
-            <View style={{
-              width: 64, height: 64, borderRadius: 16,
-              backgroundColor: isProfit ? '#ECFDF5' : '#FEF2F2',
-              alignItems: 'center', justifyContent: 'center',
-            }}>
+            <View className={cn("w-16 h-16 rounded-2xl items-center justify-center",
+              isProfit ? "bg-emerald-50 dark:bg-emerald-950" : "bg-red-50 dark:bg-red-950"
+            )}>
               {isProfit ? <ArrowUpRight size={32} color="#10B981" /> : <ArrowDownRight size={32} color="#EF4444" />}
             </View>
           </View>
         </View>
 
-        {/* Per-parcel P&L strip */}
         {!loading && parcels.length > 0 && (
-          <View style={{ marginTop: 20 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 8 }}>
-              <Text style={{ fontSize: 11, fontWeight: '600', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 1 }}>{t.parcels}</Text>
+          <View className="mt-5">
+            <View className="flex-row justify-between items-center px-4 mb-2">
+              <Text className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{t.parcels}</Text>
             </View>
             <ScrollView
               horizontal
               directionalLockEnabled={true}
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+              contentContainerClassName="px-4 gap-2"
             >
               {parcels.slice(0, 6).map((p) => {
                 const profit = p.fin?.netProfit ?? 0
                 const isP = profit >= 0
                 return (
-                  <View key={p.id} style={{ width: 128, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#FFFFFF' }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                      <View style={{ width: 24, height: 24, borderRadius: 6, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}>
+                  <View key={p.id} className="w-32 p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+                    <View className="flex-row items-center gap-1.5 mb-1">
+                      <View className="w-6 h-6 rounded-md bg-blue-50 dark:bg-blue-950 items-center justify-center">
                         <MapPin size={14} color="#3B82F6" />
                       </View>
-                      <Text style={{ fontSize: 12, fontWeight: '500', color: '#374151', flex: 1 }} numberOfLines={1}>{p.name}</Text>
+                      <Text className="text-xs font-medium text-gray-700 dark:text-gray-300 flex-1" numberOfLines={1}>{p.name}</Text>
                     </View>
-                    <Text style={{ fontSize: 14, fontWeight: '700', color: isP ? '#10B981' : '#EF4444', fontVariant: ['tabular-nums'] }}>
+                    <Text className={cn("text-sm font-bold tabular-nums", isP ? "text-emerald-500 dark:text-emerald-400" : "text-red-500 dark:text-red-400")}>
                       {isP ? '+' : '-'}{formatMAD(profit)}
                     </Text>
-                    <Text style={{ fontSize: 10, color: '#9CA3AF' }}>
+                    <Text className="text-[10px] text-gray-400 dark:text-gray-500">
                       +{formatMAD(p.fin?.totalIncome ?? 0)} / -{formatMAD((p.fin?.totalExpenses ?? 0) + (p.fin?.totalGas ?? 0) + (p.fin?.totalCooperative ?? 0))}
                     </Text>
                   </View>
@@ -220,78 +211,72 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        {/* Stats Grid */}
-        <View pointerEvents="box-none" style={{ flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, marginTop: 20, gap: 10 }}>
+        <View pointerEvents="box-none" className="flex-row flex-wrap px-4 mt-5 gap-2.5">
           {stats.map((card) => (
-            <TouchableOpacity key={card.label} onPress={() => router.push(`/(app)/(tabs)/${card.page}`)} activeOpacity={0.7} style={{ width: '47%', padding: 12, borderRadius: 12, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB' }}>
-              <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: card.bg, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+            <TouchableOpacity key={card.label} onPress={() => router.push(`/(app)/(tabs)/${card.page}`)} activeOpacity={0.7} className="w-[47%] p-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+              <View className={cn("w-9 h-9 rounded-[10px] items-center justify-center mb-2.5", card.bgClass)}>
                 {card.icon}
               </View>
               {loading ? (
-                <View style={{ width: 80, height: 28, borderRadius: 6, backgroundColor: '#F3F4F6', marginBottom: 4 }} />
+                <View className="w-20 h-7 rounded-md bg-gray-100 dark:bg-gray-800 mb-1" />
               ) : (
-                <Text style={{ fontSize: 20, fontWeight: '700', color: '#111827', fontVariant: ['tabular-nums'] }}>
+                <Text className="text-xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">
                   {formatMAD(card.value)} MAD
                 </Text>
               )}
-              <Text style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{card.label}</Text>
+              <Text className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{card.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Parcel count */}
-        <View style={{ marginHorizontal: 16, marginTop: 10, padding: 14, borderRadius: 12, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View className="mx-4 mt-2.5 p-3.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 flex-row items-center gap-2">
           <MapPin size={18} color="#10B981" />
-          <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', flex: 1 }}>{t.totalParcels}</Text>
+          <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 flex-1">{t.totalParcels}</Text>
           {loading ? (
-            <View style={{ width: 24, height: 24, borderRadius: 6, backgroundColor: '#F3F4F6' }} />
+            <View className="w-6 h-6 rounded-md bg-gray-100 dark:bg-gray-800" />
           ) : (
-            <Text style={{ fontSize: 20, fontWeight: '700', color: '#111827' }}>{summary.parcelCount}</Text>
+            <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">{summary.parcelCount}</Text>
           )}
         </View>
 
-        {/* Recent Activity */}
-        <View style={{ marginHorizontal: 16, marginTop: 20, marginBottom: 32 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <Text style={{ fontSize: 11, fontWeight: '600', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 1 }}>{t.recentActivity}</Text>
-            <TouchableOpacity onPress={loadData} style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3F4F6' }}>
+        <View className="mx-4 mt-5 mb-8">
+          <View className="flex-row justify-between items-center mb-3">
+            <Text className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{t.recentActivity}</Text>
+            <TouchableOpacity onPress={loadData} className="w-8 h-8 rounded-2xl items-center justify-center bg-gray-100 dark:bg-gray-800">
               <RefreshCcw size={14} color="#9CA3AF" />
             </TouchableOpacity>
           </View>
 
-          <View pointerEvents="box-none" style={{ borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#FFFFFF', overflow: 'hidden' }}>
+          <View pointerEvents="box-none" className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
             {loading ? (
-              <View style={{ padding: 16, gap: 12 }}>
+              <View className="p-4 gap-3">
                 {[1, 2, 3, 4].map((i) => (
-                  <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                    <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F3F4F6' }} />
-                    <View style={{ flex: 1, gap: 4 }}>
-                      <View style={{ width: '75%', height: 14, borderRadius: 4, backgroundColor: '#F3F4F6' }} />
-                      <View style={{ width: '50%', height: 10, borderRadius: 4, backgroundColor: '#F3F4F6' }} />
+                  <View key={i} className="flex-row items-center gap-3">
+                    <View className="w-9 h-9 rounded-[10px] bg-gray-100 dark:bg-gray-800" />
+                    <View className="flex-1 gap-1">
+                      <View className="w-[75%] h-3.5 rounded bg-gray-100 dark:bg-gray-800" />
+                      <View className="w-[50%] h-2.5 rounded bg-gray-100 dark:bg-gray-800" />
                     </View>
-                    <View style={{ width: 60, height: 14, borderRadius: 4, backgroundColor: '#F3F4F6' }} />
+                    <View className="w-[60px] h-3.5 rounded bg-gray-100 dark:bg-gray-800" />
                   </View>
                 ))}
               </View>
             ) : activity.length === 0 ? (
-              <Text style={{ textAlign: 'center', paddingVertical: 40, fontSize: 13, color: '#9CA3AF' }}>{t.noRecentActivity}</Text>
+              <Text className="text-center py-10 text-[13px] text-gray-400 dark:text-gray-500">{t.noRecentActivity}</Text>
             ) : (
               activity.map((item, i) => (
-                <View key={`${item.id}-${i}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
-                  <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: activityBg(item.type), alignItems: 'center', justifyContent: 'center' }}>
+                <View key={`${item.id}-${i}`} className="flex-row items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+                  <View className={cn("w-9 h-9 rounded-[10px] items-center justify-center", activityBg(item.type))}>
                     {activityIcon(item.type)}
                   </View>
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text style={{ fontSize: 13, fontWeight: '500', color: '#111827' }} numberOfLines={1}>{item.description}</Text>
-                    <Text style={{ fontSize: 11, color: '#9CA3AF' }} numberOfLines={1}>
+                  <View className="flex-1 min-w-0">
+                    <Text className="text-[13px] font-medium text-gray-900 dark:text-gray-100" numberOfLines={1}>{item.description}</Text>
+                    <Text className="text-[11px] text-gray-400 dark:text-gray-500" numberOfLines={1}>
                       {item.parcelName ? `${item.parcelName} · ` : ''}{new Date(item.date).toLocaleDateString('fr-MA')}
                     </Text>
                   </View>
                   {item.amount !== undefined ? (
-                    <Text style={{
-                      fontSize: 13, fontWeight: '600', fontVariant: ['tabular-nums'],
-                      color: item.type === 'income' ? '#10B981' : '#EF4444',
-                    }}>
+                    <Text style={{ fontVariant: ['tabular-nums'] }} className={cn("text-[13px] font-semibold", item.type === 'income' ? "text-emerald-500 dark:text-emerald-400" : "text-red-500 dark:text-red-400")}>
                       {item.type === 'income' ? '+' : '-'}{formatMAD(item.amount)}
                     </Text>
                   ) : null}

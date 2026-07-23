@@ -12,34 +12,30 @@ export default function MoreScreen() {
   const { canManageMembers, canManageFarmSettings } = useFarm()
 
   const items = [
-    { icon: <Flame size={20} color="#F97316" />, label: t.gasUsage, route: '/(app)/tools/gas', bg: '#FFF7ED' },
-    { icon: <HandCoins size={20} color="#8B5CF6" />, label: t.cooperative, route: '/(app)/tools/cooperative', bg: '#F5F3FF' },
-    { icon: <Clock size={20} color="#8B5CF6" />, label: t.activityLog, route: '/(app)/tools/activity', bg: '#EDE9FE' },
-    { icon: <BarChart3 size={20} color="#3B82F6" />, label: t.reports, route: '/(app)/tools/reports', bg: '#EFF6FF' },
-    { icon: <Users size={20} color="#F59E0B" />, label: t.members, route: '/(app)/tools/members', bg: '#FEF3C7', show: canManageMembers },
-    { icon: <Wheat size={20} color="#EF4444" />, label: t.farmSettings, route: '/(app)/tools/farm-settings', bg: '#FEE2E2', show: canManageFarmSettings },
+    { icon: <Flame size={20} color="#F97316" />, label: t.gasUsage, route: '/(app)/tools/gas', bg: 'bg-orange-50 dark:bg-orange-950' },
+    { icon: <HandCoins size={20} color="#8B5CF6" />, label: t.cooperative, route: '/(app)/tools/cooperative', bg: 'bg-violet-50 dark:bg-violet-950' },
+    { icon: <Clock size={20} color="#8B5CF6" />, label: t.activityLog, route: '/(app)/tools/activity', bg: 'bg-violet-100 dark:bg-violet-900' },
+    { icon: <BarChart3 size={20} color="#3B82F6" />, label: t.reports, route: '/(app)/tools/reports', bg: 'bg-blue-50 dark:bg-blue-950' },
+    { icon: <Users size={20} color="#F59E0B" />, label: t.members, route: '/(app)/tools/members', bg: 'bg-amber-50 dark:bg-amber-950', show: canManageMembers },
+    { icon: <Wheat size={20} color="#EF4444" />, label: t.farmSettings, route: '/(app)/tools/farm-settings', bg: 'bg-red-50 dark:bg-red-950', show: canManageFarmSettings },
   ]
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-      <ScrollView style={{ flex: 1, backgroundColor: '#FFFFFF' }} contentContainerStyle={{ padding: 16, maxWidth: 480, alignSelf: 'center', width: '100%' }}>
+    <SafeAreaView className="flex-1" edges={['top']}>
+      <ScrollView className="flex-1 bg-white dark:bg-gray-900" contentContainerStyle={{ padding: 16, maxWidth: 480, alignSelf: 'center', width: '100%' }}>
         <HeaderBar title={t.more} />
 
-        <View style={{ gap: 12, marginTop: 8 }}>
+        <View className="mt-2 gap-3">
           {items.filter(item => (item as any).show !== false).map((item) => (
             <TouchableOpacity
               key={item.route}
               onPress={() => router.push(item.route as any)}
-              style={{
-                flexDirection: 'row', alignItems: 'center', gap: 14,
-                backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E5E7EB',
-                paddingHorizontal: 20, paddingVertical: 18,
-              }}
+              className="flex-row items-center gap-3.5 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-5 py-4"
             >
-              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: item.bg, alignItems: 'center', justifyContent: 'center' }}>
+              <View className={`h-10 w-12 items-center justify-center rounded-xl ${item.bg}`}>
                 {item.icon}
               </View>
-              <Text style={{ flex: 1, fontSize: 16, fontWeight: '600', color: '#111827' }}>{item.label}</Text>
+              <Text className="flex-1 text-base font-semibold text-gray-900 dark:text-gray-100">{item.label}</Text>
               <ChevronRight size={18} color="#D1D5DB" />
             </TouchableOpacity>
           ))}

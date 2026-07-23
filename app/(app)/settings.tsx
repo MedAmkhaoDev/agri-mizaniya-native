@@ -56,161 +56,145 @@ export default function SettingsScreen() {
   const appVersion = Constants.expoConfig?.version || '1.0.0'
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
-      <ScrollView style={{ flex: 1, backgroundColor: '#FFFFFF' }} contentContainerStyle={{ padding: 16, maxWidth: 480, alignSelf: 'center', width: '100%' }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
-        <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 16 }}>{t.settings}</Text>
+    <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+      <ScrollView className="flex-1 bg-white dark:bg-gray-900" contentContainerStyle={{ padding: 16, maxWidth: 480, alignSelf: 'center', width: '100%' }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
+        <Text className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">{t.settings}</Text>
 
-        {/* Farm Card */}
-{currentFarm && (
-  <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 16, overflow: 'hidden' }}>
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 8 }}>
+        {currentFarm && (
+  <View className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 mb-4 overflow-hidden">
+    <View className="flex-row items-center gap-2 px-5 pt-5 pb-2">
       <Wheat size={16} color="#9CA3AF" />
-      <Text style={{ fontSize: 15, fontWeight: '600', color: '#374151' }}>{t.currentFarm}</Text>
+      <Text className="text-[15px] font-semibold text-gray-700 dark:text-gray-300">{t.currentFarm}</Text>
     </View>
-    <View style={{ paddingHorizontal: 20, paddingBottom: 16 }}>
-      <Text style={{ fontSize: 17, fontWeight: '700', color: '#111827', marginBottom: 4 }}>{currentFarm.name}</Text>
-      {currentFarm.description ? <Text style={{ fontSize: 13, color: '#9CA3AF' }}>{currentFarm.description}</Text> : null}
+    <View className="px-5 pb-4">
+      <Text className="text-[17px] font-bold text-gray-900 dark:text-gray-100 mb-1">{currentFarm.name}</Text>
+      {currentFarm.description ? <Text className="text-[13px] text-gray-400 dark:text-gray-500">{currentFarm.description}</Text> : null}
       <TouchableOpacity
         onPress={() => router.push('/(farm-select)')}
-        style={{ marginTop: 12, height: 40, borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}
+        className="mt-3 h-10 rounded-[10px] border border-gray-200 dark:border-gray-700 items-center justify-center flex-row gap-1.5"
       >
         <ArrowRightLeft size={14} color="#6B7280" />
-        <Text style={{ fontSize: 13, fontWeight: '500', color: '#6B7280' }}>{t.switchFarm}</Text>
+        <Text className="text-[13px] font-medium text-gray-500 dark:text-gray-400">{t.switchFarm}</Text>
       </TouchableOpacity>
     </View>
         </View>
 )}
 
-        {/* Migration Card */}
         {needsMigration && (
-          <View style={{ backgroundColor: '#FFFBEB', borderRadius: 16, borderWidth: 1, borderColor: '#FDE68A', marginBottom: 16, padding: 20 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <View className="bg-amber-50 dark:bg-amber-950 rounded-2xl border border-amber-300 dark:border-amber-700 mb-4 p-5">
+            <View className="flex-row items-center gap-2 mb-2">
               <Database size={16} color="#D97706" />
-              <Text style={{ fontSize: 15, fontWeight: '600', color: '#92400E' }}>{t.dataMigration}</Text>
+              <Text className="text-[15px] font-semibold text-amber-900 dark:text-amber-200">{t.dataMigration}</Text>
             </View>
-            <Text style={{ fontSize: 13, color: '#A16207', marginBottom: 12 }}>{t.migrationDescription}</Text>
+            <Text className="text-[13px] text-amber-700 dark:text-amber-300 mb-3">{t.migrationDescription}</Text>
             <TouchableOpacity
               onPress={async () => {
                 await runMigration()
                 Alert.alert(t.success, t.migrationComplete)
               }}
               disabled={migrating}
-              style={{ height: 44, borderRadius: 10, backgroundColor: migrating ? '#D97706' : '#F59E0B', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6, opacity: migrating ? 0.6 : 1 }}
+              className={`h-11 rounded-[10px] items-center justify-center flex-row gap-1.5 ${migrating ? 'bg-amber-600 opacity-60' : 'bg-amber-500'}`}
             >
               {migrating ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Database size={16} color="#FFFFFF" />}
-              <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '600' }}>{migrating ? t.migrating : t.startMigration}</Text>
+              <Text className="text-white text-sm font-semibold">{migrating ? t.migrating : t.startMigration}</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        {/* Profile Card */}
-        <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 16, overflow: 'hidden' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 8 }}>
+        <View className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 mb-4 overflow-hidden">
+          <View className="flex-row items-center gap-2 px-5 pt-5 pb-2">
             <User size={16} color="#9CA3AF" />
-            <Text style={{ fontSize: 15, fontWeight: '600', color: '#374151' }}>{t.profile}</Text>
+            <Text className="text-[15px] font-semibold text-gray-700 dark:text-gray-300">{t.profile}</Text>
           </View>
-          <View style={{ paddingHorizontal: 20, paddingBottom: 20, gap: 12 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#16A34A', alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFFFFF' }}>
+          <View className="px-5 pb-5 gap-3">
+            <View className="flex-row items-center gap-3">
+              <View className="w-12 h-12 rounded-full bg-green-600 items-center justify-center">
+                <Text className="text-lg font-bold text-white">
                   {profile?.fullName?.charAt(0)?.toUpperCase() || 'A'}
                 </Text>
               </View>
               <View>
-                <Text style={{ fontSize: 15, fontWeight: '500', color: '#111827' }}>{profile?.fullName || 'Agriculteur'}</Text>
-                <Text style={{ fontSize: 13, color: '#9CA3AF' }}>{user?.email}</Text>
+                <Text className="text-[15px] font-medium text-gray-900 dark:text-gray-100">{profile?.fullName || 'Agriculteur'}</Text>
+                <Text className="text-[13px] text-gray-400 dark:text-gray-500">{user?.email}</Text>
               </View>
             </View>
             <View>
-              <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.fullName}</Text>
-              <TextInput value={name} onChangeText={setName} style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }} />
+              <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t.fullName}</Text>
+              <TextInput value={name} onChangeText={setName} className="h-12 border border-gray-200 dark:border-gray-700 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-gray-100" />
             </View>
-            <TouchableOpacity onPress={handleSaveProfile} disabled={saving} style={{ height: 44, borderRadius: 10, backgroundColor: '#16A34A', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6, opacity: saving ? 0.6 : 1 }}>
+            <TouchableOpacity onPress={handleSaveProfile} disabled={saving} className={`h-11 rounded-[10px] bg-green-600 items-center justify-center flex-row gap-1.5 ${saving ? 'opacity-60' : ''}`}>
               {saved ? <CheckCircle size={16} color="#FFFFFF" /> : null}
-              <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '600' }}>{saved ? t.success : saving ? t.loading : t.save}</Text>
+              <Text className="text-white text-sm font-semibold">{saved ? t.success : saving ? t.loading : t.save}</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Language Card */}
-        <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 16, overflow: 'hidden' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 8 }}>
+        <View className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 mb-4 overflow-hidden">
+          <View className="flex-row items-center gap-2 px-5 pt-5 pb-2">
             <Globe size={16} color="#9CA3AF" />
-            <Text style={{ fontSize: 15, fontWeight: '600', color: '#374151' }}>{t.language}</Text>
+            <Text className="text-[15px] font-semibold text-gray-700 dark:text-gray-300">{t.language}</Text>
           </View>
-          <View style={{ paddingHorizontal: 20, paddingBottom: 16, gap: 6 }}>
+          <View className="px-5 pb-4 gap-1.5">
             {languageOptions.map((opt) => (
               <TouchableOpacity
                 key={opt.code}
                 onPress={() => setLanguage(opt.code)}
-                style={{
-                  flexDirection: 'row', alignItems: 'center', gap: 12,
-                  paddingHorizontal: 16, paddingVertical: 12, borderRadius: 10,
-                  borderWidth: 1, borderColor: language === opt.code ? '#16A34A' : '#E5E7EB',
-                  backgroundColor: language === opt.code ? '#F0FDF4' : '#FFFFFF',
-                }}
+                className={`flex-row items-center gap-3 px-4 py-3 rounded-[10px] border ${language === opt.code ? 'border-green-600 bg-green-50 dark:bg-green-950' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'}`}
               >
-                <Text style={{ fontSize: 18 }}>{opt.flag}</Text>
-                <Text style={{ flex: 1, fontSize: 14, fontWeight: '500', color: language === opt.code ? '#16A34A' : '#374151' }}>{opt.label}</Text>
+                <Text className="text-lg">{opt.flag}</Text>
+                <Text className={`flex-1 text-sm font-medium ${language === opt.code ? 'text-green-600' : 'text-gray-700 dark:text-gray-300'}`}>{opt.label}</Text>
                 {language === opt.code ? <CheckCircle size={16} color="#16A34A" /> : null}
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* Theme Card */}
-        <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 16, overflow: 'hidden' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 8 }}>
+        <View className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 mb-4 overflow-hidden">
+          <View className="flex-row items-center gap-2 px-5 pt-5 pb-2">
             <Sun size={16} color="#9CA3AF" />
-            <Text style={{ fontSize: 15, fontWeight: '600', color: '#374151' }}>{t.theme}</Text>
+            <Text className="text-[15px] font-semibold text-gray-700 dark:text-gray-300">{t.theme}</Text>
           </View>
-          <View style={{ paddingHorizontal: 20, paddingBottom: 16, flexDirection: 'row', gap: 8 }}>
+          <View className="px-5 pb-4 flex-row gap-2">
             {themeOptions.map((opt) => (
               <TouchableOpacity
                 key={opt.value}
                 onPress={() => setTheme(opt.value)}
-                style={{
-                  flex: 1, alignItems: 'center', gap: 6, paddingVertical: 14, borderRadius: 10,
-                  borderWidth: 1, borderColor: theme === opt.value ? '#16A34A' : '#E5E7EB',
-                  backgroundColor: theme === opt.value ? '#F0FDF4' : '#FFFFFF',
-                }}
+                className={`flex-1 items-center gap-1.5 py-3.5 rounded-[10px] border ${theme === opt.value ? 'border-green-600 bg-green-50 dark:bg-green-950' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'}`}
               >
                 {opt.icon}
-                <Text style={{ fontSize: 11, fontWeight: '500', color: theme === opt.value ? '#16A34A' : '#6B7280' }}>{opt.label}</Text>
+                <Text className={`text-[11px] font-medium ${theme === opt.value ? 'text-green-600' : 'text-gray-500 dark:text-gray-400'}`}>{opt.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* Info Card */}
-        <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 16, padding: 16, gap: 12 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 mb-4 p-4 gap-3">
+          <View className="flex-row justify-between items-center">
+            <View className="flex-row items-center gap-2">
               <Wifi size={16} color="#9CA3AF" />
-              <Text style={{ fontSize: 13, color: '#9CA3AF' }}>{t.syncStatus}</Text>
+              <Text className="text-[13px] text-gray-400 dark:text-gray-500">{t.syncStatus}</Text>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <View className="flex-row items-center gap-1">
               <CheckCircle size={14} color="#10B981" />
-              <Text style={{ fontSize: 13, fontWeight: '500', color: '#10B981' }}>{t.synced}</Text>
+              <Text className="text-[13px] font-medium text-emerald-500">{t.synced}</Text>
             </View>
           </View>
-          <View style={{ height: 1, backgroundColor: '#F3F4F6' }} />
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View className="h-px bg-gray-100 dark:bg-gray-800" />
+          <View className="flex-row justify-between items-center">
+            <View className="flex-row items-center gap-2">
               <Wheat size={16} color="#9CA3AF" />
-              <Text style={{ fontSize: 13, color: '#9CA3AF' }}>{t.appVersion}</Text>
+              <Text className="text-[13px] text-gray-400 dark:text-gray-500">{t.appVersion}</Text>
             </View>
-            <Text style={{ fontSize: 13, color: '#9CA3AF' }}>{appVersion}</Text>
+            <Text className="text-[13px] text-gray-400 dark:text-gray-500">{appVersion}</Text>
           </View>
         </View>
 
-        {/* Sign Out */}
         <TouchableOpacity
           onPress={signOut}
-          style={{ height: 48, borderRadius: 12, borderWidth: 1, borderColor: '#FECACA', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, marginBottom: 32, backgroundColor: '#FEF2F2' }}
+          className="h-12 rounded-xl border border-red-300 dark:border-red-700 items-center justify-center flex-row gap-2 mb-8 bg-red-50 dark:bg-red-950"
         >
           <LogOut size={18} color="#EF4444" />
-          <Text style={{ fontSize: 14, fontWeight: '600', color: '#EF4444' }}>{t.signOut}</Text>
+          <Text className="text-sm font-semibold text-red-500">{t.signOut}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

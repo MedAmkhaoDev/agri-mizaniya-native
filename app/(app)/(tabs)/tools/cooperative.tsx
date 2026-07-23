@@ -1,186 +1,200 @@
 import { useState, useEffect, useCallback } from 'react'
-import { View, Text, FlatList, TouchableOpacity, TextInput, Modal, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, FlatList, TouchableOpacity, RefreshControl } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/lib/auth-context'
 import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
 import { getCooperativeSupports, createCooperativeSupport, deleteCooperativeSupport, getParcels } from '@/lib/api'
-import { formatMAD, filterNumeric } from '@/lib/format'
-import type { CooperativeSupport, Parcel, CooperativeSupportType } from '@/lib/types'
+import { formatMAD } from '@/lib/format'
+import { cn } from '@/lib/utils'
+import { useUndoDelete } from '@/hooks/useUndoDelete'
+import AddCooperativeSheet from '@/components/AddCooperativeSheet'
+import { FilterSheet } from '@/components/FilterSheet'
+import { HeaderBar } from '@/components/HeaderBar'
 import Toast from 'react-native-toast-message'
-import { Plus, Trash2, HandCoins, X, Check } from 'lucide-react-native'
-
-const SUPPORT_TYPES: CooperativeSupportType[] = ['gas', 'seeds', 'tools', 'fertilizer', 'equipment', 'other']
+import type { CooperativeSupport, Parcel, ExpenseFilters } from '@/lib/types'
+import { HandCoins, Plus, Trash2, AlertCircle, RefreshCw, SlidersHorizontal } from 'lucide-react-native'
 
 export default function CooperativeScreen() {
-  const { t } = useI18n()
   const { user } = useAuth()
   const { currentFarmId, canWrite } = useFarm()
+  const { t } = useI18n()
   const [supports, setSupports] = useState<CooperativeSupport[]>([])
   const [parcels, setParcels] = useState<Parcel[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedParcel, setSelectedParcel] = useState<string>('all')
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [filters, setFilters] = useState<ExpenseFilters>({ parcelId: 'all' })
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [formParcelId, setFormParcelId] = useState('')
-  const [supportType, setSupportType] = useState<CooperativeSupportType>('other')
-  const [amount, setAmount] = useState('')
-  const [invoiceNumber, setInvoiceNumber] = useState('')
-  const [notes, setNotes] = useState('')
-  const [saving, setSaving] = useState(false)
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false)
 
-  if (!currentFarmId) return null
-
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (isRefresh = false) => {
     if (!user || !currentFarmId) return
-    setLoading(true)
-    const [s, p] = await Promise.all([
-      getCooperativeSupports(currentFarmId!, selectedParcel !== 'all' ? { parcelId: selectedParcel } : undefined),
-      getParcels(currentFarmId!),
-    ])
-    setSupports(s.data)
-    setParcels(p.data)
-    setLoading(false)
-  }, [user, currentFarmId, selectedParcel])
+    if (isRefresh) setRefreshing(true)
+    else setLoading(true)
+    setError(null)
+    try {
+      const [s, p] = await Promise.all([
+        getCooperativeSupports(currentFarmId!, filters),
+        getParcels(currentFarmId!),
+      ])
+      if (s.error || p.error) {
+        setError(t.failedToLoad)
+        return
+      }
+      setSupports(s.data)
+      setParcels(p.data)
+    } catch {
+      setError(t.failedToLoad)
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }, [user, filters, currentFarmId, t.failedToLoad])
 
   useEffect(() => { loadData() }, [loadData])
 
-  const resetForm = () => { setFormParcelId(''); setSupportType('other'); setAmount(''); setInvoiceNumber(''); setNotes(''); setSheetOpen(false) }
-
-  const handleSave = async () => {
-    if (!user || !currentFarmId || !amount) return
-    setSaving(true)
+  const handleRestore = async (item: CooperativeSupport) => {
+    if (!user || !currentFarmId) return
     await createCooperativeSupport(currentFarmId!, user.uid, {
-      parcelId: formParcelId || null, supportType, amount: parseFloat(amount),
-      invoiceNumber: invoiceNumber.trim() || null, description: null,
-      date: new Date().toISOString().split('T')[0], notes: notes.trim() || null,
+      parcelId: item.parcelId, supportType: item.supportType,
+      amount: item.amount, invoiceNumber: item.invoiceNumber,
+      description: item.description, date: item.date, notes: item.notes,
     })
-    resetForm(); setSaving(false); loadData()
+    loadData()
   }
 
-  const handleDelete = (support: CooperativeSupport) => {
-    Alert.alert(t.delete, `${t.delete}?`, [
-      { text: t.cancel, style: 'cancel' },
-      { text: t.delete, style: 'destructive', onPress: async () => { if (!user || !currentFarmId) return; await deleteCooperativeSupport(currentFarmId!, support.id); loadData() } },
-    ])
-  }
+  const { deleteWithUndo } = useUndoDelete(
+    (id) => deleteCooperativeSupport(currentFarmId!, id),
+    handleRestore,
+    loadData,
+    { deleted: t.deleted, undo: t.undo, error: t.error },
+  )
 
   const total = supports.reduce((sum, s) => sum + s.amount, 0)
   const activeParcels = parcels.filter(p => p.status === 'active')
+  const advancedFilterCount = [filters.createdBy, filters.dateFrom, filters.amountMin != null ? 'min' : null, filters.amountMax != null ? 'max' : null, filters.typeId].filter(Boolean).length
+
+  if (!currentFarmId) return null
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-      {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
-        <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>{t.cooperative}</Text>
-        {canWrite && (
-          <TouchableOpacity onPress={() => setSheetOpen(true)} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#8B5CF6', alignItems: 'center', justifyContent: 'center' }}>
-            <Plus size={20} color="#FFFFFF" />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Total */}
-      <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
-        <Text style={{ fontSize: 28, fontWeight: '700', color: '#8B5CF6', fontVariant: ['tabular-nums'] }}>-{formatMAD(total)} MAD</Text>
-      </View>
-
-      {/* Parcel filter */}
-      <FlatList
-        horizontal
-        data={[{ id: 'all', name: t.allParcels } as Parcel, ...activeParcels]}
-        keyExtractor={(i) => i.id}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16, gap: 8, marginBottom: 8 }}
-        renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => setSelectedParcel(item.id)} style={{ paddingHorizontal: 14, paddingVertical: 6, borderRadius: 10, backgroundColor: selectedParcel === item.id ? '#8B5CF6' : '#F3F4F6' }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: selectedParcel === item.id ? '#FFFFFF' : '#6B7280' }}>{item.name}</Text>
-          </TouchableOpacity>
-        )}
-      />
-
-      {loading ? (
-        <View style={{ padding: 16, gap: 10 }}>
-          {[1, 2, 3].map(i => <View key={i} style={{ height: 72, borderRadius: 12, backgroundColor: '#F3F4F6' }} />)}
-        </View>
-      ) : (
-        <FlatList
-          data={supports}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 16 }}
-          ListEmptyComponent={
-            <View style={{ alignItems: 'center', paddingVertical: 48 }}>
-              <HandCoins size={48} color="#D1D5DB" />
-              <Text style={{ color: '#9CA3AF', marginTop: 12 }}>{t.noCooperative}</Text>
-            </View>
-          }
-          renderItem={({ item }) => (
-            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 8 }}>
-              <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F5F3FF', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                <HandCoins size={16} color="#8B5CF6" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: '500', color: '#111827' }}>{t.supportTypes[item.supportType]}</Text>
-                <Text style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{item.date}</Text>
-                {item.invoiceNumber ? <Text style={{ fontSize: 11, color: '#9CA3AF' }}>{t.invoiceNumber}: {item.invoiceNumber}</Text> : null}
-              </View>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: '#8B5CF6', fontVariant: ['tabular-nums'] }}>-{formatMAD(item.amount)} MAD</Text>
-              <TouchableOpacity onPress={() => handleDelete(item)} style={{ padding: 6, marginLeft: 8 }}>
-                <Trash2 size={14} color="#EF4444" />
+    <SafeAreaView className="flex-1" edges={['top']}>
+      <View className="flex-1 bg-white dark:bg-gray-900">
+        <HeaderBar
+          title={t.cooperative}
+          right={
+            canWrite ? (
+              <TouchableOpacity onPress={() => setSheetOpen(true)} className="w-9 h-9 rounded-[10px] bg-violet-500 items-center justify-center">
+                <Plus size={20} color="#FFFFFF" />
               </TouchableOpacity>
-            </View>
-          )}
+            ) : undefined
+          }
         />
-      )}
 
-      {/* Sheet */}
-      <Modal visible={sheetOpen} transparent animationType="slide" onRequestClose={() => setSheetOpen(false)}>
-        <TouchableOpacity activeOpacity={1} onPress={() => setSheetOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-            <TouchableOpacity activeOpacity={1} style={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 34 }}>
-            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#D1D5DB', alignSelf: 'center', marginBottom: 16 }} />
-            <Text style={{ fontSize: 17, fontWeight: '700', color: '#8B5CF6', marginBottom: 16 }}>{t.addCooperative}</Text>
+        <View className="px-4 py-3">
+          <Text style={{ fontVariant: ['tabular-nums'] }} className="text-[28px] font-bold text-violet-500 dark:text-violet-400">-{formatMAD(total)} MAD</Text>
+        </View>
 
-            <Text style={{ fontSize: 11, fontWeight: '600', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>{t.supportType}</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
-              {SUPPORT_TYPES.map((type) => (
-                <TouchableOpacity key={type} onPress={() => setSupportType(type)} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: supportType === type ? '#8B5CF6' : '#E5E7EB', backgroundColor: supportType === type ? '#F5F3FF' : '#FFFFFF' }}>
-                  <Text style={{ fontSize: 13, fontWeight: '500', color: supportType === type ? '#8B5CF6' : '#6B7280' }}>{t.supportTypes[type]}</Text>
+        <FlatList
+          horizontal
+          data={[{ id: 'all', name: t.allParcels } as Parcel, ...activeParcels, { id: '__filter__' } as Parcel]}
+          keyExtractor={(i) => i.id}
+          showsHorizontalScrollIndicator={false}
+          contentContainerClassName="px-4 gap-2 mb-2"
+          contentContainerStyle={{ alignItems: 'flex-start' }}
+          style={{ flexGrow: 0 }}
+          renderItem={({ item }) => {
+            if (item.id === '__filter__') {
+              return (
+                <TouchableOpacity
+                  onPress={() => setFilterSheetOpen(true)}
+                  className="flex-row items-center gap-1.5 px-3.5 h-9 rounded-[10px] bg-gray-100 dark:bg-gray-800 justify-center"
+                >
+                  <SlidersHorizontal size={14} color="#6B7280" />
+                  {advancedFilterCount > 0 && (
+                    <View className="w-4 h-4 rounded-full bg-violet-500 items-center justify-center">
+                      <Text className="text-[9px] font-bold text-white">{advancedFilterCount}</Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
-              ))}
+              )
+            }
+            return (
+              <TouchableOpacity
+                onPress={() => setFilters((f) => ({ ...f, parcelId: item.id }))}
+                className={cn("px-3.5 py-2.5 rounded-[10px] h-9 items-center justify-center", filters.parcelId === item.id ? "bg-violet-500 dark:bg-violet-600" : "bg-gray-100 dark:bg-gray-800")}
+              >
+                <Text className={cn("text-xs font-semibold", filters.parcelId === item.id ? "text-white dark:text-gray-100" : "text-gray-500 dark:text-gray-400")}>{item.name}</Text>
+              </TouchableOpacity>
+            )
+          }}
+        />
+
+        {error ? (
+          <View className="items-center py-16 px-6">
+            <View className="w-14 h-14 rounded-full bg-red-50 dark:bg-red-950 items-center justify-center mb-4">
+              <AlertCircle size={28} color="#EF4444" />
             </View>
-
-            <Text style={{ fontSize: 11, fontWeight: '600', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>{t.parcel} ({t.optional})</Text>
+            <Text className="text-[15px] font-semibold text-gray-900 dark:text-gray-100 mb-1">{t.failedToLoad}</Text>
+            <Text className="text-[13px] text-gray-400 dark:text-gray-500 mb-5 text-center">{error}</Text>
+            <TouchableOpacity onPress={() => loadData()} className="flex-row items-center gap-2 px-5 py-2.5 rounded-[10px] bg-gray-100 dark:bg-gray-800">
+              <RefreshCw size={16} color="#6B7280" />
+              <Text className="text-[13px] font-semibold text-gray-600 dark:text-gray-300">{t.retry}</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View className="flex-1">
+            {loading && (
+              <View className="absolute inset-0 z-10 items-center justify-center">
+                <View className="items-center py-12">
+                  {[1, 2, 3].map(i => <View key={i} className="h-[72px] w-full rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse mb-2.5" />)}
+                </View>
+              </View>
+            )}
             <FlatList
-              horizontal data={activeParcels} keyExtractor={(i) => i.id} showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 6, marginBottom: 16 }}
+              data={supports}
+              keyExtractor={(item) => item.id}
+              contentContainerClassName="p-4"
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadData(true)} tintColor="#6B7280" />}
+              ListEmptyComponent={
+                !loading ? (
+                  <View className="items-center py-12">
+                    <HandCoins size={48} color="#D1D5DB" />
+                    <Text className="text-gray-400 dark:text-gray-500 mt-3">{t.noCooperative}</Text>
+                  </View>
+                ) : null
+              }
               renderItem={({ item }) => (
-                <TouchableOpacity onPress={() => setFormParcelId(item.id)} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: formParcelId === item.id ? '#8B5CF6' : '#E5E7EB', backgroundColor: formParcelId === item.id ? '#F5F3FF' : '#FFFFFF' }}>
-                  <Text style={{ fontSize: 13, fontWeight: '500', color: formParcelId === item.id ? '#8B5CF6' : '#6B7280' }}>{item.name}</Text>
-                </TouchableOpacity>
+                <View className="flex-row items-center p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 mb-2">
+                  <View className="w-9 h-9 rounded-[10px] bg-violet-50 dark:bg-violet-950 items-center justify-center mr-3">
+                    <HandCoins size={16} color="#8B5CF6" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-sm font-medium text-gray-900 dark:text-gray-100">{t.supportTypes[item.supportType]}</Text>
+                    <View className="flex-row items-center gap-1 mt-0.5">
+                      <Text className="text-[11px] text-gray-400 dark:text-gray-500">{item.date}</Text>
+                      {item.createdByName ? (
+                        <>
+                          <Text className="text-[11px] text-gray-300 dark:text-gray-600">·</Text>
+                          <Text className="text-[11px] text-gray-400 dark:text-gray-500">{t.by} {item.createdByName}</Text>
+                        </>
+                      ) : null}
+                    </View>
+                    {item.invoiceNumber ? <Text className="text-[11px] text-gray-400 dark:text-gray-500">{t.invoiceNumber}: {item.invoiceNumber}</Text> : null}
+                  </View>
+                  <Text style={{ fontVariant: ['tabular-nums'] }} className="text-sm font-semibold text-violet-500 dark:text-violet-400">-{formatMAD(item.amount)} MAD</Text>
+                  <TouchableOpacity onPress={() => deleteWithUndo(item)} className="p-1.5 ml-2">
+                    <Trash2 size={14} color="#EF4444" />
+                  </TouchableOpacity>
+                </View>
               )}
             />
+          </View>
+        )}
 
-            <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.amount}</Text>
-            <TextInput value={amount} onChangeText={v => setAmount(filterNumeric(v))} keyboardType="decimal-pad" placeholder="0" placeholderTextColor="#9CA3AF" style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827', marginBottom: 12 }} />
-
-            <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.invoiceNumber}</Text>
-            <TextInput value={invoiceNumber} onChangeText={setInvoiceNumber} placeholderTextColor="#9CA3AF" style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827', marginBottom: 12 }} />
-
-            <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.notes} ({t.optional})</Text>
-            <TextInput value={notes} onChangeText={setNotes} placeholderTextColor="#9CA3AF" style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827', marginBottom: 16 }} />
-
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <TouchableOpacity onPress={() => setSheetOpen(false)} style={{ flex: 1, height: 48, borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontWeight: '600', color: '#6B7280' }}>{t.cancel}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleSave} disabled={!amount || saving} style={{ flex: 1, height: 48, borderRadius: 10, backgroundColor: '#8B5CF6', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6, opacity: !amount || saving ? 0.5 : 1 }}>
-                {saving ? <ActivityIndicator color="#FFFFFF" /> : <Check size={18} color="#FFFFFF" />}
-                <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>{t.save}</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-          </KeyboardAvoidingView>
-        </TouchableOpacity>
-      </Modal>
-    </View>
+        <AddCooperativeSheet visible={sheetOpen} onClose={() => { setSheetOpen(false); loadData() }} />
+        <FilterSheet visible={filterSheetOpen} onClose={() => setFilterSheetOpen(false)} filters={filters} onApply={setFilters} />
+      </View>
+    </SafeAreaView>
   )
 }

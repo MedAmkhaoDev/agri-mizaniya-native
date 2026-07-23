@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { useColorScheme } from 'react-native'
+import { useColorScheme as useRNColorScheme } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useColorScheme } from 'nativewind'
 
 type Theme = 'light' | 'dark' | 'system'
 
@@ -19,19 +20,22 @@ const ThemeContext = createContext<ThemeContextType>({
 const THEME_KEY = 'agri-mizane-theme'
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const systemScheme = useColorScheme()
+  const systemScheme = useRNColorScheme()
+  const { setColorScheme } = useColorScheme()
   const [theme, setThemeState] = useState<Theme>('system')
 
   useEffect(() => {
     AsyncStorage.getItem(THEME_KEY).then((stored) => {
       if (stored === 'light' || stored === 'dark' || stored === 'system') {
         setThemeState(stored)
+        setColorScheme(stored)
       }
     })
   }, [])
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme)
+    setColorScheme(newTheme)
     AsyncStorage.setItem(THEME_KEY, newTheme)
   }
 

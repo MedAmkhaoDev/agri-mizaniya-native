@@ -37,6 +37,16 @@ export interface FarmMember {
   invitedBy: string | null
 }
 
+export type ExpenseFilters = {
+  parcelId?: string
+  createdBy?: string
+  dateFrom?: string
+  dateTo?: string
+  amountMin?: number
+  amountMax?: number
+  typeId?: string
+}
+
 export interface FarmInvitation {
   id: string
   farmId: string

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Dimensions } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/lib/auth-context'
 import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
@@ -74,7 +75,6 @@ export default function ReportsScreen() {
     const totalCooperative = coop.reduce((s, r) => s + r.amount, 0)
     const netProfit = totalIncome - totalExpenses - totalGas - totalCooperative
 
-    // Per-parcel breakdown
     const parcelBreakdown = await Promise.all(
       parcelsList.filter(p => p.status === 'active').map(async (p) => {
         const [e, i, g, c] = await Promise.all([
@@ -153,83 +153,76 @@ export default function ReportsScreen() {
   ]
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#FFFFFF' }} contentContainerStyle={{ padding: 16 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
-      <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 16 }}>{t.reports}</Text>
+    <SafeAreaView className="flex-1" edges={['top']}>
+    <ScrollView className="flex-1 bg-white dark:bg-gray-900" contentContainerStyle={{ padding: 16 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
+      <Text className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">{t.reports}</Text>
 
-      {/* Period selector */}
-      <View style={{ flexDirection: 'row', gap: 6, marginBottom: 12 }}>
+      <View className="mb-3 flex-row gap-1.5">
         {periods.map((p) => (
-          <TouchableOpacity key={p.key} onPress={() => setPeriod(p.key)} style={{ flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: period === p.key ? '#16A34A' : '#F3F4F6', alignItems: 'center' }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: period === p.key ? '#FFFFFF' : '#6B7280' }}>{p.label}</Text>
+          <TouchableOpacity key={p.key} onPress={() => setPeriod(p.key)} className={`flex-1 items-center rounded-[10px] py-2.5 ${period === p.key ? 'bg-green-600' : 'bg-gray-100 dark:bg-gray-800'}`}>
+            <Text className={`text-xs font-semibold ${period === p.key ? 'text-white' : 'text-gray-500 dark:text-gray-400'}`}>{p.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {/* Custom date range */}
       {period === 'custom' && (
-        <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 4 }}>{t.from}</Text>
-            <TextInput value={customFrom} onChangeText={setCustomFrom} placeholder="2024-01-01" placeholderTextColor="#9CA3AF" style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }} />
+        <View className="mb-3 flex-row gap-3">
+          <View className="flex-1">
+            <Text className="mb-1 text-xs text-gray-400 dark:text-gray-500">{t.from}</Text>
+            <TextInput value={customFrom} onChangeText={setCustomFrom} placeholder="2024-01-01" placeholderTextColor="#9CA3AF" className="h-12 rounded-[10px] border border-gray-200 dark:border-gray-700 px-4 text-[15px] text-gray-900 dark:text-gray-100" />
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 4 }}>{t.to}</Text>
-            <TextInput value={customTo} onChangeText={setCustomTo} placeholder="2024-12-31" placeholderTextColor="#9CA3AF" style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }} />
+          <View className="flex-1">
+            <Text className="mb-1 text-xs text-gray-400 dark:text-gray-500">{t.to}</Text>
+            <TextInput value={customTo} onChangeText={setCustomTo} placeholder="2024-12-31" placeholderTextColor="#9CA3AF" className="h-12 rounded-[10px] border border-gray-200 dark:border-gray-700 px-4 text-[15px] text-gray-900 dark:text-gray-100" />
           </View>
         </View>
       )}
 
-      {/* Parcel filter */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, marginBottom: 16 }}>
-        <TouchableOpacity onPress={() => setSelectedParcel('all')} style={{ paddingHorizontal: 14, paddingVertical: 6, borderRadius: 10, backgroundColor: selectedParcel === 'all' ? '#16A34A' : '#F3F4F6' }}>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: selectedParcel === 'all' ? '#FFFFFF' : '#6B7280' }}>{t.allParcels}</Text>
+        <TouchableOpacity onPress={() => setSelectedParcel('all')} className={`rounded-[10px] px-3.5 py-2.5 ${selectedParcel === 'all' ? 'bg-green-600' : 'bg-gray-100 dark:bg-gray-800'}`}>
+          <Text className={`text-xs font-semibold ${selectedParcel === 'all' ? 'text-white' : 'text-gray-500 dark:text-gray-400'}`}>{t.allParcels}</Text>
         </TouchableOpacity>
         {parcels.filter(p => p.status === 'active').map((p) => (
-          <TouchableOpacity key={p.id} onPress={() => setSelectedParcel(p.id)} style={{ paddingHorizontal: 14, paddingVertical: 6, borderRadius: 10, backgroundColor: selectedParcel === p.id ? '#16A34A' : '#F3F4F6' }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: selectedParcel === p.id ? '#FFFFFF' : '#6B7280' }}>{p.name}</Text>
+          <TouchableOpacity key={p.id} onPress={() => setSelectedParcel(p.id)} className={`rounded-[10px] px-3.5 py-2.5 ${selectedParcel === p.id ? 'bg-green-600' : 'bg-gray-100 dark:bg-gray-800'}`}>
+            <Text className={`text-xs font-semibold ${selectedParcel === p.id ? 'text-white' : 'text-gray-500 dark:text-gray-400'}`}>{p.name}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
-      {/* Generate button */}
-      <TouchableOpacity onPress={generate} disabled={loading} style={{ height: 48, borderRadius: 12, backgroundColor: '#16A34A', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, marginBottom: 20, opacity: loading ? 0.6 : 1 }}>
+      <TouchableOpacity onPress={generate} disabled={loading} className={`mb-5 flex-row items-center justify-center gap-2 rounded-xl bg-green-600 ${loading ? 'opacity-60' : ''}`} style={{ height: 48 }}>
         {loading ? <ActivityIndicator color="#FFFFFF" /> : <FileBarChart2 size={18} color="#FFFFFF" />}
-        <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '600' }}>{loading ? t.loading : t.generateReport}</Text>
+        <Text className="text-[15px] font-semibold text-white">{loading ? t.loading : t.generateReport}</Text>
       </TouchableOpacity>
 
-      {/* Results */}
       {generated && summary && (
         <>
-          {/* Share + PDF buttons */}
           {canExportReports && (
-            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
-              <TouchableOpacity onPress={handleShare} style={{ flex: 1, height: 40, borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}>
+            <View className="mb-4 flex-row gap-2">
+              <TouchableOpacity onPress={handleShare} className="h-10 flex-1 flex-row items-center justify-center gap-1.5 rounded-[10px] border border-gray-200 dark:border-gray-700">
                 <Share2 size={14} color="#374151" />
-                <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151' }}>WhatsApp</Text>
+                <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300">WhatsApp</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleDownloadPDF} style={{ flex: 1, height: 40, borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}>
+              <TouchableOpacity onPress={handleDownloadPDF} className="h-10 flex-1 flex-row items-center justify-center gap-1.5 rounded-[10px] border border-gray-200 dark:border-gray-700">
                 <Download size={14} color="#374151" />
-                <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151' }}>PDF</Text>
+                <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300">PDF</Text>
               </TouchableOpacity>
             </View>
           )}
 
-          {/* Net profit hero */}
-          <View style={{ padding: 20, borderRadius: 16, borderWidth: 2, borderColor: summary.netProfit >= 0 ? '#A7F3D0' : '#FECACA', marginBottom: 12 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <View style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: summary.netProfit >= 0 ? '#ECFDF5' : '#FEF2F2', alignItems: 'center', justifyContent: 'center' }}>
+          <View className={`mb-3 rounded-2xl border-2 p-5 ${summary.netProfit >= 0 ? 'border-emerald-200 dark:border-emerald-800' : 'border-red-200 dark:border-red-800'}`}>
+            <View className="flex-row items-center gap-3">
+              <View className={`h-12 w-12 items-center justify-center rounded-xl ${summary.netProfit >= 0 ? 'bg-emerald-50 dark:bg-emerald-950' : 'bg-red-50 dark:bg-red-950'}`}>
                 {summary.netProfit >= 0 ? <ArrowUpRight size={24} color="#10B981" /> : <ArrowDownRight size={24} color="#EF4444" />}
               </View>
               <View>
-                <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t.netProfitLoss}</Text>
-                <Text style={{ fontSize: 28, fontWeight: '700', color: summary.netProfit >= 0 ? '#10B981' : '#EF4444', fontVariant: ['tabular-nums'] }}>
+                <Text className="text-xs text-gray-400 dark:text-gray-500">{t.netProfitLoss}</Text>
+                <Text className="text-[28px] font-bold" style={{ fontVariant: ['tabular-nums'], color: summary.netProfit >= 0 ? '#10B981' : '#EF4444' }}>
                   {summary.netProfit >= 0 ? '+' : '-'}{formatMAD(summary.netProfit)} MAD
                 </Text>
               </View>
             </View>
           </View>
 
-          {/* Bar Chart */}
           {summary.parcelBreakdown && summary.parcelBreakdown.length > 0 && (() => {
             const barWidth = summary.parcelBreakdown.length > 4 ? 16 : 24
             const chartData = summary.parcelBreakdown.map((p: any) => ({
@@ -260,17 +253,17 @@ export default function ReportsScreen() {
             )
 
             return (
-              <View style={{ padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 12 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151' }}>{t.parcelComparison}</Text>
-                  <View style={{ flexDirection: 'row', gap: 12 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: '#10B981' }} />
-                      <Text style={{ fontSize: 10, color: '#6B7280' }}>{t.income}</Text>
+              <View className="mb-3 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                <View className="mb-3 flex-row items-center justify-between">
+                  <Text className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">{t.parcelComparison}</Text>
+                  <View className="flex-row gap-3">
+                    <View className="flex-row items-center gap-1">
+                      <View className="h-2 w-2 rounded-sm bg-emerald-500" />
+                      <Text className="text-[10px] text-gray-500 dark:text-gray-400">{t.income}</Text>
                     </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: '#EF4444' }} />
-                      <Text style={{ fontSize: 10, color: '#6B7280' }}>{t.expenses}</Text>
+                    <View className="flex-row items-center gap-1">
+                      <View className="h-2 w-2 rounded-sm bg-red-500" />
+                      <Text className="text-[10px] text-gray-500 dark:text-gray-400">{t.expenses}</Text>
                     </View>
                   </View>
                 </View>
@@ -290,7 +283,7 @@ export default function ReportsScreen() {
                       yAxisColor="#F3F4F6"
                       xAxisColor="#F3F4F6"
                     />
-                    <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 30, justifyContent: 'flex-end' }}>
+                    <View className="absolute bottom-[30px] left-0 right-0 top-0 justify-end">
                       <BarChart
                         data={expenseData}
                         barWidth={barWidth}
@@ -313,42 +306,40 @@ export default function ReportsScreen() {
             )
           })()}
 
-          {/* Detail cards */}
-          <View style={{ padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 12 }}>
+          <View className="mb-3 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
             {[
               { label: t.totalIncome, value: summary.totalIncome, color: '#10B981', icon: <TrendingUp size={16} color="#10B981" />, prefix: '+' },
               { label: t.totalExpenses, value: summary.totalExpenses, color: '#EF4444', icon: <TrendingDown size={16} color="#EF4444" />, prefix: '-' },
               { label: t.totalGas, value: summary.totalGas, color: '#F97316', icon: <Flame size={16} color="#F97316" />, prefix: '-' },
               { label: t.totalCooperative, value: summary.totalCooperative, color: '#8B5CF6', icon: <HandCoins size={16} color="#8B5CF6" />, prefix: '-' },
             ].map((row, i) => (
-              <View key={row.label} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: i < 3 ? 1 : 0, borderBottomColor: '#F3F4F6' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View key={row.label} className={`flex-row items-center justify-between py-2.5 ${i < 3 ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}>
+                <View className="flex-row items-center gap-2">
                   {row.icon}
-                  <Text style={{ fontSize: 13, color: '#374151' }}>{row.label}</Text>
+                  <Text className="text-[13px] text-gray-700 dark:text-gray-300">{row.label}</Text>
                 </View>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: row.color, fontVariant: ['tabular-nums'] }}>
+                <Text className="text-sm font-semibold" style={{ fontVariant: ['tabular-nums'], color: row.color }}>
                   {row.prefix}{formatMAD(row.value)} MAD
                 </Text>
               </View>
             ))}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#E5E7EB', marginTop: 4 }}>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151' }}>{t.totalCost}</Text>
-              <Text style={{ fontSize: 14, fontWeight: '700', color: '#EF4444', fontVariant: ['tabular-nums'] }}>
+            <View className="flex-row items-center justify-between border-t border-gray-200 dark:border-gray-700 py-2.5 mt-1">
+              <Text className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">{t.totalCost}</Text>
+              <Text className="text-sm font-bold text-red-500" style={{ fontVariant: ['tabular-nums'] }}>
                 -{formatMAD(summary.totalExpenses + summary.totalGas + summary.totalCooperative)} MAD
               </Text>
             </View>
           </View>
 
-          {/* Parcel breakdown */}
           {summary.parcelBreakdown && summary.parcelBreakdown.length > 0 && (
-            <View style={{ padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB' }}>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 12 }}>Détail par parcelle</Text>
+            <View className="rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+              <Text className="mb-3 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Détail par parcelle</Text>
               {summary.parcelBreakdown.map((p: any, i: number) => (
-                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: i < summary.parcelBreakdown.length - 1 ? 1 : 0, borderBottomColor: '#F3F4F6' }}>
-                  <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', flex: 1 }}>{p.name}</Text>
-                  <Text style={{ fontSize: 12, color: '#10B981', marginRight: 8 }}>+{formatMAD(p.totalIncome)}</Text>
-                  <Text style={{ fontSize: 12, color: '#EF4444', marginRight: 8 }}>-{formatMAD(p.totalExpenses + p.totalGas + p.totalCooperative)}</Text>
-                  <Text style={{ fontSize: 13, fontWeight: '600', color: p.netProfit >= 0 ? '#10B981' : '#EF4444' }}>
+                <View key={i} className={`flex-row items-center justify-between py-2 ${i < summary.parcelBreakdown.length - 1 ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}>
+                  <Text className="flex-1 text-[13px] font-medium text-gray-700 dark:text-gray-300">{p.name}</Text>
+                  <Text className="mr-2 text-xs text-emerald-500">+{formatMAD(p.totalIncome)}</Text>
+                  <Text className="mr-2 text-xs text-red-500">-{formatMAD(p.totalExpenses + p.totalGas + p.totalCooperative)}</Text>
+                  <Text className="text-[13px] font-semibold" style={{ color: p.netProfit >= 0 ? '#10B981' : '#EF4444' }}>
                     {p.netProfit >= 0 ? '+' : '-'}{formatMAD(p.netProfit)}
                   </Text>
                 </View>
@@ -358,5 +349,6 @@ export default function ReportsScreen() {
         </>
       )}
     </ScrollView>
+    </SafeAreaView>
   )
 }

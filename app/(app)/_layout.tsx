@@ -10,7 +10,7 @@ export default function AppLayout() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View className="flex-1 items-center justify-center bg-white dark:bg-gray-900">
         <ActivityIndicator size="large" color="#16A34A" />
       </View>
     )
@@ -21,7 +21,7 @@ export default function AppLayout() {
   const { currentFarmId, loading: farmLoading } = useFarm()
   if (farmLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View className="flex-1 items-center justify-center bg-white dark:bg-gray-900">
         <ActivityIndicator size="large" color="#16A34A" />
       </View>
     )

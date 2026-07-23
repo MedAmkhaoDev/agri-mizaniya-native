@@ -112,32 +112,29 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
 
   return (
     <BottomSheet visible={visible} onClose={onClose}>
-      <View style={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 10 }}>
-        {/* Header */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <Text style={{ fontSize: 17, fontWeight: '700', color: '#EF4444' }}>{t.addExpense}</Text>
+      <View className="px-5 pt-1 pb-2.5">
+        <View className="flex-row justify-between items-center mb-4">
+          <Text className="text-[17px] font-bold text-red-500 dark:text-red-500">{t.addExpense}</Text>
           {draft.description ? (
-            <TouchableOpacity onPress={reset} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <TouchableOpacity onPress={reset} className="flex-row items-center gap-1">
               <X size={14} color="#9CA3AF" />
-              <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t.clear}</Text>
+              <Text className="text-xs text-gray-400 dark:text-gray-400">{t.clear}</Text>
             </TouchableOpacity>
           ) : null}
         </View>
 
-        {/* Description input */}
         <TextInput
           value={draft.description || ''}
           onChangeText={(v) => update({ description: v })}
           placeholder={t.description}
           placeholderTextColor="#9CA3AF"
-          style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, fontWeight: '500', color: '#111827' }}
+          className="h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] font-medium text-gray-900 dark:text-white"
         />
 
-        {/* Expense type grid */}
-        <Text style={{ fontSize: 11, fontWeight: '600', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 1, marginTop: 20, marginBottom: 10 }}>
+        <Text className="text-[11px] font-semibold text-gray-400 dark:text-gray-400 uppercase tracking-[1px] mt-5 mb-2.5">
           {t.expenseType}
         </Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        <View className="flex-row flex-wrap gap-2">
           {expenseTypes.map((type) => {
             const selected = draft.type_id === type.id
             const IconComp = ICON_MAP[type.icon] || MoreHorizontal
@@ -145,20 +142,12 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
               <TouchableOpacity
                 key={type.id}
                 onPress={() => update({ type_id: selected ? null : type.id })}
-                style={{
-                  width: '30%',
-                  alignItems: 'center',
-                  padding: 8,
-                  borderRadius: 12,
-                  borderWidth: 2,
-                  borderColor: selected ? '#EF4444' : 'transparent',
-                  backgroundColor: selected ? '#FEF2F2' : '#F3F4F6',
-                }}
+                className={`w-[30%] items-center p-2 rounded-xl border-2 ${selected ? 'border-red-500 bg-red-50 dark:bg-red-900/30' : 'border-transparent bg-gray-100 dark:bg-gray-700'}`}
               >
-                <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: type.color + '20', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
+                <View className="w-9 h-9 rounded-[10px] items-center justify-center mb-1" style={{ backgroundColor: type.color + '20' }}>
                   <IconComp size={18} color={type.color} />
                 </View>
-                <Text style={{ fontSize: 11, fontWeight: '500', textAlign: 'center', color: '#374151' }} numberOfLines={2}>
+                <Text className="text-[11px] font-medium text-center text-gray-700 dark:text-gray-300" numberOfLines={2}>
                   {type.nameFr || type.name}
                 </Text>
               </TouchableOpacity>
@@ -167,21 +156,12 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
           {!addingCustom ? (
             <TouchableOpacity
               onPress={() => setAddingCustom(true)}
-              style={{
-                width: '30%',
-                alignItems: 'center',
-                padding: 8,
-                borderRadius: 12,
-                borderWidth: 2,
-                borderColor: '#D1D5DB',
-                borderStyle: 'dashed',
-                backgroundColor: '#FAFAFA',
-              }}
+              className="w-[30%] items-center p-2 rounded-xl border-2 border-gray-300 dark:border-gray-500 border-dashed bg-gray-50 dark:bg-gray-800"
             >
-              <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
-                <Text style={{ fontSize: 18, fontWeight: '600', color: '#9CA3AF' }}>+</Text>
+              <View className="w-9 h-9 rounded-[10px] bg-gray-100 dark:bg-gray-600 items-center justify-center mb-1">
+                <Text className="text-lg font-semibold text-gray-400 dark:text-gray-400">+</Text>
               </View>
-              <Text style={{ fontSize: 11, fontWeight: '500', textAlign: 'center', color: '#9CA3AF' }} numberOfLines={2}>
+              <Text className="text-[11px] font-medium text-center text-gray-400 dark:text-gray-400" numberOfLines={2}>
                 {t.other}
               </Text>
             </TouchableOpacity>
@@ -189,14 +169,14 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
         </View>
 
         {addingCustom ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 }}>
+          <View className="flex-row items-center gap-2 mt-2.5">
             <TextInput
               value={customName}
               onChangeText={setCustomName}
               placeholder={t.expenseType}
               placeholderTextColor="#9CA3AF"
               autoFocus
-              style={{ flex: 1, height: 48, borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 10, paddingHorizontal: 12, fontSize: 14, color: '#111827' }}
+              className="flex-1 h-12 border border-gray-300 dark:border-gray-500 rounded-[10px] px-3 text-sm text-gray-900 dark:text-white"
             />
             <TouchableOpacity
               onPress={async () => {
@@ -213,111 +193,76 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
                 }
               }}
               disabled={!customName.trim()}
-              style={{ width: 42, height: 42, borderRadius: 10, backgroundColor: customName.trim() ? '#EF4444' : '#E5E7EB', alignItems: 'center', justifyContent: 'center' }}
+              className={`w-[42px] h-[42px] rounded-[10px] items-center justify-center ${customName.trim() ? 'bg-red-500' : 'bg-gray-200 dark:bg-gray-600'}`}
             >
               <Check size={18} color="#FFFFFF" />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => { setAddingCustom(false); setCustomName('') }}
-              style={{ width: 42, height: 42, borderRadius: 10, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}
+              className="w-[42px] h-[42px] rounded-[10px] bg-gray-100 dark:bg-gray-600 items-center justify-center"
             >
               <X size={18} color="#9CA3AF" />
             </TouchableOpacity>
           </View>
         ) : null}
 
-        {/* Quantity */}
-        <View style={{ marginTop: 16 }}>
-          <Text style={{ fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 }}>{t.quantity}</Text>
+        <View className="mt-4">
+          <Text className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t.quantity}</Text>
           <TextInput
             keyboardType="decimal-pad"
             value={draft.quantity || ''}
             onChangeText={(v) => update({ quantity: filterNumeric(v) })}
             placeholder={t.quantity}
             placeholderTextColor="#9CA3AF"
-            style={{ height: 48, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: '#111827' }}
+            className="h-12 border border-gray-200 dark:border-gray-600 rounded-[10px] px-4 text-[15px] text-gray-900 dark:text-white"
           />
         </View>
 
-        {/* Unit selector */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, marginTop: 8 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-1.5 mt-2">
           {UNITS.map((u) => (
             <TouchableOpacity
               key={u}
               onPress={() => update({ unit: u })}
-              style={{
-                paddingHorizontal: 14,
-                height: 38,
-                borderRadius: 10,
-                borderWidth: 1,
-                borderColor: draft.unit === u ? '#EF4444' : '#E5E7EB',
-                backgroundColor: draft.unit === u ? '#FEF2F2' : '#FFFFFF',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+              className={`px-3.5 h-[38px] rounded-[10px] border items-center justify-center ${draft.unit === u ? 'border-red-500 bg-red-50 dark:bg-red-900/30' : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800'}`}
             >
-              <Text style={{ fontSize: 12, fontWeight: '600', color: draft.unit === u ? '#EF4444' : '#6B7280' }}>{u}</Text>
+              <Text className={`text-xs font-semibold ${draft.unit === u ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}`}>{u}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
-        {/* Amount input - big */}
         <TextInput
           keyboardType="decimal-pad"
           value={draft.amount || ''}
           onChangeText={(v) => update({ amount: filterNumeric(v) })}
           placeholder={t.amount}
           placeholderTextColor="#9CA3AF"
-          style={{
-            height: 64,
-            fontSize: 30,
-            fontWeight: '700',
-            textAlign: 'center',
-            borderWidth: 2,
-            borderColor: '#FCA5A5',
-            borderRadius: 12,
-            color: '#EF4444',
-            marginTop: 16,
-          }}
+          className="h-16 text-[30px] font-bold text-center border-2 border-red-300 dark:border-red-700 rounded-xl text-red-500 mt-4"
         />
 
-        {/* Auto-calculated unit price */}
         {unitPrice && unitPrice > 0 ? (
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderRadius: 12, backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', marginTop: 12 }}>
-            <Text style={{ fontSize: 13, color: '#6B7280' }}>{t.unitPrice} · {t.autoCalculated}</Text>
-            <Text style={{ fontSize: 17, fontWeight: '700', color: '#EF4444' }}>
-              {formatMADDecimal(unitPrice)} <Text style={{ fontSize: 13, fontWeight: '500' }}>MAD/{draft.unit || 'u'}</Text>
+          <View className="flex-row justify-between items-center p-3 rounded-xl bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 mt-3">
+            <Text className="text-[13px] text-gray-500 dark:text-gray-400">{t.unitPrice} · {t.autoCalculated}</Text>
+            <Text className="text-[17px] font-bold text-red-500">
+              {formatMADDecimal(unitPrice)} <Text className="text-[13px] font-medium">MAD/{draft.unit || 'u'}</Text>
             </Text>
           </View>
         ) : null}
 
-        {/* Recent amounts */}
         {recentAmounts.length > 0 && !draft.amount ? (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+          <View className="flex-row flex-wrap gap-1.5 mt-2">
             {recentAmounts.map((a) => (
               <TouchableOpacity
                 key={a}
                 onPress={() => update({ amount: a.toString() })}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 4,
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 20,
-                  borderWidth: 1,
-                  borderColor: '#E5E7EB',
-                  backgroundColor: '#FFFFFF',
-                }}
+                className="flex-row items-center gap-1 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800"
               >
-                <Text style={{ fontSize: 12, fontWeight: '500', color: '#374151' }}>{a}</Text>
+                <Text className="text-[12px] font-medium text-gray-700 dark:text-gray-300">{a}</Text>
               </TouchableOpacity>
             ))}
           </View>
         ) : null}
 
-        {/* Parcel list - horizontal chips */}
-        <Text style={{ fontSize: 11, fontWeight: '600', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 1, marginTop: 20, marginBottom: 8 }}>
+        <Text className="text-[11px] font-semibold text-gray-400 dark:text-gray-400 uppercase tracking-[1px] mt-5 mb-2">
           {t.parcel}
         </Text>
         <FlatList
@@ -325,35 +270,25 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
           data={parcels}
           keyExtractor={(i) => i.id}
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 6 }}
+          contentContainerClassName="gap-1.5"
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => update({ parcel_id: item.id })} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: draft.parcel_id === item.id ? '#EF4444' : '#E5E7EB', backgroundColor: draft.parcel_id === item.id ? '#FEF2F2' : '#FFFFFF' }}>
-              <Text style={{ fontSize: 13, fontWeight: '500', color: draft.parcel_id === item.id ? '#EF4444' : '#6B7280' }}>{item.name}</Text>
+            <TouchableOpacity onPress={() => update({ parcel_id: item.id })} className={`px-3.5 py-2 rounded-[10px] border ${draft.parcel_id === item.id ? 'border-red-500 bg-red-50 dark:bg-red-900/30' : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800'}`}>
+              <Text className={`text-[13px] font-medium ${draft.parcel_id === item.id ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}`}>{item.name}</Text>
             </TouchableOpacity>
           )}
         />
 
-        {/* Save button */}
         <TouchableOpacity
           onPress={handleSave}
           disabled={!draft.amount || !draft.parcel_id || saving}
-          style={{
-            height: 56,
-            borderRadius: 12,
-            backgroundColor: !draft.amount || !draft.parcel_id || saving ? '#FCA5A5' : '#EF4444',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexDirection: 'row',
-            gap: 8,
-            marginTop: 16,
-          }}
+          className={`h-14 rounded-xl items-center justify-center flex-row gap-2 mt-4 ${!draft.amount || !draft.parcel_id || saving ? 'bg-red-300 dark:bg-red-800' : 'bg-red-500 dark:bg-red-600'}`}
         >
           {saving ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
             <Check size={20} color="#FFFFFF" />
           )}
-          <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>
+          <Text className="text-white text-base font-bold">
             {t.save} {draft.amount ? `· ${draft.amount} MAD` : ''}
           </Text>
         </TouchableOpacity>
