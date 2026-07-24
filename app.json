@@ -4,7 +4,7 @@
     "slug": "agri-mizaniya",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
     "scheme": "agri-mizaniya",
     "newArchEnabled": true,
@@ -25,7 +25,7 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#16A34A",
-        "foregroundImage": "./assets/icon.png"
+        "foregroundImage": "./assets/images/adaptive-icon.png"
       },
       "package": "com.agrimizane.mobile",
       "softwareKeyboardSoftMode": "adjustResize",
@@ -43,10 +43,19 @@
       ]
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/images/favicon.png",
       "bundler": "metro"
     },
     "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#16A34A"
+        }
+      ],
       [
         "onesignal-expo-plugin",
         {
