@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
     "scheme": "agri-mizaniya",
-    "newArchEnabled": true,
     "ios": {
       "googleServicesFile": "./GoogleService-Info.plist",
       "supportsTablet": true,
@@ -28,7 +27,6 @@
         "foregroundImage": "./assets/images/adaptive-icon.png"
       },
       "package": "com.agrimizane.mobile",
-      "softwareKeyboardSoftMode": "adjustResize",
       "intentFilters": [
         {
           "action": "VIEW",
