@@ -4,8 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
 import { HeaderBar } from '@/components/HeaderBar'
-import { getActivityLog } from '@/lib/api'
 import { ActivityLogEntry } from '@/lib/types'
+import { getActivityLog } from '@/lib/api'
 import { Clock, ArrowUpRight, ArrowDownRight, Fuel, Users, Wheat, AlertCircle, RefreshCw } from 'lucide-react-native'
 
 const entityIcons: Record<string, React.ReactNode> = {

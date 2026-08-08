@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Linking } from 'react-native'
 import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
 import { useAuth } from '@/lib/auth-context'
 import { useI18n } from '@/lib/i18n-context'
@@ -55,24 +55,24 @@ export default function AuthScreen() {
     }
   }
 
+  const switchTab = (newTab: Tab) => {
+    setTab(newTab)
+    setError('')
+    setSuccess('')
+  }
+
   const handleGoogleSignIn = async () => {
     setError('')
     setSuccess('')
     setGoogleLoading(true)
     try {
       const result = await signInWithGoogle()
-      if (result.error) setError(result.error.message)
+      if (result?.error) setError(result.error.message)
     } catch {
       setError('An unexpected error occurred')
     } finally {
       setGoogleLoading(false)
     }
-  }
-
-  const switchTab = (newTab: Tab) => {
-    setTab(newTab)
-    setError('')
-    setSuccess('')
   }
 
   const handleForgotPassword = () => {
@@ -160,6 +160,26 @@ export default function AuthScreen() {
 
               {tab === 'signin' ? (
                 <>
+                  <TouchableOpacity
+                    onPress={handleGoogleSignIn}
+                    disabled={googleLoading || loading}
+                    className={cn(
+                      'h-12 rounded-lg border border-border items-center justify-center flex-row gap-2 mb-3 bg-card',
+                      (googleLoading || loading) && 'opacity-60'
+                    )}
+                  >
+                    {googleLoading ? <ActivityIndicator color="#374151" size="small" /> : (
+                      <Text className="text-lg">🌐</Text>
+                    )}
+                    <Text className="text-base font-semibold text-foreground">{t.continueWithGoogle}</Text>
+                  </TouchableOpacity>
+
+                  <View className="flex-row items-center gap-3 mb-4">
+                    <View className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+                    <Text className="text-xs text-muted-foreground">{t.or}</Text>
+                    <View className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+                  </View>
+
                   <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.email}</Text>
                   <TextInput
                     value={email}
@@ -233,30 +253,6 @@ export default function AuthScreen() {
                   </TouchableOpacity>
                 </>
               )}
-
-              {/* Divider */}
-              <View className="flex-row items-center my-5">
-                <View className="flex-1 h-px bg-border" />
-                <Text className="mx-3 text-[13px] text-muted-foreground">{t.or}</Text>
-                <View className="flex-1 h-px bg-border" />
-              </View>
-
-              {/* Google Sign-In */}
-              <TouchableOpacity
-                onPress={handleGoogleSignIn}
-                disabled={googleLoading}
-                className={cn(
-                  'h-12 rounded-lg border border-border bg-card items-center justify-center flex-row gap-2.5',
-                  googleLoading && 'opacity-60'
-                )}
-              >
-                {googleLoading ? (
-                  <ActivityIndicator color="#6B7280" />
-                ) : (
-                  <Text className="text-lg font-bold text-[#4285F4]">G</Text>
-                )}
-                <Text className="text-foreground text-[15px] font-medium">{t.continueWithGoogle}</Text>
-              </TouchableOpacity>
             </View>
           </View>
 
@@ -279,6 +275,26 @@ export default function AuthScreen() {
                 </Text>
               </TouchableOpacity>
             ))}
+          </View>
+
+          {/* Legal Links */}
+          <View className="mt-6 px-2">
+            <Text className="text-center text-[11px] text-muted-foreground leading-5">
+              {t.byContinuingYouAgree}
+              <Text
+                onPress={() => Linking.openURL('https://agri-mizane-9v.vercel.app/privacy')}
+                className="text-green-600 font-medium"
+              >
+                {t.privacyPolicy}
+              </Text>
+              {' '}{t.and}{' '}
+              <Text
+                onPress={() => Linking.openURL('https://agri-mizane-9v.vercel.app/terms')}
+                className="text-green-600 font-medium"
+              >
+                {t.termsOfUse}
+              </Text>
+            </Text>
           </View>
         </View>
       </ScrollView>

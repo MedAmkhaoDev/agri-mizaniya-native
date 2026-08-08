@@ -308,6 +308,10 @@ export const translations = {
     resetPasswordError: "Erreur lors de l'envoi de l'email",
     googlePasswordInfo: 'Le changement de mot de passe n\'est pas disponible pour les comptes Google.',
     enterEmailForReset: 'Entrez votre email pour réinitialiser votre mot de passe',
+    byContinuingYouAgree: 'En continuant, vous acceptez notre ',
+    privacyPolicy: 'Politique de confidentialité',
+    termsOfUse: 'Conditions d\'utilisation',
+    and: 'et',
   },
   en: {
     appName: 'Agri-Mizane',
@@ -616,6 +620,10 @@ export const translations = {
     resetPasswordError: 'Error sending reset email',
     googlePasswordInfo: 'Password change is not available for Google accounts.',
     enterEmailForReset: 'Enter your email to reset your password',
+    byContinuingYouAgree: 'By continuing, you agree to our ',
+    privacyPolicy: 'Privacy Policy',
+    termsOfUse: 'Terms of Use',
+    and: 'and',
   },
   ar: {
     appName: 'أجري-ميزان',
@@ -924,6 +932,10 @@ export const translations = {
     resetPasswordError: 'خطأ في إرسال بريد إعادة التعيين',
     googlePasswordInfo: 'تغيير كلمة المرور غير متاح لحسابات Google.',
     enterEmailForReset: 'أدخل بريدك الإلكتروني لإعادة تعيين كلمة المرور',
+    byContinuingYouAgree: 'بالمتابعة، أنت توافق على ',
+    privacyPolicy: 'سياسة الخصوصية',
+    termsOfUse: 'شروط الاستخدام',
+    and: 'و',
   },
 }
 

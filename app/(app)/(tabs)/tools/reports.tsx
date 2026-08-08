@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Dimensions } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Dimensions, Platform } from 'react-native'
+import DateTimePicker from '@react-native-community/datetimepicker'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/lib/auth-context'
 import { useFarm } from '@/lib/farm-context'
@@ -26,6 +27,8 @@ export default function ReportsScreen() {
   const [period, setPeriod] = useState<Period>('all')
   const [customFrom, setCustomFrom] = useState('')
   const [customTo, setCustomTo] = useState('')
+  const [pickerField, setPickerField] = useState<'from' | 'to' | null>(null)
+  const [pickerDate, setPickerDate] = useState(new Date())
   const [loading, setLoading] = useState(false)
   const [summary, setSummary] = useState<any>(null)
   const [generated, setGenerated] = useState(false)
@@ -169,13 +172,40 @@ export default function ReportsScreen() {
         <View className="mb-3 flex-row gap-3">
           <View className="flex-1">
             <Text className="mb-1 text-xs text-muted-foreground">{t.from}</Text>
-            <TextInput value={customFrom} onChangeText={setCustomFrom} placeholder="2024-01-01" placeholderTextColor="#9CA3AF" className="h-12 rounded-[10px] border border-border px-4 text-[15px] text-foreground" />
+            <TouchableOpacity
+              onPress={() => { setPickerField('from'); setPickerDate(customFrom ? new Date(customFrom) : new Date()) }}
+              className="h-12 rounded-[10px] border border-border px-4 justify-center"
+            >
+              <Text className={`text-[15px] ${customFrom ? 'text-foreground' : 'text-muted-foreground'}`}>{customFrom || '2024-01-01'}</Text>
+            </TouchableOpacity>
           </View>
           <View className="flex-1">
             <Text className="mb-1 text-xs text-muted-foreground">{t.to}</Text>
-            <TextInput value={customTo} onChangeText={setCustomTo} placeholder="2024-12-31" placeholderTextColor="#9CA3AF" className="h-12 rounded-[10px] border border-border px-4 text-[15px] text-foreground" />
+            <TouchableOpacity
+              onPress={() => { setPickerField('to'); setPickerDate(customTo ? new Date(customTo) : new Date()) }}
+              className="h-12 rounded-[10px] border border-border px-4 justify-center"
+            >
+              <Text className={`text-[15px] ${customTo ? 'text-foreground' : 'text-muted-foreground'}`}>{customTo || '2024-12-31'}</Text>
+            </TouchableOpacity>
           </View>
         </View>
+      )}
+
+      {pickerField && (
+        <DateTimePicker
+          value={pickerDate}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={(event, date) => {
+            if (Platform.OS === 'android') setPickerField(null)
+            if (event.type === 'set' && date) {
+              const iso = date.toISOString().split('T')[0]
+              if (pickerField === 'from') setCustomFrom(iso)
+              else if (pickerField === 'to') setCustomTo(iso)
+            }
+            if (Platform.OS === 'ios') setPickerField(null)
+          }}
+        />
       )}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, marginBottom: 16 }}>

@@ -3,7 +3,8 @@ import { View, Text, TouchableOpacity } from 'react-native'
 import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
 import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
-import { getFarmMembers } from '@/lib/api'
+import { getFarmMembers, getExpenseTypes } from '@/lib/api'
+import type { ExpenseType } from '@/lib/types'
 import { BottomSheet } from '@/components/BottomSheet'
 import { cn } from '@/lib/utils'
 import type { ExpenseFilters, FarmMember } from '@/lib/types'
@@ -49,6 +50,7 @@ export function FilterSheet({ visible, onClose, filters, onApply }: FilterSheetP
   const { currentFarmId } = useFarm()
   const { t } = useI18n()
   const [members, setMembers] = useState<FarmMember[]>([])
+  const [expenseTypes, setExpenseTypes] = useState<ExpenseType[]>([])
   const [draft, setDraft] = useState<ExpenseFilters>(filters)
 
   useEffect(() => {
@@ -57,6 +59,7 @@ export function FilterSheet({ visible, onClose, filters, onApply }: FilterSheetP
       if (currentFarmId) {
         getFarmMembers(currentFarmId).then((res) => setMembers(res.data))
       }
+      getExpenseTypes().then((res) => setExpenseTypes(res.data))
     }
   }, [visible, currentFarmId])
 
@@ -133,6 +136,34 @@ export function FilterSheet({ visible, onClose, filters, onApply }: FilterSheetP
                   {draft.createdBy === m.userId && <Check size={14} color="#FFFFFF" />}
                   <Text className={cn('text-xs font-semibold', draft.createdBy === m.userId ? 'text-white' : 'text-foreground')}>
                     {m.fullName}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
+
+        {/* Expense type */}
+        {expenseTypes.length > 0 && (
+          <>
+            <Text className="text-xs font-semibold text-muted-foreground mb-2.5 uppercase tracking-wider">{t.expenseType}</Text>
+            <View className="flex-row flex-wrap gap-2 mb-6">
+              {expenseTypes.map((type) => (
+                <TouchableOpacity
+                  key={type.id}
+                  onPress={() =>
+                    setDraft((d) => ({
+                      ...d,
+                      typeId: d.typeId === type.id ? undefined : type.id,
+                    }))
+                  }
+                  className={cn(
+                    'px-3.5 h-9 justify-center rounded-[10px]',
+                    draft.typeId === type.id ? 'bg-green-600 dark:bg-green-500' : 'bg-accent'
+                  )}
+                >
+                  <Text className={cn('text-xs font-semibold', draft.typeId === type.id ? 'text-white' : 'text-foreground')}>
+                    {type.nameFr || type.name}
                   </Text>
                 </TouchableOpacity>
               ))}

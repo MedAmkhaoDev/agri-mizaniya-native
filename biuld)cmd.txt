@@ -1,0 +1,7 @@
+This is an Expo project with EAS already configured. You have two options:
+Option 1: EAS Cloud Build (recommended)
+eas build --platform android --profile preview
+This builds an APK in the cloud and gives you a download link. The preview profile produces an APK (not AAB).
+Option 2: Local Build
+eas build --platform android --profile preview --local
+Requires Android SDK/JDK installed locally.

@@ -4,7 +4,7 @@ import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
 import { useAuth } from '@/lib/auth-context'
 import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
-import { createExpense, getExpenseTypes, getParcels, seedExpenseTypes, addExpenseType } from '@/lib/api'
+import { createExpense, updateExpense, getExpenseTypes, getParcels, seedExpenseTypes, addExpenseType } from '@/lib/api'
 import { BottomSheet } from '@/components/BottomSheet'
 import { useDraft, getLastParcelId, setLastParcelId, addRecentAmount, getRecentAmounts } from '@/hooks/useDraft'
 import { formatMADDecimal, filterNumeric } from '@/lib/format'
@@ -19,6 +19,16 @@ interface AddExpenseSheetProps {
   visible: boolean
   onClose: () => void
   defaultParcelId?: string
+  editingExpense?: {
+    id: string
+    parcelId: string
+    typeId: string | null
+    description: string | null
+    amount: number
+    quantity: number | null
+    unit: string | null
+    date: string
+  } | null
 }
 
 const ICON_MAP: Record<string, React.ComponentType<any>> = {
@@ -29,11 +39,26 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
 
 const UNITS = ['kg', 'quintal', 'tonne', 'litre', 'caisse', 'sac', 'unité']
 
-export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: AddExpenseSheetProps) {
+export default function AddExpenseSheet({ visible, onClose, defaultParcelId, editingExpense }: AddExpenseSheetProps) {
   const { user } = useAuth()
   const { currentFarmId } = useFarm()
   const { t } = useI18n()
   const { draft, setDraft, clearDraft } = useDraft('expense')
+  const isEditing = !!editingExpense
+
+  useEffect(() => {
+    if (visible && editingExpense) {
+      setDraft({
+        parcel_id: editingExpense.parcelId,
+        type_id: editingExpense.typeId || undefined,
+        description: editingExpense.description || '',
+        amount: editingExpense.amount?.toString() || '',
+        quantity: editingExpense.quantity?.toString() || '',
+        unit: editingExpense.unit || undefined,
+        date: editingExpense.date,
+      })
+    }
+  }, [visible, editingExpense, setDraft])
   const [expenseTypes, setExpenseTypes] = useState<ExpenseType[]>([])
   const [parcels, setParcels] = useState<Parcel[]>([])
   const [saving, setSaving] = useState(false)
@@ -89,9 +114,7 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
     if (!user || !draft.parcel_id || !draft.amount) return
     setSaving(true)
     try {
-      await setLastParcelId(draft.parcel_id)
-      await addRecentAmount(parseFloat(draft.amount))
-      await createExpense(currentFarmId!, user.uid, {
+      const payload = {
         parcelId: draft.parcel_id,
         typeId: draft.type_id || null,
         amount: parseFloat(draft.amount),
@@ -99,8 +122,14 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
         quantity: draft.quantity ? parseFloat(draft.quantity) : null,
         unit: draft.unit || null,
         date: draft.date || new Date().toISOString().split('T')[0],
-        notes: null,
-      })
+      }
+      if (isEditing && editingExpense) {
+        await updateExpense(currentFarmId!, editingExpense.id, payload)
+      } else {
+        await setLastParcelId(draft.parcel_id)
+        await addRecentAmount(parseFloat(draft.amount))
+        await createExpense(currentFarmId!, user.uid, { ...payload, notes: null })
+      }
       reset()
       onClose()
       Toast.show({ type: 'success', text1: t.expenseSaved })
@@ -115,7 +144,7 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId }: A
     <BottomSheet visible={visible} onClose={onClose}>
       <View className="px-5 pt-1 pb-2.5">
         <View className="flex-row justify-between items-center mb-4">
-          <Text className="text-[17px] font-bold text-red-500 dark:text-red-500">{t.addExpense}</Text>
+          <Text className="text-[17px] font-bold text-red-500 dark:text-red-500">{isEditing ? t.editExpense : t.addExpense}</Text>
           {draft.description ? (
             <TouchableOpacity onPress={reset} className="flex-row items-center gap-1">
               <X size={14} color="#9CA3AF" />

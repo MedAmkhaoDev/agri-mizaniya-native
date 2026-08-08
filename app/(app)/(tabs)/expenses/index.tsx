@@ -14,7 +14,7 @@ import { FilterSheet } from '@/components/FilterSheet'
 import { HeaderBar } from '@/components/HeaderBar'
 import Toast from 'react-native-toast-message'
 import type { Expense, Parcel, ExpenseFilters } from '@/lib/types'
-import { TrendingDown, Plus, Trash2, AlertCircle, RefreshCw, SlidersHorizontal } from 'lucide-react-native'
+import { TrendingDown, Plus, Trash2, AlertCircle, RefreshCw, SlidersHorizontal, Pencil } from 'lucide-react-native'
 
 export default function ExpensesScreen() {
   const { user } = useAuth()
@@ -23,6 +23,7 @@ export default function ExpensesScreen() {
   const [filters, setFilters] = useState<ExpenseFilters>({ parcelId: 'all' })
   const [sheetOpen, setSheetOpen] = useState(false)
   const [filterSheetOpen, setFilterSheetOpen] = useState(false)
+  const [editingExpense, setEditingExpense] = useState<WithPending<Expense> | null>(null)
 
   const expensesPath = currentFarmId ? `farms/${currentFarmId}/expenses` : ''
   const parcelsPath = currentFarmId ? `farms/${currentFarmId}/parcels` : ''
@@ -57,6 +58,11 @@ export default function ExpensesScreen() {
     { deleted: t.deleted, undo: t.undo, error: t.error },
   )
 
+  const openAdd = () => {
+    setEditingExpense(null)
+    setSheetOpen(true)
+  }
+
   const total = expenses.reduce((sum, e) => sum + e.amount, 0)
   const activeParcels = parcels.filter(p => p.status === 'active')
   const advancedFilterCount = [filters.createdBy, filters.dateFrom, filters.amountMin != null ? 'min' : null, filters.amountMax != null ? 'max' : null, filters.typeId].filter(Boolean).length
@@ -70,7 +76,7 @@ export default function ExpensesScreen() {
           title={t.expenses}
           right={
             canWrite ? (
-              <TouchableOpacity onPress={() => setSheetOpen(true)} className="w-9 h-9 rounded-[10px] bg-green-600 dark:bg-green-500 items-center justify-center">
+              <TouchableOpacity onPress={openAdd} className="w-9 h-9 rounded-[10px] bg-green-600 dark:bg-green-500 items-center justify-center">
                 <Plus size={20} color="#FFFFFF" />
               </TouchableOpacity>
             ) : undefined
@@ -170,7 +176,12 @@ export default function ExpensesScreen() {
                     )}
                   </View>
                   <Text style={{ fontVariant: ['tabular-nums'] }} className="text-sm font-semibold text-red-500 dark:text-red-400">-{formatMAD(item.amount)} MAD</Text>
-                  <TouchableOpacity onPress={() => deleteWithUndo(item)} className="p-1.5 ml-2">
+                  {canWrite && (
+                    <TouchableOpacity onPress={() => { setEditingExpense(item); setSheetOpen(true) }} className="p-1.5 ml-1">
+                      <Pencil size={14} color="#6B7280" />
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity onPress={() => deleteWithUndo(item)} className="p-1.5 ml-1">
                     <Trash2 size={14} color="#EF4444" />
                   </TouchableOpacity>
                 </View>
@@ -179,7 +190,11 @@ export default function ExpensesScreen() {
           </View>
         )}
 
-        <AddExpenseSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} />
+        <AddExpenseSheet
+          visible={sheetOpen}
+          onClose={() => { setEditingExpense(null); setSheetOpen(false) }}
+          editingExpense={editingExpense}
+        />
         <FilterSheet visible={filterSheetOpen} onClose={() => setFilterSheetOpen(false)} filters={filters} onApply={setFilters} />
       </View>
     </SafeAreaView>

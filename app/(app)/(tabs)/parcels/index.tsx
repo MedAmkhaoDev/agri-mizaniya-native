@@ -21,7 +21,7 @@ import {
 
 export default function ParcelsScreen() {
   const { user } = useAuth()
-  const { currentFarmId, canManageParcels, isWorker } = useFarm()
+  const { currentFarmId, canManageParcels, canCreateEntries, isWorker } = useFarm()
   const { t } = useI18n()
   const [financials, setFinancials] = useState<Record<string, FinancialSummary>>({})
   const [selectedParcel, setSelectedParcel] = useState<WithPending<Parcel> | null>(null)
@@ -134,7 +134,7 @@ export default function ParcelsScreen() {
         <HeaderBar
           title={t.parcels}
           right={
-            canManageParcels ? (
+            canCreateEntries ? (
               <TouchableOpacity onPress={openAdd} className="w-9 h-9 rounded-[10px] bg-green-600 dark:bg-green-500 items-center justify-center">
                 <Plus size={20} color="#FFFFFF" />
               </TouchableOpacity>
@@ -157,10 +157,12 @@ export default function ParcelsScreen() {
             <View className="items-center py-16">
               <MapPin size={48} color="#D1D5DB" />
               <Text className="text-muted-foreground mt-3">{t.noParcels}</Text>
-              <TouchableOpacity onPress={openAdd} className="mt-4 flex-row items-center gap-1.5 px-4 py-2.5 rounded-[10px] bg-green-600 dark:bg-green-500">
-                <Plus size={16} color="#FFFFFF" />
-                <Text className="text-white font-semibold">{t.addParcel}</Text>
-              </TouchableOpacity>
+              {canCreateEntries && (
+                <TouchableOpacity onPress={openAdd} className="mt-4 flex-row items-center gap-1.5 px-4 py-2.5 rounded-[10px] bg-green-600 dark:bg-green-500">
+                  <Plus size={16} color="#FFFFFF" />
+                  <Text className="text-white font-semibold">{t.addParcel}</Text>
+                </TouchableOpacity>
+              )}
             </View>
           ) : (
             activeParcels.map(renderParcelCard)

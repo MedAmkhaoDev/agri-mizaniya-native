@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "517334185126",
+    "project_id": "agri-mizane",
+    "storage_bucket": "agri-mizane.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:517334185126:android:0b44bc44788d2694303067",
+        "android_client_info": {
+          "package_name": "com.agrimizane.mobile"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "517334185126-8d523uj1ud5ohl4hn8sm6v29hui1h2bk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.agrimizane.mobile",
+            "certificate_hash": "1bd673207f053966268ed405687cd0dbfd1845ce"
+          }
+        },
+        {
+          "client_id": "517334185126-abqet5q0qa2s0482m8ltv93l8eapg6s3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD_dWRvFJCgAjsh2vH4sEV4q1AU8c7pcBE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "517334185126-abqet5q0qa2s0482m8ltv93l8eapg6s3.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "517334185126-6fb6mdgqa963018deif40upobuoq1rf2.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.agrimizane.native"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

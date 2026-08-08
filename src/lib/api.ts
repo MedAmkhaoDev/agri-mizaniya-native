@@ -271,7 +271,7 @@ export async function updateFarm(
     })
     if (userId) {
       const userName = await getUserName(userId)
-      notifyFarm(farmId, userId, 'FARM_SETTINGS_CHANGED', 'Paramètres modifiés', `${userName} a modifié les paramètres de la ferme`, { entityId: farmId, entityType: 'farm', actionBy: userId, actionByName: userName })
+      notifyFarm(farmId, userId, 'FARM_SETTINGS_CHANGED', 'Paramètres modifiés / Settings updated', `${userName} a modifié les paramètres de la ferme / updated the farm settings`, { entityId: farmId, entityType: 'farm', actionBy: userId, actionByName: userName })
     }
     return { error: null }
   } catch (error) {
@@ -1113,21 +1113,22 @@ export async function getIncomes(
 export async function createIncome(
   farmId: string,
   userId: string,
-  income: Omit<Income, 'id' | 'farmId' | 'createdBy' | 'createdAt' | 'updatedAt'>
+  income: Omit<Income, 'id' | 'farmId' | 'createdBy' | 'createdAt' | 'updatedAt' | 'createdByName'>
 ): Promise<{ data: Income | null; error: Error | null }> {
   try {
     const now = new Date().toISOString()
+    const userName = await getUserName(userId)
     const docRef = await addDoc(farmCollection(farmId, 'incomes'), {
       ...income,
       farmId,
       createdBy: userId,
+      createdByName: userName,
       createdAt: now,
       updatedAt: now,
     })
-    const userName = await getUserName(userId)
     const amount = income.totalAmount.toLocaleString('fr-FR')
     notifyFarm(farmId, userId, 'INCOME_CREATED', 'Revenu enregistré', `${userName} a enregistré un revenu de ${amount} MAD`, { entityId: docRef.id, entityType: 'income', actionBy: userId, actionByName: userName })
-    return { data: { id: docRef.id, farmId, createdBy: userId, ...income, createdAt: now, updatedAt: now } as Income, error: null }
+    return { data: { id: docRef.id, farmId, createdBy: userId, createdByName: userName, ...income, createdAt: now, updatedAt: now } as Income, error: null }
   } catch (error) {
     return { data: null, error: error as Error }
   }
@@ -1188,21 +1189,22 @@ export async function getGasUsages(
 export async function createGasUsage(
   farmId: string,
   userId: string,
-  gas: Omit<GasUsage, 'id' | 'farmId' | 'createdBy' | 'createdAt' | 'updatedAt'>
+  gas: Omit<GasUsage, 'id' | 'farmId' | 'createdBy' | 'createdAt' | 'updatedAt' | 'createdByName'>
 ): Promise<{ data: GasUsage | null; error: Error | null }> {
   try {
     const now = new Date().toISOString()
+    const userName = await getUserName(userId)
     const docRef = await addDoc(farmCollection(farmId, 'gasUsages'), {
       ...gas,
       farmId,
       createdBy: userId,
+      createdByName: userName,
       createdAt: now,
       updatedAt: now,
     })
-    const userName = await getUserName(userId)
     const amount = gas.totalAmount.toLocaleString('fr-FR')
     notifyFarm(farmId, userId, 'GAS_CREATED', 'Consommation de gaz enregistrée', `${userName} a enregistré une consommation de gaz de ${amount} MAD`, { entityId: docRef.id, entityType: 'gas', actionBy: userId, actionByName: userName })
-    return { data: { id: docRef.id, farmId, createdBy: userId, ...gas, createdAt: now, updatedAt: now } as GasUsage, error: null }
+    return { data: { id: docRef.id, farmId, createdBy: userId, createdByName: userName, ...gas, createdAt: now, updatedAt: now } as GasUsage, error: null }
   } catch (error) {
     return { data: null, error: error as Error }
   }
@@ -1263,21 +1265,22 @@ export async function getCooperativeSupports(
 export async function createCooperativeSupport(
   farmId: string,
   userId: string,
-  support: Omit<CooperativeSupport, 'id' | 'farmId' | 'createdBy' | 'createdAt' | 'updatedAt'>
+  support: Omit<CooperativeSupport, 'id' | 'farmId' | 'createdBy' | 'createdAt' | 'updatedAt' | 'createdByName'>
 ): Promise<{ data: CooperativeSupport | null; error: Error | null }> {
   try {
     const now = new Date().toISOString()
+    const userName = await getUserName(userId)
     const docRef = await addDoc(farmCollection(farmId, 'cooperativeSupports'), {
       ...support,
       farmId,
       createdBy: userId,
+      createdByName: userName,
       createdAt: now,
       updatedAt: now,
     })
-    const userName = await getUserName(userId)
     const amount = support.amount.toLocaleString('fr-FR')
     notifyFarm(farmId, userId, 'COOPERATIVE_CREATED', 'Aide coopérative enregistrée', `${userName} a enregistré une aide coopérative de ${amount} MAD`, { entityId: docRef.id, entityType: 'cooperative', actionBy: userId, actionByName: userName })
-    return { data: { id: docRef.id, farmId, createdBy: userId, ...support, createdAt: now, updatedAt: now } as CooperativeSupport, error: null }
+    return { data: { id: docRef.id, farmId, createdBy: userId, createdByName: userName, ...support, createdAt: now, updatedAt: now } as CooperativeSupport, error: null }
   } catch (error) {
     return { data: null, error: error as Error }
   }

@@ -14,6 +14,9 @@ import { useFarm } from '@/lib/farm-context'
 import { useRouter } from 'expo-router'
 import ChangePasswordSheet from '@/components/ChangePasswordSheet'
 import { useSync } from '@/lib/sync-context'
+import { deleteFarm, removeMember } from '@/lib/api'
+import { db } from '@/config/firebase'
+import { doc, updateDoc } from 'firebase/firestore'
 
 export default function SettingsScreen() {
   const { t, language, setLanguage } = useI18n()
@@ -26,6 +29,9 @@ export default function SettingsScreen() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [showChangePassword, setShowChangePassword] = useState(false)
+  const { currentFarmId, canDeleteFarm, canLeaveFarm, reloadFarms } = useFarm()
+  const [deleting, setDeleting] = useState(false)
+  const [leaving, setLeaving] = useState(false)
 
   const needsMigration = !profile?.farmIds || profile.farmIds.length === 0
   const isGoogleUser = user?.providerData?.some((p) => p.providerId === 'google.com')
@@ -46,6 +52,37 @@ export default function SettingsScreen() {
     }
   }
 
+  const handleLeaveFarm = async () => {
+    if (!currentFarmId || !user) return
+    Alert.alert(t.leaveFarm, t.confirmLeaveFarm, [
+      { text: t.cancel, style: 'cancel' },
+      { text: t.leaveFarm, style: 'destructive', onPress: async () => {
+        setLeaving(true)
+        const { error } = await removeMember(currentFarmId, user.uid)
+        setLeaving(false)
+        if (error) { Alert.alert(t.error, error.message || t.failedToRemove); return }
+        await updateDoc(doc(db, 'users', user.uid), { currentFarmId: null })
+        await reloadFarms()
+        router.replace('/(farm-select)')
+      }}
+    ])
+  }
+  const handleDeleteFarm = async () => {
+    if (!currentFarmId || !user) return
+    Alert.alert(t.deleteFarm, t.confirmDeleteFarm, [
+      { text: t.cancel, style: 'cancel' },
+      { text: t.delete, style: 'destructive', onPress: async () => {
+        setDeleting(true)
+        const { error } = await deleteFarm(currentFarmId)
+        setDeleting(false)
+        if (error) { Alert.alert(t.error, error.message || t.failedToSave); return }
+        const uid = user.uid
+        await updateDoc(doc(db, 'users', uid), { currentFarmId: null })
+        await reloadFarms()
+        router.replace('/(farm-select)')
+      }}
+    ])
+  }
   const languageOptions: { code: Language; label: string; flag: string }[] = [
     { code: 'fr', label: 'Français', flag: '🇫🇷' },
     { code: 'en', label: 'English', flag: '🇬🇧' },
@@ -81,6 +118,26 @@ export default function SettingsScreen() {
         <ArrowRightLeft size={14} color="#6B7280" />
         <Text className="text-[13px] font-medium text-muted-foreground">{t.switchFarm}</Text>
       </TouchableOpacity>
+      {canLeaveFarm && (
+        <TouchableOpacity
+          onPress={handleLeaveFarm}
+          disabled={leaving}
+          className="mt-2 h-10 rounded-[10px] border border-orange-300 dark:border-orange-700 items-center justify-center flex-row gap-1.5 bg-orange-50 dark:bg-orange-950"
+        >
+          {leaving ? <ActivityIndicator size="small" color="#D97706" /> : <LogOut size={14} color="#D97706" />}
+          <Text className="text-[13px] font-medium text-orange-600 dark:text-orange-400">{t.leaveFarm}</Text>
+        </TouchableOpacity>
+      )}
+      {canDeleteFarm && (
+        <TouchableOpacity
+          onPress={handleDeleteFarm}
+          disabled={deleting}
+          className="mt-2 h-10 rounded-[10px] border border-red-300 dark:border-red-700 items-center justify-center flex-row gap-1.5 bg-red-50 dark:bg-red-950"
+        >
+          {deleting ? <ActivityIndicator size="small" color="#EF4444" /> : <LogOut size={14} color="#EF4444" />}
+          <Text className="text-[13px] font-medium text-red-500">{t.deleteFarm}</Text>
+        </TouchableOpacity>
+      )}
     </View>
         </View>
 )}
