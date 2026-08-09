@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Dimensions, Platform } from 'react-native'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useIsDesktop } from '@/lib/web-layout'
 import { useAuth } from '@/lib/auth-context'
 import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
@@ -30,8 +31,16 @@ export default function ReportsScreen() {
   const [pickerField, setPickerField] = useState<'from' | 'to' | null>(null)
   const [pickerDate, setPickerDate] = useState(new Date())
   const [loading, setLoading] = useState(false)
+  const isDesktop = useIsDesktop()
   const [summary, setSummary] = useState<any>(null)
   const [generated, setGenerated] = useState(false)
+
+  useEffect(() => {
+    if (!currentFarmId) return
+    getParcels(currentFarmId).then(({ data }) => {
+      if (data) setParcels(data)
+    })
+  }, [currentFarmId])
 
   if (!currentFarmId) return null
 
@@ -144,8 +153,21 @@ export default function ReportsScreen() {
       ${breakdownRows ? `<h3>Détail par parcelle</h3><table><tr><th>Parcelle</th><th>Revenus</th><th>Coûts</th><th>Résultat</th></tr>${breakdownRows}</table>` : ''}
     </body></html>`
 
-    const { uri } = await Print.printToFileAsync({ html })
-    await Sharing.shareAsync(uri)
+    if (Platform.OS === 'web') {
+      const blob = new Blob([html], { type: 'text/html' })
+      const url = URL.createObjectURL(blob)
+      window.open(url, '_blank')
+      return
+    }
+
+    try {
+      const result = await Print.printToFileAsync({ html })
+      if (result?.uri) {
+        await Sharing.shareAsync(result.uri)
+      }
+    } catch (e) {
+      console.error('PDF generation failed:', e)
+    }
   }
 
   const periods: { key: Period; label: string }[] = [
@@ -172,26 +194,44 @@ export default function ReportsScreen() {
         <View className="mb-3 flex-row gap-3">
           <View className="flex-1">
             <Text className="mb-1 text-xs text-muted-foreground">{t.from}</Text>
-            <TouchableOpacity
-              onPress={() => { setPickerField('from'); setPickerDate(customFrom ? new Date(customFrom) : new Date()) }}
-              className="h-12 rounded-[10px] border border-border px-4 justify-center"
-            >
-              <Text className={`text-[15px] ${customFrom ? 'text-foreground' : 'text-muted-foreground'}`}>{customFrom || '2024-01-01'}</Text>
-            </TouchableOpacity>
+            {isDesktop ? (
+              <input
+                type="date"
+                value={customFrom || '2024-01-01'}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="h-12 w-full rounded-[10px] border border-border px-4 text-[15px] bg-background text-foreground"
+              />
+            ) : (
+              <TouchableOpacity
+                onPress={() => { setPickerField('from'); setPickerDate(customFrom ? new Date(customFrom) : new Date()) }}
+                className="h-12 rounded-[10px] border border-border px-4 justify-center"
+              >
+                <Text className={`text-[15px] ${customFrom ? 'text-foreground' : 'text-muted-foreground'}`}>{customFrom || '2024-01-01'}</Text>
+              </TouchableOpacity>
+            )}
           </View>
           <View className="flex-1">
             <Text className="mb-1 text-xs text-muted-foreground">{t.to}</Text>
-            <TouchableOpacity
-              onPress={() => { setPickerField('to'); setPickerDate(customTo ? new Date(customTo) : new Date()) }}
-              className="h-12 rounded-[10px] border border-border px-4 justify-center"
-            >
-              <Text className={`text-[15px] ${customTo ? 'text-foreground' : 'text-muted-foreground'}`}>{customTo || '2024-12-31'}</Text>
-            </TouchableOpacity>
+            {isDesktop ? (
+              <input
+                type="date"
+                value={customTo || '2024-12-31'}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="h-12 w-full rounded-[10px] border border-border px-4 text-[15px] bg-background text-foreground"
+              />
+            ) : (
+              <TouchableOpacity
+                onPress={() => { setPickerField('to'); setPickerDate(customTo ? new Date(customTo) : new Date()) }}
+                className="h-12 rounded-[10px] border border-border px-4 justify-center"
+              >
+                <Text className={`text-[15px] ${customTo ? 'text-foreground' : 'text-muted-foreground'}`}>{customTo || '2024-12-31'}</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       )}
 
-      {pickerField && (
+      {pickerField && Platform.OS !== 'web' && (
         <DateTimePicker
           value={pickerDate}
           mode="date"

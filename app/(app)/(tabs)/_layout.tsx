@@ -3,7 +3,7 @@ import { useI18n } from '@/lib/i18n-context'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Platform, useWindowDimensions } from 'react-native'
 import { useColorScheme } from 'nativewind'
-import { LayoutDashboard, MapPin, TrendingDown, TrendingUp, MoreHorizontal } from 'lucide-react-native'
+import { LayoutDashboard, MapPin, TrendingDown, TrendingUp, MoreHorizontal, Flame, HandCoins, Users, Wheat, BarChart3, Clock } from 'lucide-react-native'
 import { WEB_MAX_WIDTH } from '@/lib/web-layout'
 
 export default function AppTabs() {
@@ -82,6 +82,55 @@ export default function AppTabs() {
         options={{
           title: t.more,
           tabBarIcon: ({ color, size }) => <MoreHorizontal size={size} color={color} />,
+          href: Platform.OS === 'web' ? null : '/(app)/(tabs)/tools',
+        }}
+      />
+      <Tabs.Screen
+        name="gas"
+        options={{
+          title: t.gasUsage,
+          tabBarIcon: ({ color, size }) => <Flame size={size} color={color} />,
+          href: Platform.OS === 'web' ? '/gas' : null,
+        }}
+      />
+      <Tabs.Screen
+        name="cooperative"
+        options={{
+          title: t.cooperative,
+          tabBarIcon: ({ color, size }) => <HandCoins size={size} color={color} />,
+          href: Platform.OS === 'web' ? '/cooperative' : null,
+        }}
+      />
+      <Tabs.Screen
+        name="activity"
+        options={{
+          title: t.activityLog,
+          tabBarIcon: ({ color, size }) => <Clock size={size} color={color} />,
+          href: Platform.OS === 'web' ? '/activity' : null,
+        }}
+      />
+      <Tabs.Screen
+        name="reports"
+        options={{
+          title: t.reports,
+          tabBarIcon: ({ color, size }) => <BarChart3 size={size} color={color} />,
+          href: Platform.OS === 'web' ? '/reports' : null,
+        }}
+      />
+      <Tabs.Screen
+        name="members"
+        options={{
+          title: t.members,
+          tabBarIcon: ({ color, size }) => <Users size={size} color={color} />,
+          href: Platform.OS === 'web' ? '/members' : null,
+        }}
+      />
+      <Tabs.Screen
+        name="farm-settings"
+        options={{
+          title: t.farmSettings,
+          tabBarIcon: ({ color, size }) => <Wheat size={size} color={color} />,
+          href: Platform.OS === 'web' ? '/farm-settings' : null,
         }}
       />
       <Tabs.Screen name="settings" options={{ href: null }} />
