@@ -40,6 +40,7 @@
     "expo-system-ui": "~57.0.1",
     "expo-web-browser": "~57.0.1",
     "firebase": "^9.23.0",
+    "html2canvas": "^1.4.1",
     "lucide-react-native": "^1.25.0",
     "nativewind": "^4.1.0",
     "onesignal-expo-plugin": "^2.7.0",

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Dimensions, Platform } from 'react-native'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -16,6 +16,7 @@ import {
   FileBarChart2, Download, TrendingUp, TrendingDown, Flame, HandCoins,
   ArrowUpRight, ArrowDownRight, Share2,
 } from 'lucide-react-native'
+import html2canvas from 'html2canvas'
 
 type Period = 'monthly' | 'yearly' | 'custom' | 'all'
 
@@ -117,41 +118,35 @@ export default function ReportsScreen() {
     }
   }, [user, currentFarmId, selectedParcel, period, customFrom, customTo, parcels, t.allParcels])
 
-  const handleShare = () => {
+  const handleWhatsAppShare = async () => {
     if (!summary) return
-    const isProfit = summary.netProfit >= 0
+
     const text = `*${t.appName} - Rapport*\n\n` +
-      `📍 Parcelle: ${summary.parcelName}\n` +
-      `📅 Période: ${summary.filters.from || 'Tout'} - ${summary.filters.to || ''}\n\n` +
-      `💰 Revenus: +${formatMAD(summary.totalIncome)} MAD\n` +
-      `📉 Dépenses: -${formatMAD(summary.totalExpenses)} MAD\n` +
-      `🔥 Gaz: -${formatMAD(summary.totalGas)} MAD\n` +
-      `🤝 Coopérative: -${formatMAD(summary.totalCooperative)} MAD\n\n` +
-      `${isProfit ? '✅' : '❌'} *Résultat: ${isProfit ? '+' : '-'}${formatMAD(summary.netProfit)} MAD*`
-    Sharing.shareAsync(`whatsapp://send?text=${encodeURIComponent(text)}`).catch(() => {
-      Sharing.shareAsync(text)
-    })
+      `Parcelle: ${summary.parcelName}\n` +
+      `Periode: ${summary.filters.from || 'Tout'} - ${summary.filters.to || ''}\n\n` +
+      `Revenus: ${formatMAD(summary.totalIncome)} MAD\n` +
+      `Depenses: ${formatMAD(summary.totalExpenses)} MAD\n` +
+      `Gaz: ${formatMAD(summary.totalGas)} MAD\n` +
+      `Cooperative: ${formatMAD(summary.totalCooperative)} MAD\n\n` +
+      `Resultat net: ${formatMAD(summary.netProfit)} MAD`
+
+    if (Platform.OS === 'web') {
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`
+      window.open(whatsappUrl, '_blank')
+      return
+    }
+
+    try {
+      await Sharing.shareAsync(text)
+    } catch (e) {
+      console.error('Share failed:', e)
+    }
   }
 
   const handleDownloadPDF = async () => {
     if (!summary) return
-    const isProfit = summary.netProfit >= 0
-    const breakdownRows = (summary.parcelBreakdown || []).map((p: any) =>
-      `<tr><td>${p.name}</td><td style="color:green">+${formatMAD(p.totalIncome)}</td><td style="color:red">-${formatMAD(p.totalExpenses + p.totalGas + p.totalCooperative)}</td><td style="color:${p.netProfit >= 0 ? 'green' : 'red'}">${p.netProfit >= 0 ? '+' : '-'}${formatMAD(p.netProfit)}</td></tr>`
-    ).join('')
-
-    const html = `<html><head><style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse;margin:10px 0}td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f5}.green{color:green}.red{color:red}</style></head><body>
-      <h1>${t.appName} - Rapport</h1>
-      <p>📍 ${summary.parcelName}</p>
-      <p>📅 ${summary.filters.from || 'Tout'} → ${summary.filters.to || ''}</p>
-      <hr/>
-      <h2>Résultat: <span class="${isProfit ? 'green' : 'red'}">${isProfit ? '+' : '-'}${formatMAD(summary.netProfit)} MAD</span></h2>
-      <p>💰 Revenus: +${formatMAD(summary.totalIncome)} MAD</p>
-      <p>📉 Dépenses: -${formatMAD(summary.totalExpenses)} MAD</p>
-      <p>🔥 Gaz: -${formatMAD(summary.totalGas)} MAD</p>
-      <p>🤝 Coopérative: -${formatMAD(summary.totalCooperative)} MAD</p>
-      ${breakdownRows ? `<h3>Détail par parcelle</h3><table><tr><th>Parcelle</th><th>Revenus</th><th>Coûts</th><th>Résultat</th></tr>${breakdownRows}</table>` : ''}
-    </body></html>`
+    const html = getReportHTML()
+    if (!html) return
 
     if (Platform.OS === 'web') {
       const blob = new Blob([html], { type: 'text/html' })
@@ -170,6 +165,152 @@ export default function ReportsScreen() {
     }
   }
 
+  const getReportHTML = () => {
+    if (!summary) return ''
+    const isProfit = summary.netProfit >= 0
+    const breakdownRows = (summary.parcelBreakdown || []).map((p: any) =>
+      `<tr>
+        <td>${p.name}</td>
+        <td style="text-align: right;">${formatMAD(p.totalIncome)}</td>
+        <td style="text-align: right;">${formatMAD(p.totalExpenses + p.totalGas + p.totalCooperative)}</td>
+        <td style="text-align: right; font-weight: bold;">${formatMAD(p.netProfit)}</td>
+      </tr>`
+    ).join('')
+
+    return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rapport - ${summary.parcelName}</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+      color: #000;
+    }
+    h1 {
+      text-align: center;
+      border-bottom: 2px solid #000;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+    .info {
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+    .info p {
+      margin: 5px 0;
+    }
+    .summary {
+      border: 1px solid #000;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px solid #ccc;
+    }
+    .summary-item:last-child {
+      border-bottom: none;
+      font-weight: bold;
+      font-size: 16px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 2px solid #000;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #000;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f0f0f0;
+      font-weight: bold;
+    }
+    td {
+      text-align: right;
+    }
+    td:first-child {
+      text-align: left;
+    }
+    .footer {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+      border-top: 1px solid #ccc;
+      padding-top: 10px;
+    }
+    @media print {
+      body { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <h1>RAPPORT FINANCIER</h1>
+
+  <div class="info">
+    <p><strong>Parcelle:</strong> ${summary.parcelName}</p>
+    <p><strong>Période:</strong> ${summary.filters.from || 'Tout'} - ${summary.filters.to || ''}</p>
+    <p><strong>Date:</strong> ${new Date().toLocaleDateString('fr-FR')}</p>
+  </div>
+
+  <div class="summary">
+    <div class="summary-item">
+      <span>Revenus totaux:</span>
+      <span>${formatMAD(summary.totalIncome)} MAD</span>
+    </div>
+    <div class="summary-item">
+      <span>Dépenses totales:</span>
+      <span>${formatMAD(summary.totalExpenses)} MAD</span>
+    </div>
+    <div class="summary-item">
+      <span>Gaz:</span>
+      <span>${formatMAD(summary.totalGas)} MAD</span>
+    </div>
+    <div class="summary-item">
+      <span>Coopérative:</span>
+      <span>${formatMAD(summary.totalCooperative)} MAD</span>
+    </div>
+    <div class="summary-item">
+      <span>Résultat net:</span>
+      <span>${formatMAD(summary.netProfit)} MAD</span>
+    </div>
+  </div>
+
+  ${summary.parcelBreakdown && summary.parcelBreakdown.length > 0 ? `
+  <table>
+    <thead>
+      <tr>
+        <th>Parcelle</th>
+        <th style="text-align: right;">Revenus</th>
+        <th style="text-align: right;">Dépenses</th>
+        <th style="text-align: right;">Résultat</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${summary.parcelBreakdown.map((p: any) => breakdownRows).join('')}
+    </tbody>
+  </table>
+  ` : ''}
+
+  <div class="footer">
+    <p>Rapport généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}</p>
+  </div>
+</body>
+</html>`
+  }
+
   const periods: { key: Period; label: string }[] = [
     { key: 'monthly', label: t.monthly },
     { key: 'yearly', label: t.yearly },
@@ -180,6 +321,7 @@ export default function ReportsScreen() {
   return (
     <SafeAreaView className="flex-1" edges={['top']}>
     <ScrollView className="flex-1 bg-background" contentContainerStyle={{ padding: 16 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
+      <div id="report-content">
       <Text className="mb-4 text-lg font-bold text-foreground">{t.reports}</Text>
 
       <View className="mb-3 flex-row gap-1.5">
@@ -268,7 +410,7 @@ export default function ReportsScreen() {
         <>
           {canExportReports && (
             <View className="mb-4 flex-row gap-2">
-              <TouchableOpacity onPress={handleShare} className="h-10 flex-1 flex-row items-center justify-center gap-1.5 rounded-[10px] border border-border">
+              <TouchableOpacity onPress={handleWhatsAppShare} className="h-10 flex-1 flex-row items-center justify-center gap-1.5 rounded-[10px] border border-border">
                 <Share2 size={14} color="#374151" />
                 <Text className="text-[13px] font-medium text-foreground">WhatsApp</Text>
               </TouchableOpacity>
@@ -418,6 +560,7 @@ export default function ReportsScreen() {
           )}
         </>
       )}
+      </div>
     </ScrollView>
     </SafeAreaView>
   )
