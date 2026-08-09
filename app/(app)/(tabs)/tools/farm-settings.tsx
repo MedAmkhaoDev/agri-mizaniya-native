@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput, ActivityIndicator } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native'
+import { alert } from '@/lib/alert'
 import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -45,12 +46,12 @@ export default function FarmSettingsScreen() {
     setSaving(true)
     const { error } = await updateFarm(currentFarmId, { name: farmName.trim(), description: farmDesc.trim() || undefined }, user?.uid)
     if (error) {
-      Alert.alert(t.error, error.message || t.failedToSave)
+      alert(t.error, error.message || t.failedToSave)
       setSaving(false)
       return
     }
     await refreshFarm()
-    Alert.alert(t.success, t.farmUpdated)
+    alert(t.success, t.farmUpdated)
     setSaving(false)
   }
 
@@ -59,18 +60,18 @@ export default function FarmSettingsScreen() {
     setGenerating(true)
     const { data, error } = await generateShareCode(currentFarmId, currentFarm.name, user.uid, 'viewer' as FarmRole)
     if (error) {
-      Alert.alert(t.error, error.message || t.failedToGenerate)
+      alert(t.error, error.message || t.failedToGenerate)
       setGenerating(false)
       return
     }
     if (data) setShareCodes([data, ...shareCodes])
-    Alert.alert(t.success, t.codeGenerated)
+    alert(t.success, t.codeGenerated)
     setGenerating(false)
   }
 
   const handleCopyCode = async (code: string) => {
     await Clipboard.setStringAsync(code)
-    Alert.alert(t.copied, t.codeCopiedToClipboard)
+    alert(t.copied, t.codeCopiedToClipboard)
   }
 
   if (!currentFarmId) return null

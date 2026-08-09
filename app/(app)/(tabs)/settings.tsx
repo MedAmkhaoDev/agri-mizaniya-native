@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Platform } from 'react-native'
+import { alert } from '@/lib/alert'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/lib/auth-context'
 import { useI18n } from '@/lib/i18n-context'
@@ -8,7 +9,7 @@ import { updateProfile } from 'firebase/auth'
 import type { Language } from '@/lib/i18n'
 import Constants from 'expo-constants'
 import {
-  User, Globe, Sun, Moon, Monitor, LogOut, CheckCircle, Wifi, WifiOff, Wheat, ArrowRightLeft, Database, Shield, RefreshCw,
+  User, Globe, Sun, Moon, Monitor, LogOut, CheckCircle, Wifi, WifiOff, Wheat, ArrowRightLeft, Database, Shield, RefreshCw, ChevronLeft,
 } from 'lucide-react-native'
 import { useFarm } from '@/lib/farm-context'
 import { useRouter } from 'expo-router'
@@ -54,13 +55,13 @@ export default function SettingsScreen() {
 
   const handleLeaveFarm = async () => {
     if (!currentFarmId || !user) return
-    Alert.alert(t.leaveFarm, t.confirmLeaveFarm, [
+    alert(t.leaveFarm, t.confirmLeaveFarm, [
       { text: t.cancel, style: 'cancel' },
       { text: t.leaveFarm, style: 'destructive', onPress: async () => {
         setLeaving(true)
         const { error } = await removeMember(currentFarmId, user.uid)
         setLeaving(false)
-        if (error) { Alert.alert(t.error, error.message || t.failedToRemove); return }
+        if (error) { alert(t.error, error.message || t.failedToRemove); return }
         await updateDoc(doc(db, 'users', user.uid), { currentFarmId: null })
         await reloadFarms()
         router.replace('/(farm-select)')
@@ -69,13 +70,13 @@ export default function SettingsScreen() {
   }
   const handleDeleteFarm = async () => {
     if (!currentFarmId || !user) return
-    Alert.alert(t.deleteFarm, t.confirmDeleteFarm, [
+    alert(t.deleteFarm, t.confirmDeleteFarm, [
       { text: t.cancel, style: 'cancel' },
       { text: t.delete, style: 'destructive', onPress: async () => {
         setDeleting(true)
         const { error } = await deleteFarm(currentFarmId)
         setDeleting(false)
-        if (error) { Alert.alert(t.error, error.message || t.failedToSave); return }
+        if (error) { alert(t.error, error.message || t.failedToSave); return }
         const uid = user.uid
         await updateDoc(doc(db, 'users', uid), { currentFarmId: null })
         await reloadFarms()
@@ -97,10 +98,24 @@ export default function SettingsScreen() {
 
   const appVersion = Constants.expoConfig?.version || '1.0.0'
 
+  const hasHistory = () => {
+    if (Platform.OS === 'web') {
+      return typeof window !== 'undefined' && window.history.length > 1
+    }
+    return true
+  }
+
   return (
     <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
-      <ScrollView className="flex-1 bg-background" contentContainerStyle={{ padding: 16, maxWidth: 480, alignSelf: 'center', width: '100%' }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
-        <Text className="text-lg font-bold text-foreground mb-4">{t.settings}</Text>
+      <ScrollView className="flex-1 bg-background" contentContainerStyle={{ padding: 16, maxWidth: 560, alignSelf: 'center', width: '100%' }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
+        <View className="flex-row items-center gap-2 mb-4">
+          {hasHistory() && (
+            <TouchableOpacity onPress={() => router.back()} className="w-9 h-9 rounded-[10px] bg-accent items-center justify-center mr-1">
+              <ChevronLeft size={20} color="#374151" />
+            </TouchableOpacity>
+          )}
+          <Text className="text-lg font-bold text-foreground">{t.settings}</Text>
+        </View>
 
         {currentFarm && (
   <View className="bg-background rounded-2xl border border-border mb-4 overflow-hidden">
@@ -152,7 +167,7 @@ export default function SettingsScreen() {
             <TouchableOpacity
               onPress={async () => {
                 await runMigration()
-                Alert.alert(t.success, t.migrationComplete)
+                alert(t.success, t.migrationComplete)
               }}
               disabled={migrating}
               className={`h-11 rounded-[10px] items-center justify-center flex-row gap-1.5 ${migrating ? 'bg-amber-600 opacity-60' : 'bg-amber-500'}`}

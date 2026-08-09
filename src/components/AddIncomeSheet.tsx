@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, FlatList, ActivityIndicator } from 'react-native'
-import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
+import { SheetTextInput } from '@/components/SheetTextInput'
 import { useAuth } from '@/lib/auth-context'
 import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
-import { createIncome, getParcels } from '@/lib/api'
+import { createIncome, updateIncome, getParcels } from '@/lib/api'
 import { BottomSheet } from '@/components/BottomSheet'
 import { useDraft, getLastParcelId, setLastParcelId, getRecentProducts, addRecentProduct } from '@/hooks/useDraft'
 import { formatMADDecimal, filterNumeric } from '@/lib/format'
@@ -16,28 +16,62 @@ interface AddIncomeSheetProps {
   visible: boolean
   onClose: () => void
   defaultParcelId?: string
+  editingIncome?: {
+    id: string
+    parcelId: string
+    productName: string
+    quantity: number | null
+    unit: string | null
+    totalAmount: number
+    date: string
+  } | null
 }
 
 const UNITS = ['kg', 'quintal', 'tonne', 'litre', 'caisse', 'sac', 'unité']
 
-export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: AddIncomeSheetProps) {
+export default function AddIncomeSheet({ visible, onClose, defaultParcelId, editingIncome }: AddIncomeSheetProps) {
   const { user } = useAuth()
   const { currentFarmId } = useFarm()
   const { t } = useI18n()
   const { draft, setDraft, clearDraft } = useDraft('income')
+  const isEditing = !!editingIncome
+
+  useEffect(() => {
+    if (visible && editingIncome) {
+      setDraft({
+        parcel_id: editingIncome.parcelId,
+        product_name: editingIncome.productName,
+        quantity: editingIncome.quantity?.toString() || '',
+        unit: editingIncome.unit || undefined,
+        total_amount: editingIncome.totalAmount?.toString() || '',
+        date: editingIncome.date,
+      })
+    }
+  }, [visible, editingIncome, setDraft])
   const [parcels, setParcels] = useState<Parcel[]>([])
   const [saving, setSaving] = useState(false)
   const [recentProducts, setRecentProducts] = useState<string[]>([])
+  const mountedRef = useRef(true)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   useEffect(() => {
     if (visible) {
-      getRecentProducts(8).then(setRecentProducts)
+      getRecentProducts(8).then((products) => {
+        if (mountedRef.current) setRecentProducts(products)
+      })
     }
   }, [visible])
 
   const loadParcels = useCallback(async () => {
     if (!user || !currentFarmId) return
     const { data } = await getParcels(currentFarmId!)
+    if (!mountedRef.current) return
     const active = data.filter((p) => p.status === 'active')
     const lastId = defaultParcelId || (await getLastParcelId())
     const sorted = [...active].sort((a, b) => {
@@ -46,11 +80,12 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
       return 0
     })
     setParcels(sorted)
-    if (!draft.parcel_id && sorted.length > 0) {
+    setDraft((prev) => {
+      if (prev.parcel_id || isEditing) return prev
       const prefill = sorted.find((p) => p.id === lastId) || sorted[0]
-      setDraft({ ...draft, parcel_id: prefill.id })
-    }
-  }, [defaultParcelId, draft, setDraft, user, currentFarmId])
+      return prefill ? { ...prev, parcel_id: prefill.id } : prev
+    })
+  }, [defaultParcelId, setDraft, user, currentFarmId, isEditing])
 
   useEffect(() => {
     if (visible) loadParcels()
@@ -70,9 +105,7 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
     if (!user || !draft.product_name || !draft.total_amount || !draft.parcel_id) return
     setSaving(true)
     try {
-      await setLastParcelId(draft.parcel_id)
-      await addRecentProduct(draft.product_name)
-      await createIncome(currentFarmId!, user.uid, {
+      const payload = {
         parcelId: draft.parcel_id,
         productName: draft.product_name,
         quantity: draft.quantity ? parseFloat(draft.quantity) : null,
@@ -80,7 +113,14 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
         totalAmount: parseFloat(draft.total_amount),
         date: draft.date || new Date().toISOString().split('T')[0],
         notes: null,
-      })
+      }
+      if (isEditing && editingIncome) {
+        await updateIncome(currentFarmId!, editingIncome.id, payload)
+      } else {
+        await setLastParcelId(draft.parcel_id)
+        await addRecentProduct(draft.product_name)
+        await createIncome(currentFarmId!, user.uid, payload)
+      }
       reset()
       onClose()
       Toast.show({ type: 'success', text1: t.incomeSaved })
@@ -95,7 +135,7 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
     <BottomSheet visible={visible} onClose={onClose}>
       <View className="px-5 pt-1 pb-2.5">
         <View className="flex-row justify-between items-center mb-4">
-          <Text className="text-[17px] font-bold text-emerald-500 dark:text-emerald-500">{t.addIncome}</Text>
+          <Text className="text-[17px] font-bold text-emerald-500 dark:text-emerald-500">{isEditing ? t.editIncome : t.addIncome}</Text>
           {draft.product_name ? (
             <TouchableOpacity onPress={reset} className="flex-row items-center gap-1">
               <X size={14} color="#9CA3AF" />
@@ -104,7 +144,7 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
           ) : null}
         </View>
 
-        <BottomSheetTextInput
+        <SheetTextInput
           value={draft.product_name || ''}
           onChangeText={(v) => update({ product_name: v })}
           placeholder={t.productName}
@@ -129,7 +169,7 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
 
         <View className="mt-4">
           <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.quantity}</Text>
-          <BottomSheetTextInput
+          <SheetTextInput
             keyboardType="decimal-pad"
             value={draft.quantity || ''}
             onChangeText={(v) => update({ quantity: filterNumeric(v) })}
@@ -151,7 +191,7 @@ export default function AddIncomeSheet({ visible, onClose, defaultParcelId }: Ad
           ))}
         </ScrollView>
 
-        <BottomSheetTextInput
+        <SheetTextInput
           keyboardType="decimal-pad"
           value={draft.total_amount || ''}
           onChangeText={(v) => update({ total_amount: filterNumeric(v) })}

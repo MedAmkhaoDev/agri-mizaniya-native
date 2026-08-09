@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Modal, TextInput, Pressable, Alert, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Modal, TextInput, Pressable, KeyboardAvoidingView, Platform } from 'react-native'
+import { alert } from '@/lib/alert'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useFarm } from '@/lib/farm-context'
@@ -65,7 +66,7 @@ export default function FarmSelectScreen() {
 
   const handleSelectFarm = async (farmId: string) => {
     await switchFarm(farmId)
-    router.replace('/(app)')
+    router.replace('/(app)/(tabs)')
   }
 
   const handleJoin = async () => {
@@ -79,7 +80,7 @@ export default function FarmSelectScreen() {
     )
     setJoining(false)
     if (error) {
-      Alert.alert(t.error, error.message)
+      alert(t.error, error.message)
       return
     }
     setJoinModalVisible(false)
@@ -87,7 +88,7 @@ export default function FarmSelectScreen() {
     if (farmId) {
       await reloadFarms()
       await switchFarm(farmId)
-      router.replace('/(app)')
+      router.replace('/(app)/(tabs)')
     }
   }
 
@@ -239,9 +240,9 @@ export default function FarmSelectScreen() {
 
       {/* Join Farm Modal */}
       <Modal visible={joinModalVisible} animationType="slide" transparent>
-        <Pressable className="flex-1 bg-black/30 justify-end" onPress={() => setJoinModalVisible(false)}>
+        <Pressable className={cn("flex-1 bg-black/30", Platform.OS === 'web' ? "items-center justify-center p-6" : "justify-end")} onPress={() => setJoinModalVisible(false)}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-            <Pressable onPress={(e: any) => e.stopPropagation()} className="bg-card rounded-t-[20px] p-5">
+            <Pressable onPress={(e: any) => e.stopPropagation()} className={cn("bg-card rounded-[20px] p-5 w-full", Platform.OS === 'web' ? "max-w-[480px] max-h-[80%] rounded-2xl" : "rounded-t-[20px]")} style={Platform.OS === 'web' ? { boxShadow: '0px 8px 32px rgba(0,0,0,0.15)' } : undefined}>
             <View className="flex-row justify-between items-center mb-5">
               <Text className="text-lg font-bold text-foreground">{t.joinFarm}</Text>
               <TouchableOpacity onPress={() => setJoinModalVisible(false)}>

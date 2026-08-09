@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { View, Text, TouchableOpacity, ScrollView, FlatList, ActivityIndicator } from 'react-native'
-import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
+import { SheetTextInput } from '@/components/SheetTextInput'
 import { useAuth } from '@/lib/auth-context'
 import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
@@ -65,25 +65,37 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId, edi
   const [recentAmounts, setRecentAmounts] = useState<number[]>([])
   const [addingCustom, setAddingCustom] = useState(false)
   const [customName, setCustomName] = useState('')
+  const mountedRef = useRef(true)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   useEffect(() => {
     if (visible) {
       getExpenseTypes().then(async ({ data }) => {
+        if (!mountedRef.current) return
         if (data.length === 0) {
           await seedExpenseTypes()
           const { data: seeded } = await getExpenseTypes()
-          setExpenseTypes(seeded)
+          if (mountedRef.current) setExpenseTypes(seeded)
         } else {
           setExpenseTypes(data)
         }
       })
-      getRecentAmounts(4).then(setRecentAmounts)
+      getRecentAmounts(4).then((amounts) => {
+        if (mountedRef.current) setRecentAmounts(amounts)
+      })
     }
   }, [visible])
 
   const loadParcels = useCallback(async () => {
     if (!user || !currentFarmId) return
     const { data } = await getParcels(currentFarmId!)
+    if (!mountedRef.current) return
     const active = data.filter((p) => p.status === 'active')
     const lastId = defaultParcelId || (await getLastParcelId())
     const sorted = [...active].sort((a, b) => {
@@ -92,11 +104,12 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId, edi
       return 0
     })
     setParcels(sorted)
-    if (!draft.parcel_id && sorted.length > 0) {
+    setDraft((prev) => {
+      if (prev.parcel_id || isEditing) return prev
       const prefill = sorted.find((p) => p.id === lastId) || sorted[0]
-      setDraft({ ...draft, parcel_id: prefill.id })
-    }
-  }, [defaultParcelId, draft, setDraft, user, currentFarmId])
+      return prefill ? { ...prev, parcel_id: prefill.id } : prev
+    })
+  }, [defaultParcelId, setDraft, user, currentFarmId, isEditing])
 
   useEffect(() => {
     if (visible) loadParcels()
@@ -153,7 +166,7 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId, edi
           ) : null}
         </View>
 
-        <BottomSheetTextInput
+        <SheetTextInput
           value={draft.description || ''}
           onChangeText={(v) => update({ description: v })}
           placeholder={t.description}
@@ -200,7 +213,7 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId, edi
 
         {addingCustom ? (
           <View className="flex-row items-center gap-2 mt-2.5">
-            <BottomSheetTextInput
+            <SheetTextInput
               value={customName}
               onChangeText={setCustomName}
               placeholder={t.expenseType}
@@ -238,7 +251,7 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId, edi
 
         <View className="mt-4">
           <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.quantity}</Text>
-          <BottomSheetTextInput
+          <SheetTextInput
             keyboardType="decimal-pad"
             value={draft.quantity || ''}
             onChangeText={(v) => update({ quantity: filterNumeric(v) })}
@@ -260,7 +273,7 @@ export default function AddExpenseSheet({ visible, onClose, defaultParcelId, edi
           ))}
         </ScrollView>
 
-        <BottomSheetTextInput
+        <SheetTextInput
           keyboardType="decimal-pad"
           value={draft.amount || ''}
           onChangeText={(v) => update({ amount: filterNumeric(v) })}

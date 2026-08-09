@@ -38,7 +38,7 @@ export default function CreateFarmScreen() {
       } else {
         await refreshProfile()
         await reloadFarms()
-        router.replace('/(app)')
+        router.replace('/(app)/(tabs)')
       }
     } catch {
       setError('An unexpected error occurred')
@@ -53,7 +53,7 @@ export default function CreateFarmScreen() {
       className="flex-1 bg-background"
     >
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-        <View className="flex-1 px-6 pt-14 pb-12">
+        <View className={cn("flex-1 px-6 pt-14 pb-12 w-full", Platform.OS === 'web' && "self-center max-w-[640px]")}>
           {/* Back button */}
           <TouchableOpacity
             onPress={() => router.back()}

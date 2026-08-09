@@ -11,10 +11,12 @@ import {
   sendPasswordResetEmail,
   GoogleAuthProvider,
   signInWithCredential,
+  signInWithPopup,
+  type AuthCredential,
   type User,
 } from 'firebase/auth'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
-import { GoogleSignin } from '@react-native-google-signin/google-signin'
+import { Platform } from 'react-native'
 import { auth, db } from '@/config/firebase'
 import type { Profile } from './types'
 import { migrateUserData } from './migrate'
@@ -150,21 +152,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-      await GoogleSignin.hasPlayServices()
-      const { idToken } = await GoogleSignin.signIn()
-      if (!idToken) {
-        return { error: new Error('No id token received') }
+      let credential: AuthCredential
+      let email: string | null = null
+      let fullName: string | null = null
+      let photoURL: string | null = null
+
+      if (Platform.OS === 'web') {
+        const result = await signInWithPopup(auth, new GoogleAuthProvider())
+        credential = GoogleAuthProvider.credentialFromResult(result)!
+        email = result.user.email
+        fullName = result.user.displayName
+        photoURL = result.user.photoURL
+      } else {
+        const { GoogleSignin } = require('@react-native-google-signin/google-signin')
+        await GoogleSignin.hasPlayServices()
+        const response = await GoogleSignin.signIn()
+        const idToken = response.data?.idToken
+        if (!idToken) {
+          return { error: new Error('No id token received') }
+        }
+        credential = GoogleAuthProvider.credential(idToken)
       }
-      const credential = GoogleAuthProvider.credential(idToken)
+
       const result = await signInWithCredential(auth, credential)
       const userRef = doc(db, 'users', result.user.uid)
       const userSnap = await getDoc(userRef)
       if (!userSnap.exists()) {
         await setDoc(userRef, {
-          fullName: result.user.displayName || 'Utilisateur',
-          email: result.user.email || '',
+          fullName: fullName || result.user.displayName || 'Utilisateur',
+          email: email || result.user.email || '',
           preferredLanguage: 'fr',
-          avatarUrl: result.user.photoURL || null,
+          avatarUrl: photoURL || result.user.photoURL || null,
           currentFarmId: null,
           farmIds: [],
           createdAt: new Date().toISOString(),
@@ -174,7 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await fetchProfile(result.user.uid)
       return { error: null }
     } catch (error: any) {
-      if (error?.code === 'SIGN_IN_CANCELLED') {
+      if (error?.code === 'SIGN_IN_CANCELLED' || error?.code === 'auth/popup-closed-by-user' || error?.code === 'auth/cancelled-popup-request') {
         return { error: null }
       }
       return { error: error as Error }
@@ -182,9 +200,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
-    onesignalLogout()
-    await GoogleSignin.signOut()
-    await firebaseSignOut(auth)
+    try {
+      await firebaseSignOut(auth)
+    } finally {
+      onesignalLogout()
+      if (Platform.OS !== 'web') {
+        try {
+          const { GoogleSignin } = require('@react-native-google-signin/google-signin')
+          await GoogleSignin.signOut()
+        } catch {
+          // best-effort — Firebase session is already closed
+        }
+      }
+    }
   }
 
   const changePassword = async (currentPassword: string, newPassword: string) => {

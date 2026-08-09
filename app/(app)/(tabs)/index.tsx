@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/lib/auth-context'
 import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
+import { useIsDesktop } from '@/lib/web-layout'
 import { getFinancialSummary, getRecentActivity, getParcels } from '@/lib/api'
 import { formatMAD } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -18,7 +19,7 @@ import type { FinancialSummary, ActivityItem, Parcel } from '@/lib/types'
 import { NotificationBell } from '@/components/NotificationBell'
 import {
   TrendingUp, TrendingDown, Flame, HandCoins, MapPin,
-  ArrowUpRight, ArrowDownRight, RefreshCcw, Settings, ChevronDown,
+  ArrowUpRight, ArrowDownRight, RefreshCcw, Settings, ChevronDown, Plus,
 } from 'lucide-react-native'
 
 interface ParcelWithFin extends Parcel {
@@ -30,6 +31,7 @@ export default function DashboardScreen() {
   const { currentFarmId, currentFarm, canWrite } = useFarm()
   const { t } = useI18n()
   const router = useRouter()
+  const isDesktop = useIsDesktop()
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [summary, setSummary] = useState<FinancialSummary>({
@@ -42,6 +44,7 @@ export default function DashboardScreen() {
   const [gasSheetOpen, setGasSheetOpen] = useState(false)
   const [coopSheetOpen, setCoopSheetOpen] = useState(false)
   const [farmSwitcherVisible, setFarmSwitcherVisible] = useState(false)
+  const [addMenuOpen, setAddMenuOpen] = useState(false)
 
   const loadData = useCallback(async () => {
     if (!user || !currentFarmId) return
@@ -102,11 +105,32 @@ export default function DashboardScreen() {
   }
 
   const stats = [
-    { label: t.totalIncome, value: summary.totalIncome, icon: <TrendingUp size={20} color="#10B981" />, bgClass: 'bg-emerald-50 dark:bg-emerald-950', page: 'incomes' },
-    { label: t.totalExpenses, value: summary.totalExpenses, icon: <TrendingDown size={20} color="#EF4444" />, bgClass: 'bg-red-50 dark:bg-red-950', page: 'expenses' },
-    { label: t.totalGas, value: summary.totalGas, icon: <Flame size={20} color="#F97316" />, bgClass: 'bg-orange-50 dark:bg-orange-950', page: 'gas' },
-    { label: t.totalCooperative, value: summary.totalCooperative, icon: <HandCoins size={20} color="#8B5CF6" />, bgClass: 'bg-violet-50 dark:bg-violet-950', page: 'cooperative' },
+    { label: t.totalIncome, value: summary.totalIncome, icon: <TrendingUp size={20} color="#10B981" />, bgClass: 'bg-emerald-50 dark:bg-emerald-950', href: '/(app)/(tabs)/incomes' as const },
+    { label: t.totalExpenses, value: summary.totalExpenses, icon: <TrendingDown size={20} color="#EF4444" />, bgClass: 'bg-red-50 dark:bg-red-950', href: '/(app)/(tabs)/expenses' as const },
+    { label: t.totalGas, value: summary.totalGas, icon: <Flame size={20} color="#F97316" />, bgClass: 'bg-orange-50 dark:bg-orange-950', href: '/(app)/(tabs)/tools/gas' as const },
+    { label: t.totalCooperative, value: summary.totalCooperative, icon: <HandCoins size={20} color="#8B5CF6" />, bgClass: 'bg-violet-50 dark:bg-violet-950', href: '/(app)/(tabs)/tools/cooperative' as const },
   ]
+
+  const renderParcelCard = (p: ParcelWithFin) => {
+    const profit = p.fin?.netProfit ?? 0
+    const isP = profit >= 0
+    return (
+      <View key={p.id} className={cn("p-3 rounded-xl border border-border bg-background", isDesktop ? "w-[31%]" : "w-32")}>
+        <View className="flex-row items-center gap-1.5 mb-1">
+          <View className="w-6 h-6 rounded-md bg-blue-50 dark:bg-blue-950 items-center justify-center">
+            <MapPin size={14} color="#3B82F6" />
+          </View>
+          <Text className="text-xs font-medium text-foreground flex-1" numberOfLines={1}>{p.name}</Text>
+        </View>
+        <Text className={cn("text-sm font-bold tabular-nums", isP ? "text-emerald-500 dark:text-emerald-400" : "text-red-500 dark:text-red-400")}>
+          {isP ? '+' : '-'}{formatMAD(profit)}
+        </Text>
+        <Text className="text-[10px] text-muted-foreground">
+          +{formatMAD(p.fin?.totalIncome ?? 0)} / -{formatMAD((p.fin?.totalExpenses ?? 0) + (p.fin?.totalGas ?? 0) + (p.fin?.totalCooperative ?? 0))}
+        </Text>
+      </View>
+    )
+  }
 
   if (!currentFarmId) return null
 
@@ -114,10 +138,52 @@ export default function DashboardScreen() {
     <SafeAreaView className="flex-1" edges={['top']}>
       <ScrollView
         className="flex-1 bg-background"
-        contentContainerClassName="pb-[120px]"
+        contentContainerClassName={isDesktop ? "pb-10" : "pb-[120px]"}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        <View className="px-4 pt-4 pb-2">
+        <View className={cn("pt-4 pb-2", isDesktop ? "px-8" : "px-4")}>
+          {isDesktop ? (
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1 min-w-0">
+                <Text className="text-2xl font-bold text-foreground">{t.dashboard}</Text>
+                <TouchableOpacity onPress={() => setFarmSwitcherVisible(true)} className="flex-row items-center gap-1.5 mt-1 self-start" activeOpacity={0.7}>
+                  <Text className="text-[13px] font-medium text-green-600 dark:text-emerald-500">{currentFarm?.name || t.appName}</Text>
+                  <ChevronDown size={14} color="#16A34A" />
+                </TouchableOpacity>
+              </View>
+              <View className="flex-row items-center gap-2.5">
+                {canWrite && (
+                  <View style={{ position: 'relative' }}>
+                    <TouchableOpacity onPress={() => setAddMenuOpen((v) => !v)} className="flex-row gap-2 h-10 px-4 rounded-[10px] bg-green-600 dark:bg-green-500 items-center justify-center">
+                      <Plus size={18} color="#FFFFFF" />
+                      <Text className="text-[13px] font-semibold text-white">{t.add}</Text>
+                      <ChevronDown size={14} color="#FFFFFF" />
+                    </TouchableOpacity>
+                    {addMenuOpen && (
+                      <View style={{ position: 'absolute', top: 46, right: 0, zIndex: 60 }} className="rounded-xl border border-border bg-background p-1.5 w-52 shadow-md">
+                        {[
+                          { label: t.addExpense, icon: <TrendingDown size={16} color="#EF4444" />, onPress: () => { setAddMenuOpen(false); setExpenseSheetOpen(true) } },
+                          { label: t.addIncome, icon: <TrendingUp size={16} color="#10B981" />, onPress: () => { setAddMenuOpen(false); setIncomeSheetOpen(true) } },
+                          { label: t.addGas, icon: <Flame size={16} color="#F97316" />, onPress: () => { setAddMenuOpen(false); setGasSheetOpen(true) } },
+                          { label: t.addCooperative, icon: <HandCoins size={16} color="#8B5CF6" />, onPress: () => { setAddMenuOpen(false); setCoopSheetOpen(true) } },
+                        ].map((a) => (
+                          <TouchableOpacity key={a.label} onPress={a.onPress} className="flex-row items-center gap-2.5 px-3 py-2.5 rounded-lg">
+                            {a.icon}
+                            <Text className="text-[13px] font-medium text-foreground">{a.label}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                )}
+                <NotificationBell />
+                <TouchableOpacity onPress={() => router.push('/(app)/(tabs)/settings')} className="flex-row gap-2 h-10 px-4 rounded-[10px] bg-accent items-center justify-center border border-border">
+                  <Settings size={16} color="#6B7280" />
+                  <Text className="text-[13px] font-medium text-muted-foreground">{t.settings}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
           <View className="flex-row items-center gap-2.5">
             <View className="w-9 h-9 rounded-[10px] bg-green-600 dark:bg-green-500 items-center justify-center">
               <Text className="text-base font-bold text-white">🌾</Text>
@@ -130,14 +196,16 @@ export default function DashboardScreen() {
               <Text className="text-xs text-muted-foreground">{t.appTagline}</Text>
             </TouchableOpacity>
             <NotificationBell />
-            <TouchableOpacity onPress={() => router.push('/(app)/settings')} className="w-9 h-9 rounded-[10px] bg-accent items-center justify-center">
+            <TouchableOpacity onPress={() => router.push('/(app)/(tabs)/settings')} className="w-9 h-9 rounded-[10px] bg-accent items-center justify-center">
               <Settings size={18} color="#6B7280" />
             </TouchableOpacity>
           </View>
+          )}
         </View>
 
-        <View pointerEvents="box-none" className={cn("mx-4 mt-4 p-5 rounded-2xl bg-background border-2",
-          isProfit ? "border-emerald-200 dark:border-emerald-800" : "border-red-200 dark:border-red-800"
+        <View pointerEvents="box-none" className={cn("mt-4 p-5 rounded-2xl bg-background border-2",
+          isProfit ? "border-emerald-200 dark:border-emerald-800" : "border-red-200 dark:border-red-800",
+          isDesktop ? "mx-8" : "mx-4"
         )} style={{ boxShadow: '0px 2px 8px rgba(0,0,0,0.08)' }}>
           <View className="flex-row justify-between items-center">
             <View>
@@ -178,42 +246,29 @@ export default function DashboardScreen() {
 
         {!loading && parcels.length > 0 && (
           <View className="mt-5">
-            <View className="flex-row justify-between items-center px-4 mb-2">
-              <Text className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">{t.parcels}</Text>
+            <View className="flex-row justify-between items-center mb-2">
+              <Text className={cn("text-[11px] font-semibold text-muted-foreground uppercase tracking-widest", isDesktop ? "px-8" : "px-4")}>{t.parcels}</Text>
             </View>
-            <ScrollView
-              horizontal
-              directionalLockEnabled={true}
-              showsHorizontalScrollIndicator={false}
-              contentContainerClassName="px-4 gap-2"
-            >
-              {parcels.slice(0, 6).map((p) => {
-                const profit = p.fin?.netProfit ?? 0
-                const isP = profit >= 0
-                return (
-                  <View key={p.id} className="w-32 p-3 rounded-xl border border-border bg-background">
-                    <View className="flex-row items-center gap-1.5 mb-1">
-                      <View className="w-6 h-6 rounded-md bg-blue-50 dark:bg-blue-950 items-center justify-center">
-                        <MapPin size={14} color="#3B82F6" />
-                      </View>
-                      <Text className="text-xs font-medium text-foreground flex-1" numberOfLines={1}>{p.name}</Text>
-                    </View>
-                    <Text className={cn("text-sm font-bold tabular-nums", isP ? "text-emerald-500 dark:text-emerald-400" : "text-red-500 dark:text-red-400")}>
-                      {isP ? '+' : '-'}{formatMAD(profit)}
-                    </Text>
-                    <Text className="text-[10px] text-muted-foreground">
-                      +{formatMAD(p.fin?.totalIncome ?? 0)} / -{formatMAD((p.fin?.totalExpenses ?? 0) + (p.fin?.totalGas ?? 0) + (p.fin?.totalCooperative ?? 0))}
-                    </Text>
-                  </View>
-                )
-              })}
-            </ScrollView>
+            {isDesktop ? (
+              <View className="px-8 flex-row flex-wrap gap-2.5">
+                {parcels.slice(0, 6).map(renderParcelCard)}
+              </View>
+            ) : (
+              <ScrollView
+                horizontal
+                directionalLockEnabled={true}
+                showsHorizontalScrollIndicator={false}
+                contentContainerClassName="px-4 gap-2"
+              >
+                {parcels.slice(0, 6).map(renderParcelCard)}
+              </ScrollView>
+            )}
           </View>
         )}
 
-        <View pointerEvents="box-none" className="flex-row flex-wrap px-4 mt-5 gap-2.5">
+        <View pointerEvents="box-none" className={cn("flex-row flex-wrap gap-2.5 mt-5", isDesktop ? "px-8" : "px-4")}>
           {stats.map((card) => (
-            <TouchableOpacity key={card.label} onPress={() => router.push(`/(app)/(tabs)/${card.page}`)} activeOpacity={0.7} className="w-[47%] p-3 rounded-xl bg-background border border-border">
+            <TouchableOpacity key={card.label} onPress={() => router.push(card.href)} activeOpacity={0.7} className={cn("p-3 rounded-xl bg-background border border-border", isDesktop ? "w-[23%]" : "w-[47%]")}>
               <View className={cn("w-9 h-9 rounded-[10px] items-center justify-center mb-2.5", card.bgClass)}>
                 {card.icon}
               </View>
@@ -229,7 +284,7 @@ export default function DashboardScreen() {
           ))}
         </View>
 
-        <View className="mx-4 mt-2.5 p-3.5 rounded-xl bg-background border border-border flex-row items-center gap-2">
+        <View className={cn("mt-2.5 p-3.5 rounded-xl bg-background border border-border flex-row items-center gap-2", isDesktop ? "mx-8" : "mx-4")}>
           <MapPin size={18} color="#10B981" />
           <Text className="text-[13px] font-medium text-foreground flex-1">{t.totalParcels}</Text>
           {loading ? (
@@ -239,7 +294,7 @@ export default function DashboardScreen() {
           )}
         </View>
 
-        <View className="mx-4 mt-5 mb-8">
+        <View className={cn("mt-5 mb-8", isDesktop ? "mx-8" : "mx-4")}>
           <View className="flex-row justify-between items-center mb-3">
             <Text className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">{t.recentActivity}</Text>
             <TouchableOpacity onPress={loadData} className="w-8 h-8 rounded-2xl items-center justify-center bg-accent">

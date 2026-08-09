@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { View, Text, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native'
+import { View, Text, FlatList, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/lib/auth-context'
 import { useI18n } from '@/lib/i18n-context'
@@ -7,11 +7,13 @@ import { deleteExpense, expenseConstraints } from '@/lib/api'
 import { formatMAD } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useFarm } from '@/lib/farm-context'
+import { useIsDesktop } from '@/lib/web-layout'
 import { useUndoDelete } from '@/hooks/useUndoDelete'
 import { useRealtimeCollection, type WithPending } from '@/hooks/useRealtimeCollection'
 import AddExpenseSheet from '@/components/AddExpenseSheet'
 import { FilterSheet } from '@/components/FilterSheet'
 import { HeaderBar } from '@/components/HeaderBar'
+import { DesktopTable } from '@/components/DesktopTable'
 import Toast from 'react-native-toast-message'
 import type { Expense, Parcel, ExpenseFilters } from '@/lib/types'
 import { TrendingDown, Plus, Trash2, AlertCircle, RefreshCw, SlidersHorizontal, Pencil } from 'lucide-react-native'
@@ -20,6 +22,7 @@ export default function ExpensesScreen() {
   const { user } = useAuth()
   const { t } = useI18n()
   const { currentFarmId, canWrite } = useFarm()
+  const isDesktop = useIsDesktop()
   const [filters, setFilters] = useState<ExpenseFilters>({ parcelId: 'all' })
   const [sheetOpen, setSheetOpen] = useState(false)
   const [filterSheetOpen, setFilterSheetOpen] = useState(false)
@@ -31,12 +34,12 @@ export default function ExpensesScreen() {
   const constraints = useMemo(() => expenseConstraints(filters), [filters])
   const parcelConstraintsMemo = useMemo(() => [], [])
 
-  const { data: expenses, loading, error, hasPendingWrites } = useRealtimeCollection<Expense>(expensesPath, {
+  const { data: expenses, loading, error, hasPendingWrites, refreshing, refresh } = useRealtimeCollection<Expense>(expensesPath, {
     constraints,
     enabled: !!currentFarmId,
   })
 
-  const { data: parcels } = useRealtimeCollection<Parcel>(parcelsPath, {
+  const { data: parcels, refresh: refreshParcels } = useRealtimeCollection<Parcel>(parcelsPath, {
     constraints: parcelConstraintsMemo,
     enabled: !!currentFarmId,
   })
@@ -76,8 +79,9 @@ export default function ExpensesScreen() {
           title={t.expenses}
           right={
             canWrite ? (
-              <TouchableOpacity onPress={openAdd} className="w-9 h-9 rounded-[10px] bg-green-600 dark:bg-green-500 items-center justify-center">
-                <Plus size={20} color="#FFFFFF" />
+              <TouchableOpacity onPress={openAdd} className={cn("items-center justify-center", isDesktop ? "flex-row gap-2 h-10 px-4 rounded-[10px] bg-green-600 dark:bg-green-500" : "w-9 h-9 rounded-[10px] bg-green-600 dark:bg-green-500")}>
+                <Plus size={18} color="#FFFFFF" />
+                {isDesktop && <Text className="text-[13px] font-semibold text-white">{t.add}</Text>}
               </TouchableOpacity>
             ) : undefined
           }
@@ -139,11 +143,68 @@ export default function ExpensesScreen() {
                 </View>
               </View>
             )}
+            {isDesktop ? (
+              <ScrollView contentContainerClassName="p-6" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { refresh(); refreshParcels() }} tintColor="#6B7280" />}>
+                <DesktopTable
+                  columns={[
+                    { label: t.date, flex: 1.1 },
+                    { label: t.description, flex: 2.4 },
+                    { label: t.parcel, flex: 1.6 },
+                    { label: t.createdBy, flex: 1.4 },
+                    { label: t.amount, flex: 1.2, align: 'right' },
+                    { label: '', flex: 0.7, align: 'right' },
+                  ]}
+                  rows={expenses}
+                  rowKey={(e) => e.id}
+                  emptyText={t.noExpenses}
+                  actionColumnIndex={4}
+                  renderCell={(e, i) => {
+                    switch (i) {
+                      case 0:
+                        return <Text className="text-[13px] text-muted-foreground">{e.date}</Text>
+                      case 1:
+                        return (
+                          <View className="flex-row items-center gap-2 min-w-0">
+                            <View className="w-7 h-7 rounded-lg bg-red-50 dark:bg-red-950 items-center justify-center shrink-0">
+                              <TrendingDown size={13} color="#EF4444" />
+                            </View>
+                            <Text className="text-[13px] font-medium text-foreground" numberOfLines={1}>{e.description || t.other}</Text>
+                          </View>
+                        )
+                      case 2:
+                        return <Text className="text-[13px] text-muted-foreground">{e.parcelName || '—'}</Text>
+                      case 3:
+                        return <Text className="text-[13px] text-muted-foreground">{e.createdByName || '—'}</Text>
+                      case 4:
+                        return <Text style={{ fontVariant: ['tabular-nums'] }} className="text-[13px] font-semibold text-red-500 dark:text-red-400">-{formatMAD(e.amount)} MAD</Text>
+                      case 5:
+                        return (
+                          <View className="flex-row items-center gap-0.5">
+                            {canWrite && (
+                              <TouchableOpacity onPress={() => { setEditingExpense(e); setSheetOpen(true) }} className="p-1.5">
+                                <Pencil size={15} color="#6B7280" />
+                              </TouchableOpacity>
+                            )}
+                            <TouchableOpacity onPress={() => deleteWithUndo(e)} className="p-1.5">
+                              <Trash2 size={15} color="#EF4444" />
+                            </TouchableOpacity>
+                          </View>
+                        )
+                      default:
+                        return null
+                    }
+                  }}
+                />
+              </ScrollView>
+            ) : (
             <FlatList
               data={expenses}
+              key={isDesktop ? 'expenses-2col' : 'expenses-1col'}
+              numColumns={isDesktop ? 2 : 1}
+              columnWrapperStyle={isDesktop ? { gap: 10 } : undefined}
               keyExtractor={(item) => item.id}
-              contentContainerClassName="p-4"
-              refreshControl={<RefreshControl refreshing={false} onRefresh={() => {}} tintColor="#6B7280" />}
+              contentContainerClassName={isDesktop ? "p-6" : "p-4"}
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { refresh(); refreshParcels() }} tintColor="#6B7280" />}
               ListEmptyComponent={
                 !loading ? (
                   <View className="items-center py-12">
@@ -153,7 +214,7 @@ export default function ExpensesScreen() {
                 ) : null
               }
               renderItem={({ item }) => (
-                <View className="flex-row items-center p-3.5 rounded-xl border border-border mb-2">
+                <View className="flex-row flex-1 items-center p-3.5 rounded-xl border border-border mb-2">
                   <View className="w-9 h-9 rounded-[10px] bg-red-50 dark:bg-red-950 items-center justify-center mr-3">
                     <TrendingDown size={16} color="#EF4444" />
                   </View>
@@ -185,8 +246,9 @@ export default function ExpensesScreen() {
                     <Trash2 size={14} color="#EF4444" />
                   </TouchableOpacity>
                 </View>
-              )}
-            />
+                  )}
+                />
+            )}
           </View>
         )}
 

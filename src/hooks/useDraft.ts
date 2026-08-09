@@ -26,33 +26,61 @@ async function writeDrafts(key: string, drafts: Drafts) {
   } catch {}
 }
 
+export type DraftUpdater = Record<string, any> | ((prev: Record<string, any>) => Record<string, any>)
+
 export function useDraft(kind: 'expense' | 'income') {
   const [draft, setDraftState] = useState<Record<string, any>>({})
   const loadedRef = useRef(false)
   const { currentFarmId } = useFarm()
 
   const key = draftKey(currentFarmId ?? 'default')
+  const keyRef = useRef(key)
+  keyRef.current = key
+
+  const draftRef = useRef<Record<string, any>>({})
 
   useEffect(() => {
+    let cancelled = false
     readDrafts(key).then((all) => {
-      setDraftState(all[kind] || {})
+      if (cancelled) return
+      draftRef.current = all[kind] || {}
+      setDraftState(draftRef.current)
       loadedRef.current = true
     })
+    return () => {
+      cancelled = true
+    }
   }, [kind, key])
 
-  const setDraft = useCallback(
-    (values: Record<string, any>) => {
-      setDraftState(values)
-      readDrafts(key).then((all) => {
-        all[kind] = values
-        writeDrafts(key, all)
+  // Serialize AsyncStorage writes so rapid updates can't interleave
+  // (read-modify-write race would otherwise lose the latest draft).
+  const writeQueue = useRef(Promise.resolve())
+
+  const persist = useCallback(
+    (next: Record<string, any>) => {
+      writeQueue.current = writeQueue.current.then(async () => {
+        const all = await readDrafts(keyRef.current)
+        all[kind] = next
+        await writeDrafts(keyRef.current, all)
       })
     },
-    [kind, key],
+    [kind],
+  )
+
+  const setDraft = useCallback(
+    (values: DraftUpdater) => {
+      const next = typeof values === 'function' ? values(draftRef.current) : values
+      draftRef.current = next
+      setDraftState(next)
+      persist(next)
+    },
+    [persist],
   )
 
   const clearDraft = useCallback(async () => {
-    setDraftState({})
+    const next = {}
+    draftRef.current = next
+    setDraftState(next)
     const all = await readDrafts(key)
     all[kind] = {}
     await writeDrafts(key, all)

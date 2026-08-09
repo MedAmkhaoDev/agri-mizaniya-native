@@ -14,7 +14,7 @@ export default function MoreLayout() {
       try {
         const state = navigation.getState()
         if (state && state.index > 0) {
-          navigation.navigate('index')
+          navigation.navigate('index' as never)
         }
       } catch {}
     })

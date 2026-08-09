@@ -62,9 +62,9 @@ export function QRScanner({ visible, onClose, onScanned }: QRScannerProps) {
               </TouchableOpacity>
             </View>
             <View style={styles.permissionBox}>
-              <Text style={styles.permissionText}>Camera permission required</Text>
+              <Text style={styles.permissionText}>{t.cameraPermissionRequired}</Text>
               <TouchableOpacity onPress={requestPermission} style={styles.permissionBtn}>
-                <Text style={styles.permissionBtnText}>Grant Permission</Text>
+                <Text style={styles.permissionBtnText}>{t.grantPermission}</Text>
               </TouchableOpacity>
             </View>
           </View>

@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router'
 import { Settings, ChevronDown, ChevronLeft } from 'lucide-react-native'
 import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
+import { useIsDesktop } from '@/lib/web-layout'
 import FarmSwitcherModal from './FarmSwitcherModal'
 import { NotificationBell } from './NotificationBell'
 
@@ -20,7 +21,42 @@ export function HeaderBar({ title, right, showFarmSwitcher = true, showBack = fa
   const router = useRouter()
   const { currentFarm, userFarms } = useFarm()
   const { t } = useI18n()
+  const isDesktop = useIsDesktop()
   const [farmSwitcherVisible, setFarmSwitcherVisible] = useState(false)
+
+  if (isDesktop) {
+    return (
+      <>
+        <View className="px-8 pt-6 pb-4 border-b border-border">
+          <View className="flex-row items-center justify-between">
+            <View className="flex-1 min-w-0">
+              <Text className="text-2xl font-bold text-foreground" numberOfLines={1}>{title}</Text>
+              {showFarmSwitcher && currentFarm && (
+                <TouchableOpacity onPress={() => setFarmSwitcherVisible(true)} className="flex-row items-center gap-1.5 mt-1 self-start">
+                  <Text className="text-[13px] font-medium text-green-600 dark:text-emerald-500">{currentFarm.name}</Text>
+                  <ChevronDown size={14} color="#16A34A" />
+                </TouchableOpacity>
+              )}
+            </View>
+            <View className="flex-row items-center gap-2.5">
+              {right}
+              {showNotifications && <NotificationBell />}
+              {showSettings && (
+                <TouchableOpacity
+                  onPress={() => router.push('/(app)/(tabs)/settings')}
+                  className="h-10 px-4 rounded-[10px] bg-accent flex-row items-center gap-2 border border-border"
+                >
+                  <Settings size={16} color="#6B7280" />
+                  <Text className="text-[13px] font-medium text-muted-foreground">{t.settings}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </View>
+        <FarmSwitcherModal visible={farmSwitcherVisible} onClose={() => setFarmSwitcherVisible(false)} onCreateNew={() => { setFarmSwitcherVisible(false); router.push('/(farm-select)/create') }} />
+      </>
+    )
+  }
 
   return (
     <>
@@ -46,7 +82,7 @@ export function HeaderBar({ title, right, showFarmSwitcher = true, showBack = fa
           {right}
           {showNotifications && <NotificationBell />}
           {showSettings && (
-            <TouchableOpacity onPress={() => router.push('/(app)/settings')} className="w-9 h-9 rounded-[10px] bg-accent items-center justify-center">
+            <TouchableOpacity onPress={() => router.push('/(app)/(tabs)/settings')} className="w-9 h-9 rounded-[10px] bg-accent items-center justify-center">
               <Settings size={18} color="#6B7280" />
             </TouchableOpacity>
           )}

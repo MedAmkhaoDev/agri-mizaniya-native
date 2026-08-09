@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { I18nManager } from 'react-native'
+import { I18nManager, Platform } from 'react-native'
 import { translations, type Language, type Translations } from './i18n'
 
 interface I18nContextType {
@@ -20,14 +20,23 @@ const I18nContext = createContext<I18nContextType>({
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>('fr')
 
+  const applyRTL = (rtl: boolean, lang: string) => {
+    if (Platform.OS === 'web') {
+      if (typeof document !== 'undefined') {
+        document.documentElement.dir = rtl ? 'rtl' : 'ltr'
+        document.documentElement.lang = lang
+      }
+    } else {
+      I18nManager.forceRTL(rtl)
+      I18nManager.allowRTL(rtl)
+    }
+  }
+
   useEffect(() => {
     AsyncStorage.getItem('language').then((stored) => {
       if (stored && (stored === 'fr' || stored === 'en' || stored === 'ar')) {
         setLanguageState(stored)
-        const rtl = stored === 'ar'
-        if (I18nManager.isRTL !== rtl) {
-          I18nManager.forceRTL(rtl)
-        }
+        applyRTL(stored === 'ar', stored)
       }
     })
   }, [])
@@ -35,11 +44,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   const setLanguage = (lang: Language) => {
     setLanguageState(lang)
     AsyncStorage.setItem('language', lang)
-    const rtl = lang === 'ar'
-    if (I18nManager.isRTL !== rtl) {
-      I18nManager.forceRTL(rtl)
-      I18nManager.allowRTL(rtl)
-    }
+    applyRTL(lang === 'ar', lang)
   }
 
   const isRTL = language === 'ar'

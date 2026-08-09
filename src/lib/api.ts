@@ -16,6 +16,7 @@ import {
   type QueryConstraint,
 } from 'firebase/firestore'
 import { db } from '@/config/firebase'
+import { getAuth } from 'firebase/auth'
 import type {
   Farm,
   FarmMember,
@@ -167,6 +168,29 @@ async function logActivity(
   } catch (error) {
     console.error('logActivity error:', error)
   }
+}
+
+async function logEntityActivity(
+  farmId: string,
+  action: ActivityLogEntry['action'],
+  entityType: ActivityLogEntry['entityType'],
+  entityId: string,
+  entityName: string,
+  details: Record<string, any> | null = null
+): Promise<void> {
+  const currentUser = getAuth().currentUser
+  if (!currentUser) return
+  const userName = await getUserName(currentUser.uid)
+  await logActivity(farmId, {
+    farmId,
+    userId: currentUser.uid,
+    userName,
+    action,
+    entityType,
+    entityId,
+    entityName,
+    details,
+  })
 }
 
 export async function getActivityLog(
@@ -407,6 +431,7 @@ export async function addMemberToFarm(
     await batch.commit()
     const farmName = await getFarmName(farmId)
     notifyFarm(farmId, member.userId, 'MEMBER_JOINED', 'Membre rejoint', `${member.fullName} a rejoint la ferme`, { entityId: member.userId, entityType: 'member', actionBy: member.userId, actionByName: member.fullName })
+    await logEntityActivity(farmId, 'join', 'member', member.userId, member.fullName)
     return { error: null }
   } catch (error) {
     return { error: error as Error }
@@ -431,6 +456,7 @@ export async function updateMemberRole(
     const targetName = await getUserName(targetUserId)
     const roleLabels: Record<string, string> = { owner: 'Propriétaire', manager: 'Gestionnaire', worker: 'Travailleur', viewer: 'Observateur' }
     notifyFarm(farmId, targetUserId, 'ROLE_CHANGED', 'Rôle modifié', `Le rôle de ${targetName} a été changé en ${roleLabels[newRole] || newRole}`, { entityId: targetUserId, entityType: 'member', actionBy: targetUserId, actionByName: targetName })
+    await logEntityActivity(farmId, 'role_change', 'member', targetUserId, targetName, { role: newRole })
     return { error: null }
   } catch (error) {
     return { error: error as Error }
@@ -471,6 +497,7 @@ export async function removeMember(
     await batch.commit()
     const targetName = await getUserName(targetUserId)
     notifyFarm(farmId, targetUserId, 'MEMBER_LEFT', 'Membre retiré', `${targetName} a été retiré de la ferme`, { entityId: targetUserId, entityType: 'member', actionBy: targetUserId, actionByName: targetName })
+    await logEntityActivity(farmId, 'leave', 'member', targetUserId, targetName)
     return { error: null }
   } catch (error) {
     return { error: error as Error }
@@ -675,11 +702,16 @@ export async function joinByShareCode(
     const now = new Date().toISOString()
     const batch = writeBatch(db)
 
+    const memberRef = doc(db, 'farms', codeData.farmId, 'members', userId)
+    const existingMember = await getDoc(memberRef)
+    if (existingMember.exists()) {
+      return { error: new Error('You are already a member of this farm') }
+    }
+
     batch.update(codeDoc.ref, {
       useCount: increment(1),
     })
 
-    const memberRef = doc(db, 'farms', codeData.farmId, 'members', userId)
     batch.set(memberRef, {
       userId,
       email: userEmail,
@@ -706,6 +738,7 @@ export async function joinByShareCode(
 
     await batch.commit()
     notifyFarm(codeData.farmId, userId, 'MEMBER_JOINED', 'Membre rejoint', `${userName} a rejoint la ferme via un code de partage`, { entityId: userId, entityType: 'member', actionBy: userId, actionByName: userName })
+    await logEntityActivity(codeData.farmId, 'join', 'member', userId, userName)
     return { error: null, farmId: codeData.farmId }
   } catch (error) {
     return { error: error as Error }
@@ -722,7 +755,7 @@ export async function getShareCodes(
       orderBy('createdAt', 'desc')
     )
     const snapshot = await getDocs(q)
-    const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as FarmInviteCode))
+    const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as unknown as FarmInviteCode)
     return { data, error: null }
   } catch (error) {
     return { data: [], error: error as Error }
@@ -927,6 +960,7 @@ export async function createParcel(
     const docSnap = await getDoc(docRef)
     const userName = await getUserName(userId)
     notifyFarm(farmId, userId, 'PARCEL_CREATED', 'Parcelle créée', `${userName} a créé la parcelle "${parcel.name}"`, { entityId: docRef.id, entityType: 'parcel', actionBy: userId, actionByName: userName })
+    await logEntityActivity(farmId, 'create', 'parcel', docRef.id, parcel.name, { areaHectares: parcel.areaHectares })
     return { data: { id: docRef.id, farmId, createdBy: userId, ...docSnap.data() } as Parcel, error: null }
   } catch (error) {
     return { data: null, error: error as Error }
@@ -939,11 +973,15 @@ export async function updateParcel(
   parcel: Partial<Parcel>
 ): Promise<{ data: Parcel | null; error: Error | null }> {
   try {
-    await updateDoc(farmDoc(farmId, 'parcels', id), {
+    const ref = farmDoc(farmId, 'parcels', id)
+    const snap = await getDoc(ref)
+    const prev = snap.exists() ? (snap.data() as Parcel) : null
+    await updateDoc(ref, {
       ...parcel,
       updatedAt: new Date().toISOString(),
     })
-    const docSnap = await getDoc(farmDoc(farmId, 'parcels', id))
+    const docSnap = await getDoc(ref)
+    await logEntityActivity(farmId, 'update', 'parcel', id, parcel.name || prev?.name || 'Parcelle')
     return { data: { id, farmId, ...docSnap.data() } as Parcel, error: null }
   } catch (error) {
     return { data: null, error: error as Error }
@@ -955,7 +993,11 @@ export async function deleteParcel(
   id: string
 ): Promise<{ error: Error | null }> {
   try {
-    await deleteDoc(farmDoc(farmId, 'parcels', id))
+    const ref = farmDoc(farmId, 'parcels', id)
+    const snap = await getDoc(ref)
+    const prev = snap.exists() ? (snap.data() as Parcel) : null
+    await deleteDoc(ref)
+    await logEntityActivity(farmId, 'delete', 'parcel', id, prev?.name || 'Parcelle')
     return { error: null }
   } catch (error) {
     return { error: error as Error }
@@ -1052,6 +1094,7 @@ export async function createExpense(
     })
     const amount = expense.amount.toLocaleString('fr-FR')
     notifyFarm(farmId, userId, 'EXPENSE_CREATED', 'Dépense enregistrée', `${userName} a enregistré une dépense de ${amount} MAD`, { entityId: docRef.id, entityType: 'expense', actionBy: userId, actionByName: userName })
+    await logEntityActivity(farmId, 'create', 'expense', docRef.id, expense.description || 'Dépense', { amount: expense.amount })
     return { data: { id: docRef.id, farmId, createdBy: userId, createdByName: userName, ...expense, createdAt: now, updatedAt: now } as Expense, error: null }
   } catch (error) {
     return { data: null, error: error as Error }
@@ -1064,10 +1107,14 @@ export async function updateExpense(
   expense: Partial<Expense>
 ): Promise<{ error: Error | null }> {
   try {
-    await updateDoc(farmDoc(farmId, 'expenses', id), {
+    const ref = farmDoc(farmId, 'expenses', id)
+    const snap = await getDoc(ref)
+    const prev = snap.exists() ? (snap.data() as Expense) : null
+    await updateDoc(ref, {
       ...expense,
       updatedAt: new Date().toISOString(),
     })
+    await logEntityActivity(farmId, 'update', 'expense', id, expense.description || prev?.description || 'Dépense', { amount: expense.amount ?? prev?.amount })
     return { error: null }
   } catch (error) {
     return { error: error as Error }
@@ -1079,7 +1126,11 @@ export async function deleteExpense(
   id: string
 ): Promise<{ error: Error | null }> {
   try {
-    await deleteDoc(farmDoc(farmId, 'expenses', id))
+    const ref = farmDoc(farmId, 'expenses', id)
+    const snap = await getDoc(ref)
+    const prev = snap.exists() ? (snap.data() as Expense) : null
+    await deleteDoc(ref)
+    await logEntityActivity(farmId, 'delete', 'expense', id, prev?.description || 'Dépense')
     return { error: null }
   } catch (error) {
     return { error: error as Error }
@@ -1128,6 +1179,7 @@ export async function createIncome(
     })
     const amount = income.totalAmount.toLocaleString('fr-FR')
     notifyFarm(farmId, userId, 'INCOME_CREATED', 'Revenu enregistré', `${userName} a enregistré un revenu de ${amount} MAD`, { entityId: docRef.id, entityType: 'income', actionBy: userId, actionByName: userName })
+    await logEntityActivity(farmId, 'create', 'income', docRef.id, income.productName || 'Revenu', { amount: income.totalAmount })
     return { data: { id: docRef.id, farmId, createdBy: userId, createdByName: userName, ...income, createdAt: now, updatedAt: now } as Income, error: null }
   } catch (error) {
     return { data: null, error: error as Error }
@@ -1140,10 +1192,14 @@ export async function updateIncome(
   income: Partial<Income>
 ): Promise<{ error: Error | null }> {
   try {
-    await updateDoc(farmDoc(farmId, 'incomes', id), {
+    const ref = farmDoc(farmId, 'incomes', id)
+    const snap = await getDoc(ref)
+    const prev = snap.exists() ? (snap.data() as Income) : null
+    await updateDoc(ref, {
       ...income,
       updatedAt: new Date().toISOString(),
     })
+    await logEntityActivity(farmId, 'update', 'income', id, income.productName || prev?.productName || 'Revenu', { amount: income.totalAmount ?? prev?.totalAmount })
     return { error: null }
   } catch (error) {
     return { error: error as Error }
@@ -1155,7 +1211,11 @@ export async function deleteIncome(
   id: string
 ): Promise<{ error: Error | null }> {
   try {
-    await deleteDoc(farmDoc(farmId, 'incomes', id))
+    const ref = farmDoc(farmId, 'incomes', id)
+    const snap = await getDoc(ref)
+    const prev = snap.exists() ? (snap.data() as Income) : null
+    await deleteDoc(ref)
+    await logEntityActivity(farmId, 'delete', 'income', id, prev?.productName || 'Revenu')
     return { error: null }
   } catch (error) {
     return { error: error as Error }
@@ -1204,6 +1264,7 @@ export async function createGasUsage(
     })
     const amount = gas.totalAmount.toLocaleString('fr-FR')
     notifyFarm(farmId, userId, 'GAS_CREATED', 'Consommation de gaz enregistrée', `${userName} a enregistré une consommation de gaz de ${amount} MAD`, { entityId: docRef.id, entityType: 'gas', actionBy: userId, actionByName: userName })
+    await logEntityActivity(farmId, 'create', 'gas', docRef.id, `${gas.quantityBottles} bouteilles`, { amount: gas.totalAmount })
     return { data: { id: docRef.id, farmId, createdBy: userId, createdByName: userName, ...gas, createdAt: now, updatedAt: now } as GasUsage, error: null }
   } catch (error) {
     return { data: null, error: error as Error }
@@ -1216,10 +1277,14 @@ export async function updateGasUsage(
   gas: Partial<GasUsage>
 ): Promise<{ error: Error | null }> {
   try {
-    await updateDoc(farmDoc(farmId, 'gasUsages', id), {
+    const ref = farmDoc(farmId, 'gasUsages', id)
+    const snap = await getDoc(ref)
+    const prev = snap.exists() ? (snap.data() as GasUsage) : null
+    await updateDoc(ref, {
       ...gas,
       updatedAt: new Date().toISOString(),
     })
+    await logEntityActivity(farmId, 'update', 'gas', id, `${gas.quantityBottles ?? prev?.quantityBottles ?? 0} bouteilles`, { amount: gas.totalAmount ?? prev?.totalAmount })
     return { error: null }
   } catch (error) {
     return { error: error as Error }
@@ -1231,7 +1296,11 @@ export async function deleteGasUsage(
   id: string
 ): Promise<{ error: Error | null }> {
   try {
-    await deleteDoc(farmDoc(farmId, 'gasUsages', id))
+    const ref = farmDoc(farmId, 'gasUsages', id)
+    const snap = await getDoc(ref)
+    const prev = snap.exists() ? (snap.data() as GasUsage) : null
+    await deleteDoc(ref)
+    await logEntityActivity(farmId, 'delete', 'gas', id, `${prev?.quantityBottles ?? 0} bouteilles`)
     return { error: null }
   } catch (error) {
     return { error: error as Error }
@@ -1280,6 +1349,7 @@ export async function createCooperativeSupport(
     })
     const amount = support.amount.toLocaleString('fr-FR')
     notifyFarm(farmId, userId, 'COOPERATIVE_CREATED', 'Aide coopérative enregistrée', `${userName} a enregistré une aide coopérative de ${amount} MAD`, { entityId: docRef.id, entityType: 'cooperative', actionBy: userId, actionByName: userName })
+    await logEntityActivity(farmId, 'create', 'cooperative', docRef.id, support.description || support.supportType || 'Aide coopérative', { amount: support.amount })
     return { data: { id: docRef.id, farmId, createdBy: userId, createdByName: userName, ...support, createdAt: now, updatedAt: now } as CooperativeSupport, error: null }
   } catch (error) {
     return { data: null, error: error as Error }
@@ -1292,10 +1362,14 @@ export async function updateCooperativeSupport(
   support: Partial<CooperativeSupport>
 ): Promise<{ error: Error | null }> {
   try {
-    await updateDoc(farmDoc(farmId, 'cooperativeSupports', id), {
+    const ref = farmDoc(farmId, 'cooperativeSupports', id)
+    const snap = await getDoc(ref)
+    const prev = snap.exists() ? (snap.data() as CooperativeSupport) : null
+    await updateDoc(ref, {
       ...support,
       updatedAt: new Date().toISOString(),
     })
+    await logEntityActivity(farmId, 'update', 'cooperative', id, support.description || prev?.description || prev?.supportType || 'Aide coopérative', { amount: support.amount ?? prev?.amount })
     return { error: null }
   } catch (error) {
     return { error: error as Error }
@@ -1307,7 +1381,11 @@ export async function deleteCooperativeSupport(
   id: string
 ): Promise<{ error: Error | null }> {
   try {
-    await deleteDoc(farmDoc(farmId, 'cooperativeSupports', id))
+    const ref = farmDoc(farmId, 'cooperativeSupports', id)
+    const snap = await getDoc(ref)
+    const prev = snap.exists() ? (snap.data() as CooperativeSupport) : null
+    await deleteDoc(ref)
+    await logEntityActivity(farmId, 'delete', 'cooperative', id, prev?.description || prev?.supportType || 'Aide coopérative')
     return { error: null }
   } catch (error) {
     return { error: error as Error }

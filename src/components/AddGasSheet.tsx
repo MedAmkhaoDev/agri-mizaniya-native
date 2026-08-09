@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { View, Text, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native'
-import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
+import { SheetTextInput } from '@/components/SheetTextInput'
 import { useAuth } from '@/lib/auth-context'
 import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
-import { createGasUsage, getParcels } from '@/lib/api'
+import { createGasUsage, updateGasUsage, getParcels } from '@/lib/api'
 import { getLastParcelId, setLastParcelId } from '@/hooks/useDraft'
 import { BottomSheet } from '@/components/BottomSheet'
 import { filterNumeric } from '@/lib/format'
@@ -16,22 +16,41 @@ interface AddGasSheetProps {
   visible: boolean
   onClose: () => void
   defaultParcelId?: string
+  editingGas?: {
+    id: string
+    parcelId: string
+    quantityBottles: number
+    totalAmount: number
+    date: string
+    notes: string | null
+  } | null
 }
 
-export default function AddGasSheet({ visible, onClose, defaultParcelId }: AddGasSheetProps) {
+export default function AddGasSheet({ visible, onClose, defaultParcelId, editingGas }: AddGasSheetProps) {
   const { user } = useAuth()
   const { currentFarmId } = useFarm()
   const { t } = useI18n()
+  const isEditing = !!editingGas
   const [parcels, setParcels] = useState<Parcel[]>([])
   const [parcelId, setParcelId] = useState('')
   const [quantityBottles, setQuantityBottles] = useState('')
   const [totalAmount, setTotalAmount] = useState('')
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
+  const mountedRef = useRef(true)
+  const prefilledRef = useRef(false)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   const loadParcels = useCallback(async () => {
     if (!user || !currentFarmId) return
     const { data } = await getParcels(currentFarmId!)
+    if (!mountedRef.current) return
     const active = data.filter((p) => p.status === 'active')
     const lastId = defaultParcelId || (await getLastParcelId())
     const sorted = [...active].sort((a, b) => {
@@ -40,20 +59,30 @@ export default function AddGasSheet({ visible, onClose, defaultParcelId }: AddGa
       return 0
     })
     setParcels(sorted)
-    if (!parcelId && sorted.length > 0) {
+    if (!prefilledRef.current && !isEditing && sorted.length > 0) {
+      prefilledRef.current = true
       const prefill = sorted.find((p) => p.id === lastId) || sorted[0]
       setParcelId(prefill.id)
     }
-  }, [defaultParcelId, parcelId, user, currentFarmId])
+  }, [defaultParcelId, user, currentFarmId, isEditing])
 
   useEffect(() => {
     if (visible) {
+      prefilledRef.current = false
       loadParcels()
-      setQuantityBottles('')
-      setTotalAmount('')
-      setNotes('')
+      if (editingGas) {
+        setParcelId(editingGas.parcelId)
+        setQuantityBottles(editingGas.quantityBottles?.toString() || '')
+        setTotalAmount(editingGas.totalAmount?.toString() || '')
+        setNotes(editingGas.notes || '')
+      } else {
+        setParcelId('')
+        setQuantityBottles('')
+        setTotalAmount('')
+        setNotes('')
+      }
     }
-  }, [visible, loadParcels])
+  }, [visible, loadParcels, editingGas])
 
   const pricePerBottle = quantityBottles && totalAmount && parseFloat(quantityBottles) > 0
     ? parseFloat(totalAmount) / parseFloat(quantityBottles)
@@ -63,14 +92,19 @@ export default function AddGasSheet({ visible, onClose, defaultParcelId }: AddGa
     if (!user || !parcelId || !quantityBottles || !totalAmount) return
     setSaving(true)
     try {
-      await setLastParcelId(parcelId)
-      await createGasUsage(currentFarmId!, user.uid, {
+      const payload = {
         parcelId,
         quantityBottles: parseFloat(quantityBottles),
         totalAmount: parseFloat(totalAmount),
-        date: new Date().toISOString().split('T')[0],
+        date: editingGas?.date || new Date().toISOString().split('T')[0],
         notes: notes.trim() || null,
-      })
+      }
+      if (isEditing && editingGas) {
+        await updateGasUsage(currentFarmId!, editingGas.id, payload)
+      } else {
+        await setLastParcelId(parcelId)
+        await createGasUsage(currentFarmId!, user.uid, payload)
+      }
       onClose()
       Toast.show({ type: 'success', text1: t.gasUsage + ' ✓' })
     } catch (e: any) {
@@ -83,7 +117,7 @@ export default function AddGasSheet({ visible, onClose, defaultParcelId }: AddGa
   return (
     <BottomSheet visible={visible} onClose={onClose}>
       <View className="px-5 pt-1 pb-2.5">
-        <Text className="text-[17px] font-bold text-orange-500 dark:text-orange-500 mb-4">{t.addGas}</Text>
+        <Text className="text-[17px] font-bold text-orange-500 dark:text-orange-500 mb-4">{isEditing ? t.editGas : t.addGas}</Text>
 
         <Text className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[1px] mb-2">{t.parcel}</Text>
         <FlatList
@@ -102,11 +136,11 @@ export default function AddGasSheet({ visible, onClose, defaultParcelId }: AddGa
         <View className="flex-row gap-3 mb-3">
           <View className="flex-1">
             <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.quantityBottles}</Text>
-            <BottomSheetTextInput value={quantityBottles} onChangeText={v => setQuantityBottles(filterNumeric(v))} keyboardType="decimal-pad" placeholder="5" placeholderTextColor="#9CA3AF" className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground" />
+            <SheetTextInput value={quantityBottles} onChangeText={v => setQuantityBottles(filterNumeric(v))} keyboardType="decimal-pad" placeholder="5" placeholderTextColor="#9CA3AF" className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground" />
           </View>
           <View className="flex-1">
             <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.amount} (MAD)</Text>
-            <BottomSheetTextInput value={totalAmount} onChangeText={v => setTotalAmount(filterNumeric(v))} keyboardType="decimal-pad" placeholder="0" placeholderTextColor="#9CA3AF" className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground" />
+            <SheetTextInput value={totalAmount} onChangeText={v => setTotalAmount(filterNumeric(v))} keyboardType="decimal-pad" placeholder="0" placeholderTextColor="#9CA3AF" className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground" />
           </View>
         </View>
 
@@ -117,7 +151,7 @@ export default function AddGasSheet({ visible, onClose, defaultParcelId }: AddGa
         ) : null}
 
         <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.notes} ({t.optional})</Text>
-        <BottomSheetTextInput value={notes} onChangeText={setNotes} placeholderTextColor="#9CA3AF" className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground mb-4" />
+        <SheetTextInput value={notes} onChangeText={setNotes} placeholderTextColor="#9CA3AF" className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground mb-4" />
 
         <TouchableOpacity onPress={handleSave} disabled={!parcelId || !quantityBottles || !totalAmount || saving} className={`h-14 rounded-xl items-center justify-center flex-row gap-2 ${!parcelId || !quantityBottles || !totalAmount || saving ? 'bg-orange-200 dark:bg-orange-800' : 'bg-orange-500 dark:bg-orange-600'}`}>
           {saving ? <ActivityIndicator color="#FFFFFF" /> : <Check size={20} color="#FFFFFF" />}

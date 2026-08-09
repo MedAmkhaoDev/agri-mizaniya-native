@@ -1,76 +1,64 @@
-import { OneSignal, LogLevel, type NotificationClickEvent, type NotificationWillDisplayEvent } from 'react-native-onesignal'
-import { Alert } from 'react-native'
+import { Platform } from 'react-native'
+import type { NotificationClickEvent, NotificationWillDisplayEvent } from 'react-native-onesignal'
 
 const ONESIGNAL_APP_ID = process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID || ''
 
-let dialogShown = false
+const isWeb = Platform.OS === 'web'
 
-function isRegistered(subscriptionId: string | null | undefined): boolean {
-  return !!subscriptionId && !subscriptionId.startsWith('local-')
-}
-
-function maybeShowIntegrationCompleteDialog(subscriptionId: string | null | undefined): void {
-  if (isRegistered(subscriptionId) && !dialogShown) {
-    dialogShown = true
-    showIntegrationCompleteDialog()
-  }
-}
-
-function showIntegrationCompleteDialog(): void {
-  Alert.alert(
-    'Your OneSignal SDK integration is complete!',
-    'You can now send Push Notifications & In-App Messages through OneSignal. Tap below to enable push notifications.',
-    [
-      {
-        text: 'Got it',
-        onPress: () => {
-          OneSignal.Notifications.requestPermission(true)
-        },
-      },
-    ],
-    { cancelable: false }
-  )
+function nativeOneSignal(): any {
+  // react-native-onesignal throws at import time on web (TurboModuleRegistry),
+  // so it must never be evaluated there — lazy-require only on native.
+  return require('react-native-onesignal')
 }
 
 export function initializeOneSignal(): void {
+  if (isWeb || !ONESIGNAL_APP_ID) return
+  const { OneSignal, LogLevel } = nativeOneSignal()
   OneSignal.Debug.setLogLevel(LogLevel.Verbose)
   OneSignal.initialize(ONESIGNAL_APP_ID)
-
-  OneSignal.User.pushSubscription.addEventListener('change', (subscription) => {
-    maybeShowIntegrationCompleteDialog(subscription.current.id)
-  })
-
-  OneSignal.User.pushSubscription.getIdAsync().then(maybeShowIntegrationCompleteDialog)
+  OneSignal.User.pushSubscription.getIdAsync()
 }
 
 export function onesignalLogin(userId: string): void {
+  if (isWeb || !ONESIGNAL_APP_ID) return
+  const { OneSignal } = nativeOneSignal()
   OneSignal.login(userId)
 }
 
 export function onesignalLogout(): void {
+  if (isWeb || !ONESIGNAL_APP_ID) return
+  const { OneSignal } = nativeOneSignal()
   OneSignal.logout()
 }
 
 export function addNotificationClickListener(
   handler: (event: NotificationClickEvent) => void
 ): void {
+  if (isWeb || !ONESIGNAL_APP_ID) return
+  const { OneSignal } = nativeOneSignal()
   OneSignal.Notifications.addEventListener('click', handler)
 }
 
 export function removeNotificationClickListener(
   handler: (event: NotificationClickEvent) => void
 ): void {
+  if (isWeb || !ONESIGNAL_APP_ID) return
+  const { OneSignal } = nativeOneSignal()
   OneSignal.Notifications.removeEventListener('click', handler)
 }
 
 export function addForegroundNotificationHandler(
   handler: (event: NotificationWillDisplayEvent) => void
 ): void {
+  if (isWeb || !ONESIGNAL_APP_ID) return
+  const { OneSignal } = nativeOneSignal()
   OneSignal.Notifications.addEventListener('foregroundWillDisplay', handler)
 }
 
 export function removeForegroundNotificationHandler(
   handler: (event: NotificationWillDisplayEvent) => void
 ): void {
+  if (isWeb || !ONESIGNAL_APP_ID) return
+  const { OneSignal } = nativeOneSignal()
   OneSignal.Notifications.removeEventListener('foregroundWillDisplay', handler)
 }

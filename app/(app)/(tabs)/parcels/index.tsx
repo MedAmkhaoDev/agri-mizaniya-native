@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native'
-import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
+import { SheetTextInput } from '@/components/SheetTextInput'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/lib/auth-context'
 import { useFarm } from '@/lib/farm-context'
@@ -33,7 +33,7 @@ export default function ParcelsScreen() {
   const parcelsPath = currentFarmId ? `farms/${currentFarmId}/parcels` : ''
   const constraints = useMemo(() => parcelConstraints(), [])
 
-  const { data: allParcels, loading, error } = useRealtimeCollection<Parcel>(parcelsPath, {
+  const { data: allParcels, loading, error, refreshing, refresh } = useRealtimeCollection<Parcel>(parcelsPath, {
     constraints,
     enabled: !!currentFarmId,
   })
@@ -142,7 +142,7 @@ export default function ParcelsScreen() {
           }
         />
 
-        <ScrollView contentContainerClassName="p-4" refreshControl={<RefreshControl refreshing={false} onRefresh={() => {}} tintColor="#6B7280" />}>
+        <ScrollView contentContainerClassName="p-4" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#6B7280" />}>
           {loading ? (
             [1, 2, 3].map(i => <View key={i} className="h-24 rounded-xl bg-accent mb-2.5 animate-pulse" />)
           ) : error ? (
@@ -258,19 +258,19 @@ export default function ParcelsScreen() {
         <BottomSheet visible={sheetOpen} onClose={() => setSheetOpen(false)}>
               <Text className="text-[17px] font-bold text-foreground mb-4">{editingParcel ? t.editParcel : t.addParcel}</Text>
               <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.parcelName} *</Text>
-              <BottomSheetTextInput value={form.name} onChangeText={v => setForm(p => ({ ...p, name: v }))} placeholder="Parcelle A" placeholderTextColor="#9CA3AF" className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground mb-3" />
+              <SheetTextInput value={form.name} onChangeText={v => setForm(p => ({ ...p, name: v }))} placeholder="Parcelle A" placeholderTextColor="#9CA3AF" className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground mb-3" />
               <View className="flex-row gap-3 mb-3">
                 <View className="flex-1">
                   <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.areaHectares}</Text>
-                  <BottomSheetTextInput value={form.area_hectares} onChangeText={v => setForm(p => ({ ...p, area_hectares: filterNumeric(v) }))} placeholder="2.5" placeholderTextColor="#9CA3AF" keyboardType="decimal-pad" className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground" />
+                  <SheetTextInput value={form.area_hectares} onChangeText={v => setForm(p => ({ ...p, area_hectares: filterNumeric(v) }))} placeholder="2.5" placeholderTextColor="#9CA3AF" keyboardType="decimal-pad" className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground" />
                 </View>
                 <View className="flex-1">
                   <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.location}</Text>
-                  <BottomSheetTextInput value={form.location} onChangeText={v => setForm(p => ({ ...p, location: v }))} placeholder="Douar..." placeholderTextColor="#9CA3AF" className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground" />
+                  <SheetTextInput value={form.location} onChangeText={v => setForm(p => ({ ...p, location: v }))} placeholder="Douar..." placeholderTextColor="#9CA3AF" className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground" />
                 </View>
               </View>
               <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.notes}</Text>
-              <BottomSheetTextInput value={form.notes} onChangeText={v => setForm(p => ({ ...p, notes: v }))} placeholder={t.notes} placeholderTextColor="#9CA3AF" multiline numberOfLines={2} className="border border-border rounded-[10px] px-4 py-2.5 text-[15px] text-foreground mb-4 min-h-[60px]" style={{ textAlignVertical: 'top' }} />
+              <SheetTextInput value={form.notes} onChangeText={v => setForm(p => ({ ...p, notes: v }))} placeholder={t.notes} placeholderTextColor="#9CA3AF" multiline numberOfLines={2} className="border border-border rounded-[10px] px-4 py-2.5 text-[15px] text-foreground mb-4 min-h-[60px]" style={{ textAlignVertical: 'top' }} />
               <View className="flex-row gap-3">
                 <TouchableOpacity onPress={() => setSheetOpen(false)} className="flex-1 h-12 rounded-[10px] border border-border items-center justify-center">
                   <Text className="font-semibold text-muted-foreground">{t.cancel}</Text>

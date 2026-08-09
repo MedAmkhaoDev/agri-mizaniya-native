@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Linking } from 'react-native'
-import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
+import { SheetTextInput } from '@/components/SheetTextInput'
 import { useAuth } from '@/lib/auth-context'
 import { useI18n } from '@/lib/i18n-context'
 import { Wheat } from 'lucide-react-native'
@@ -100,7 +100,7 @@ export default function AuthScreen() {
       className="flex-1 bg-background"
     >
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-        <View className="flex-1 justify-center px-6 py-12">
+        <View className={cn("flex-1 justify-center px-6 py-12 w-full", Platform.OS === 'web' && "self-center max-w-[560px]")}>
           {/* Header */}
           <View className="items-center mb-8">
             <View className="w-16 h-16 rounded-2xl bg-green-600 items-center justify-center mb-4">
@@ -303,7 +303,7 @@ export default function AuthScreen() {
         <View className="p-5">
           <Text className="text-lg font-bold text-foreground mb-2">{t.forgotPassword}</Text>
           <Text className="text-[13px] text-muted-foreground mb-4">{t.enterEmailForReset}</Text>
-          <BottomSheetTextInput
+          <SheetTextInput
             value={resetEmail}
             onChangeText={setResetEmail}
             placeholder="agriculteur@example.com"

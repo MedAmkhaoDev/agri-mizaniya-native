@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
-import { View, StyleSheet, Platform, Keyboard } from 'react-native'
+import { View, StyleSheet, Platform, Keyboard, ScrollView, TouchableOpacity, Text } from 'react-native'
 import BottomSheetLib, { BottomSheetBackdrop, BottomSheetView, type BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { useColorScheme } from 'nativewind'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { X } from 'lucide-react-native'
 
 interface BottomSheetProps {
   visible: boolean
@@ -38,7 +39,43 @@ export function BottomSheet({ visible, onClose, children }: BottomSheetProps) {
     onClose()
   }, [onClose])
 
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !visible) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [visible, onClose])
+
   if (!visible) return null
+
+  if (Platform.OS === 'web') {
+    return (
+      <View style={[StyleSheet.absoluteFill, { zIndex: 50 }]} className="items-center justify-center bg-black/40 p-4">
+        <View
+          className="bg-background rounded-2xl border border-border w-full"
+          style={{ maxWidth: 640, maxHeight: '90%', flexShrink: 1 }}
+        >
+          <View className="flex-row justify-end pt-3 pr-3">
+            <TouchableOpacity
+              onPress={onClose}
+              className="w-8 h-8 rounded-full bg-accent items-center justify-center"
+            >
+              <X size={16} color="#6B7280" />
+            </TouchableOpacity>
+          </View>
+          <ScrollView
+            contentContainerStyle={styles.webContent}
+            style={{ flexShrink: 1 }}
+            keyboardShouldPersistTaps="handled"
+          >
+            {children}
+          </ScrollView>
+        </View>
+      </View>
+    )
+  }
 
   return (
     <GestureHandlerRootView style={StyleSheet.absoluteFill}>
@@ -77,5 +114,9 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
+  },
+  webContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 24,
   },
 })

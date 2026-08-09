@@ -1,15 +1,10 @@
 import { Redirect, Stack } from 'expo-router'
 import { useAuth } from '@/lib/auth-context'
 import { useFarm } from '@/lib/farm-context'
-import { useI18n } from '@/lib/i18n-context'
-import { useTheme } from '@/lib/theme-context'
 import { View, ActivityIndicator } from 'react-native'
 
 export default function AppLayout() {
   const { user, loading } = useAuth()
-  const { t } = useI18n()
-  const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === 'dark'
 
   if (loading) {
     return (
@@ -34,7 +29,6 @@ export default function AppLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="settings" options={{ title: t.settings, headerShown: true, headerStyle: { backgroundColor: isDark ? '#1a2e1a' : '#FFFFFF' }, headerTintColor: isDark ? '#e5e7eb' : '#1F2937', headerTitleStyle: { fontWeight: '600' } }} />
     </Stack>
   )
 }

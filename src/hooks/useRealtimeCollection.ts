@@ -20,12 +20,19 @@ export type WithPending<T> = T & { _pending: boolean }
 export function useRealtimeCollection<T>(
   collectionPath: string,
   options?: UseRealtimeCollectionOptions
-): { data: WithPending<T>[]; loading: boolean; error: Error | null; hasPendingWrites: boolean } {
+): { data: WithPending<T>[]; loading: boolean; error: Error | null; hasPendingWrites: boolean; refreshing: boolean; refresh: () => void } {
   const [data, setData] = useState<WithPending<T>[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   const [hasPendingWrites, setHasPendingWrites] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
   const prevPath = useRef(collectionPath)
+
+  const refresh = () => {
+    setRefreshing(true)
+    setRefreshKey((k) => k + 1)
+  }
 
   useEffect(() => {
     if (options?.enabled === false) {
@@ -55,17 +62,19 @@ export function useRealtimeCollection<T>(
         setHasPendingWrites(snapshot.metadata.hasPendingWrites)
         setLoading(false)
         setError(null)
+        setRefreshing(false)
       },
       (err) => {
         setError(err)
         setLoading(false)
+        setRefreshing(false)
       }
     )
 
     return () => unsubscribe()
-  }, [collectionPath, options?.enabled, JSON.stringify(options?.constraints)])
+  }, [collectionPath, options?.enabled, refreshKey, JSON.stringify(options?.constraints)])
 
-  return { data, loading, error, hasPendingWrites }
+  return { data, loading, error, hasPendingWrites, refreshing, refresh }
 }
 
 export function watchCollection<T>(

@@ -14,6 +14,7 @@ import Toast from 'react-native-toast-message'
 import { toastConfig } from '@/lib/toast-config'
 import { initializeOneSignal } from '@/lib/onesignal'
 import { View } from 'react-native'
+import { WebShell } from '@/components/WebShell'
 
 function RootLayoutNav() {
   const { loading } = useAuth()
@@ -64,8 +65,10 @@ export default function RootLayout() {
             <AuthProvider>
               <SyncProvider>
                 <FarmProvider>
-                  <RootLayoutNav />
-                  <Toast config={toastConfig} />
+                  <WebShell>
+                    <RootLayoutNav />
+                    <Toast config={toastConfig} />
+                  </WebShell>
                   <ThemedStatusBar />
                 </FarmProvider>
               </SyncProvider>

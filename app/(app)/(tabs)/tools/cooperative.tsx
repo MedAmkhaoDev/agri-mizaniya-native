@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react'
-import { View, Text, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native'
+import { View, Text, FlatList, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/lib/auth-context'
 import { useFarm } from '@/lib/farm-context'
+import { useIsDesktop } from '@/lib/web-layout'
 import { useI18n } from '@/lib/i18n-context'
 import { deleteCooperativeSupport, cooperativeSupportConstraints } from '@/lib/api'
 import { formatMAD } from '@/lib/format'
@@ -12,17 +13,20 @@ import { useRealtimeCollection, type WithPending } from '@/hooks/useRealtimeColl
 import AddCooperativeSheet from '@/components/AddCooperativeSheet'
 import { FilterSheet } from '@/components/FilterSheet'
 import { HeaderBar } from '@/components/HeaderBar'
+import { DesktopTable } from '@/components/DesktopTable'
 import Toast from 'react-native-toast-message'
 import type { CooperativeSupport, Parcel, ExpenseFilters } from '@/lib/types'
-import { HandCoins, Plus, Trash2, AlertCircle, RefreshCw, SlidersHorizontal } from 'lucide-react-native'
+import { HandCoins, Plus, Trash2, AlertCircle, RefreshCw, SlidersHorizontal, Pencil } from 'lucide-react-native'
 
 export default function CooperativeScreen() {
   const { user } = useAuth()
   const { currentFarmId, canWrite } = useFarm()
   const { t } = useI18n()
+  const isDesktop = useIsDesktop()
   const [filters, setFilters] = useState<ExpenseFilters>({ parcelId: 'all' })
   const [sheetOpen, setSheetOpen] = useState(false)
   const [filterSheetOpen, setFilterSheetOpen] = useState(false)
+  const [editingSupport, setEditingSupport] = useState<WithPending<CooperativeSupport> | null>(null)
 
   const coopPath = currentFarmId ? `farms/${currentFarmId}/cooperativeSupports` : ''
   const parcelsPath = currentFarmId ? `farms/${currentFarmId}/parcels` : ''
@@ -30,12 +34,12 @@ export default function CooperativeScreen() {
   const constraints = useMemo(() => cooperativeSupportConstraints(filters), [filters])
   const parcelConstraintsMemo = useMemo(() => [], [])
 
-  const { data: supports, loading, error } = useRealtimeCollection<CooperativeSupport>(coopPath, {
+  const { data: supports, loading, error, refreshing, refresh } = useRealtimeCollection<CooperativeSupport>(coopPath, {
     constraints,
     enabled: !!currentFarmId,
   })
 
-  const { data: parcels } = useRealtimeCollection<Parcel>(parcelsPath, {
+  const { data: parcels, refresh: refreshParcels } = useRealtimeCollection<Parcel>(parcelsPath, {
     constraints: parcelConstraintsMemo,
     enabled: !!currentFarmId,
   })
@@ -69,8 +73,9 @@ export default function CooperativeScreen() {
           title={t.cooperative}
           right={
             canWrite ? (
-              <TouchableOpacity onPress={() => setSheetOpen(true)} className="w-9 h-9 rounded-[10px] bg-violet-500 items-center justify-center">
-                <Plus size={20} color="#FFFFFF" />
+              <TouchableOpacity onPress={() => setSheetOpen(true)} className={cn("items-center justify-center", isDesktop ? "flex-row gap-2 h-10 px-4 rounded-[10px] bg-violet-500" : "w-9 h-9 rounded-[10px] bg-violet-500")}>
+                <Plus size={18} color="#FFFFFF" />
+                {isDesktop && <Text className="text-[13px] font-semibold text-white">{t.add}</Text>}
               </TouchableOpacity>
             ) : undefined
           }
@@ -132,11 +137,68 @@ export default function CooperativeScreen() {
                 </View>
               </View>
             )}
+            {isDesktop ? (
+              <ScrollView contentContainerClassName="p-6" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { refresh(); refreshParcels() }} tintColor="#6B7280" />}>
+                <DesktopTable
+                  columns={[
+                    { label: t.date, flex: 1.1 },
+                    { label: t.supportType, flex: 2 },
+                    { label: t.invoiceNumber, flex: 1.6 },
+                    { label: t.createdBy, flex: 1.5 },
+                    { label: t.amount, flex: 1.1, align: 'right' },
+                    { label: '', flex: 0.6, align: 'right' },
+                  ]}
+                  rows={supports}
+                  rowKey={(e) => e.id}
+                  emptyText={t.noCooperative}
+                  actionColumnIndex={4}
+                  renderCell={(e, i) => {
+                    switch (i) {
+                      case 0:
+                        return <Text className="text-[13px] text-muted-foreground">{e.date}</Text>
+                      case 1:
+                        return (
+                          <View className="flex-row items-center gap-2 min-w-0">
+                            <View className="w-7 h-7 rounded-lg bg-violet-50 dark:bg-violet-950 items-center justify-center shrink-0">
+                              <HandCoins size={13} color="#8B5CF6" />
+                            </View>
+                            <Text className="text-[13px] font-medium text-foreground" numberOfLines={1}>{t.supportTypes[e.supportType]}</Text>
+                          </View>
+                        )
+                      case 2:
+                        return <Text className="text-[13px] text-muted-foreground">{e.invoiceNumber || '—'}</Text>
+                      case 3:
+                        return <Text className="text-[13px] text-muted-foreground">{e.createdByName || '—'}</Text>
+                      case 4:
+                        return <Text style={{ fontVariant: ['tabular-nums'] }} className="text-[13px] font-semibold text-violet-500 dark:text-violet-400">-{formatMAD(e.amount)} MAD</Text>
+                      case 5:
+                        return (
+                          <View className="flex-row items-center gap-0.5">
+                            {canWrite && (
+                              <TouchableOpacity onPress={() => { setEditingSupport(e); setSheetOpen(true) }} className="p-1.5">
+                                <Pencil size={15} color="#6B7280" />
+                              </TouchableOpacity>
+                            )}
+                            <TouchableOpacity onPress={() => deleteWithUndo(e)} className="p-1.5">
+                              <Trash2 size={15} color="#EF4444" />
+                            </TouchableOpacity>
+                          </View>
+                        )
+                      default:
+                        return null
+                    }
+                  }}
+                />
+              </ScrollView>
+            ) : (
             <FlatList
               data={supports}
+              key={isDesktop ? 'coop-2col' : 'coop-1col'}
+              numColumns={isDesktop ? 2 : 1}
+              columnWrapperStyle={isDesktop ? { gap: 10 } : undefined}
               keyExtractor={(item) => item.id}
-              contentContainerClassName="p-4"
-              refreshControl={<RefreshControl refreshing={false} onRefresh={() => {}} tintColor="#6B7280" />}
+              contentContainerClassName={isDesktop ? "p-6" : "p-4"}
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { refresh(); refreshParcels() }} tintColor="#6B7280" />}
               ListEmptyComponent={
                 !loading ? (
                   <View className="items-center py-12">
@@ -146,7 +208,7 @@ export default function CooperativeScreen() {
                 ) : null
               }
               renderItem={({ item }) => (
-                <View className="flex-row items-center p-3.5 rounded-xl border border-border mb-2">
+                <View className="flex-row flex-1 items-center p-3.5 rounded-xl border border-border mb-2">
                   <View className="w-9 h-9 rounded-[10px] bg-violet-50 dark:bg-violet-950 items-center justify-center mr-3">
                     <HandCoins size={16} color="#8B5CF6" />
                   </View>
@@ -170,16 +232,26 @@ export default function CooperativeScreen() {
                     )}
                   </View>
                   <Text style={{ fontVariant: ['tabular-nums'] }} className="text-sm font-semibold text-violet-500 dark:text-violet-400">-{formatMAD(item.amount)} MAD</Text>
+                  {canWrite && (
+                    <TouchableOpacity onPress={() => { setEditingSupport(item); setSheetOpen(true) }} className="p-1.5 ml-1">
+                      <Pencil size={14} color="#6B7280" />
+                    </TouchableOpacity>
+                  )}
                   <TouchableOpacity onPress={() => deleteWithUndo(item)} className="p-1.5 ml-2">
                     <Trash2 size={14} color="#EF4444" />
                   </TouchableOpacity>
                 </View>
               )}
             />
+            )}
           </View>
         )}
 
-        <AddCooperativeSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} />
+        <AddCooperativeSheet
+          visible={sheetOpen}
+          onClose={() => { setEditingSupport(null); setSheetOpen(false) }}
+          editingSupport={editingSupport}
+        />
         <FilterSheet visible={filterSheetOpen} onClose={() => setFilterSheetOpen(false)} filters={filters} onApply={setFilters} />
       </View>
     </SafeAreaView>

@@ -1,5 +1,6 @@
-import { View, Text, ScrollView, TouchableOpacity, Alert, Pressable, ActivityIndicator, RefreshControl, Share } from 'react-native'
-import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
+import { View, Text, ScrollView, TouchableOpacity, Pressable, ActivityIndicator, RefreshControl, Share } from 'react-native'
+import { alert } from '@/lib/alert'
+import { SheetTextInput } from '@/components/SheetTextInput'
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/lib/auth-context'
@@ -15,7 +16,7 @@ import type { FarmMember, FarmRole } from '@/lib/types'
 import { UserPlus, MoreVertical, X, AlertCircle, RefreshCw, Copy, Share2, Link as LinkIcon, UserPlus2 } from 'lucide-react-native'
 import * as Clipboard from 'expo-clipboard'
 import Toast from 'react-native-toast-message'
-import { cn } from '@/lib/utils'
+import { cn, buildJoinUrl } from '@/lib/utils'
 
 export default function MembersScreen() {
   const { user, profile } = useAuth()
@@ -25,7 +26,7 @@ export default function MembersScreen() {
 
   const membersPath = currentFarmId ? `farms/${currentFarmId}/members` : ''
 
-  const { data: members, loading, error } = useRealtimeCollection<FarmMember>(membersPath, {
+  const { data: members, loading, error, refreshing, refresh } = useRealtimeCollection<FarmMember>(membersPath, {
     enabled: !!currentFarmId,
   })
 
@@ -51,7 +52,7 @@ export default function MembersScreen() {
     const { data, error } = await generateShareCode(currentFarmId, currentFarm.name, user.uid, 'viewer')
     setGenerating(false)
     if (error || !data) {
-      Alert.alert(t.error, error?.message || t.failedToGenerate)
+      alert(t.error, error?.message || t.failedToGenerate)
       return
     }
     setInviteCode(data.code)
@@ -63,7 +64,7 @@ export default function MembersScreen() {
     }
   }, [inviteModalVisible, inviteTab])
 
-  const deepLink = inviteCode ? `agri-mizaniya://join?code=${inviteCode}` : ''
+  const deepLink = inviteCode ? buildJoinUrl(inviteCode) : ''
 
   const handleCopyCode = async () => {
     await Clipboard.setStringAsync(inviteCode)
@@ -117,7 +118,7 @@ export default function MembersScreen() {
       setCreatePassword('')
       setInviteModalVisible(false)
       setTimeout(() => {
-        Alert.alert(t.error, error.message || t.failedToCreateMember)
+        alert(t.error, error.message || t.failedToCreateMember)
       }, 300)
       return
     }
@@ -136,7 +137,7 @@ export default function MembersScreen() {
       setInviteModalVisible(false)
 
       setTimeout(() => {
-        Alert.alert(t.success, t.accountCreatedAndSent, [
+        alert(t.success, t.accountCreatedAndSent, [
           { text: t.sendCredentials, onPress: async () => {
             await Share.share({ message: credsMessage, url: deepLink })
           }},
@@ -149,19 +150,19 @@ export default function MembersScreen() {
   const handleRemoveMember = async (member: FarmMember) => {
     if (!currentFarmId || !user) return
     if (member.role === 'owner') {
-      Alert.alert(t.error, t.cannotRemoveOwner)
+      alert(t.error, t.cannotRemoveOwner)
       return
     }
     if (member.userId === user.uid) {
-      Alert.alert(t.error, t.cannotRemoveSelf)
+      alert(t.error, t.cannotRemoveSelf)
       return
     }
-    Alert.alert(t.removeMember, t.removeMemberConfirm, [
+    alert(t.removeMember, t.removeMemberConfirm, [
       { text: t.cancel, style: 'cancel' },
       { text: t.delete, style: 'destructive', onPress: async () => {
         const { error } = await removeMember(currentFarmId, member.userId)
         if (error) {
-          Alert.alert(t.error, error.message || t.failedToRemove)
+          alert(t.error, error.message || t.failedToRemove)
           return
         }
       }}
@@ -171,12 +172,12 @@ export default function MembersScreen() {
   const handleChangeRole = async (member: FarmMember, newRole: FarmRole) => {
     if (!currentFarmId) return
     if (member.role === 'owner') {
-      Alert.alert(t.error, t.cannotChangeOwnerRole)
+      alert(t.error, t.cannotChangeOwnerRole)
       return
     }
     const { error } = await updateMemberRole(currentFarmId, member.userId, newRole)
     if (error) {
-      Alert.alert(t.error, error.message || t.failedToChangeRole)
+      alert(t.error, error.message || t.failedToChangeRole)
       return
     }
     setRoleModalVisible(false)
@@ -226,7 +227,7 @@ export default function MembersScreen() {
           <Text className="text-[13px] text-muted-foreground mb-5 text-center">{error.message}</Text>
         </View>
       ) : (
-        <ScrollView className="flex-1 p-4" refreshControl={<RefreshControl refreshing={false} onRefresh={() => {}} tintColor="#6B7280" />}>
+        <ScrollView className="flex-1 p-4" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#6B7280" />}>
           {members.map((member) => (
             <View key={member.userId} className="mb-3 flex-row items-center rounded-xl border border-border bg-card p-4">
               <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-accent">
@@ -349,7 +350,7 @@ export default function MembersScreen() {
               <Text className="text-[13px] text-muted-foreground mb-4">{t.createAccountFor}</Text>
 
               <Text className="mb-1.5 text-[13px] font-semibold text-foreground">{t.memberName}</Text>
-              <BottomSheetTextInput
+              <SheetTextInput
                 value={createName}
                 onChangeText={setCreateName}
                 placeholder={t.fullName}
@@ -360,7 +361,7 @@ export default function MembersScreen() {
               />
 
               <Text className="mb-1.5 text-[13px] font-semibold text-foreground">{t.memberEmail}</Text>
-              <BottomSheetTextInput
+              <SheetTextInput
                 value={createEmail}
                 onChangeText={setCreateEmail}
                 placeholder={t.email}
@@ -384,7 +385,7 @@ export default function MembersScreen() {
               {!autoGenerate && (
                 <>
                   <Text className="mb-1.5 text-[13px] font-semibold text-foreground">{t.newPassword}</Text>
-                  <BottomSheetTextInput
+                  <SheetTextInput
                     value={createPassword}
                     onChangeText={setCreatePassword}
                     placeholder="••••••••"

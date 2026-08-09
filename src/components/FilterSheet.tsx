@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { View, Text, TouchableOpacity } from 'react-native'
-import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
+import { SheetTextInput } from '@/components/SheetTextInput'
 import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
 import { getFarmMembers, getExpenseTypes } from '@/lib/api'
 import type { ExpenseType } from '@/lib/types'
 import { BottomSheet } from '@/components/BottomSheet'
 import { cn } from '@/lib/utils'
+import { filterNumeric } from '@/lib/format'
 import type { ExpenseFilters, FarmMember } from '@/lib/types'
 import { X, Check } from 'lucide-react-native'
 
@@ -174,17 +175,23 @@ export function FilterSheet({ visible, onClose, filters, onApply }: FilterSheetP
         {/* Amount range */}
         <Text className="text-xs font-semibold text-muted-foreground mb-2.5 uppercase tracking-wider">{t.amountRange}</Text>
         <View className="flex-row gap-3 mb-6">
-          <BottomSheetTextInput
+          <SheetTextInput
             value={draft.amountMin?.toString() ?? ''}
-            onChangeText={(v) => setDraft((d) => ({ ...d, amountMin: v ? Number(v) : undefined }))}
+            onChangeText={(v) => {
+              const cleaned = filterNumeric(v)
+              setDraft((d) => ({ ...d, amountMin: cleaned ? Number(cleaned) : undefined }))
+            }}
             placeholder={t.min}
             placeholderTextColor="#9CA3AF"
             keyboardType="numeric"
             className="flex-1 h-11 px-3 rounded-[10px] border border-border text-[15px] text-foreground"
           />
-          <BottomSheetTextInput
+          <SheetTextInput
             value={draft.amountMax?.toString() ?? ''}
-            onChangeText={(v) => setDraft((d) => ({ ...d, amountMax: v ? Number(v) : undefined }))}
+            onChangeText={(v) => {
+              const cleaned = filterNumeric(v)
+              setDraft((d) => ({ ...d, amountMax: cleaned ? Number(cleaned) : undefined }))
+            }}
             placeholder={t.max}
             placeholderTextColor="#9CA3AF"
             keyboardType="numeric"

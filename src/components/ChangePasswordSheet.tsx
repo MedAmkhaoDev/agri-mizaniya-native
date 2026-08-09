@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native'
-import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
+import { SheetTextInput } from '@/components/SheetTextInput'
 import { useAuth } from '@/lib/auth-context'
 import { useI18n } from '@/lib/i18n-context'
 import { BottomSheet } from '@/components/BottomSheet'
@@ -85,7 +85,7 @@ export default function ChangePasswordSheet({ visible, onClose }: ChangePassword
             <View className="mb-3">
               <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.currentPassword}</Text>
               <View className="flex-row items-center h-12 border border-border rounded-[10px] px-4">
-                <BottomSheetTextInput
+                <SheetTextInput
                   value={currentPassword}
                   onChangeText={setCurrentPassword}
                   secureTextEntry={!showCurrent}
@@ -101,7 +101,7 @@ export default function ChangePasswordSheet({ visible, onClose }: ChangePassword
             <View className="mb-3">
               <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.newPassword}</Text>
               <View className="flex-row items-center h-12 border border-border rounded-[10px] px-4">
-                <BottomSheetTextInput
+                <SheetTextInput
                   value={newPassword}
                   onChangeText={setNewPassword}
                   secureTextEntry={!showNew}
@@ -116,7 +116,7 @@ export default function ChangePasswordSheet({ visible, onClose }: ChangePassword
 
             <View className="mb-5">
               <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.confirmNewPassword}</Text>
-              <BottomSheetTextInput
+              <SheetTextInput
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry={!showNew}

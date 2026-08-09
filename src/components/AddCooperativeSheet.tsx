@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { View, Text, TouchableOpacity, FlatList, ActivityIndicator, ScrollView } from 'react-native'
-import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
+import { SheetTextInput } from '@/components/SheetTextInput'
 import { useAuth } from '@/lib/auth-context'
 import { useFarm } from '@/lib/farm-context'
 import { useI18n } from '@/lib/i18n-context'
-import { createCooperativeSupport, getParcels } from '@/lib/api'
+import { createCooperativeSupport, updateCooperativeSupport, getParcels } from '@/lib/api'
 import { getLastParcelId, setLastParcelId } from '@/hooks/useDraft'
 import { BottomSheet } from '@/components/BottomSheet'
 import { filterNumeric } from '@/lib/format'
@@ -21,12 +21,22 @@ const SUPPORT_COLORS: Record<CooperativeSupportType, string> = {
 interface AddCooperativeSheetProps {
   visible: boolean
   onClose: () => void
+  editingSupport?: {
+    id: string
+    parcelId: string | null
+    invoiceNumber: string | null
+    supportType: CooperativeSupportType
+    amount: number
+    date: string
+    notes: string | null
+  } | null
 }
 
-export default function AddCooperativeSheet({ visible, onClose }: AddCooperativeSheetProps) {
+export default function AddCooperativeSheet({ visible, onClose, editingSupport }: AddCooperativeSheetProps) {
   const { user } = useAuth()
   const { currentFarmId } = useFarm()
   const { t } = useI18n()
+  const isEditing = !!editingSupport
   const [parcels, setParcels] = useState<Parcel[]>([])
   const [supportType, setSupportType] = useState<CooperativeSupportType>('other')
   const [amount, setAmount] = useState('')
@@ -34,10 +44,20 @@ export default function AddCooperativeSheet({ visible, onClose }: AddCooperative
   const [invoiceNumber, setInvoiceNumber] = useState('')
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
+  const mountedRef = useRef(true)
+  const prefilledRef = useRef(false)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   const loadParcels = useCallback(async () => {
     if (!user || !currentFarmId) return
     const { data } = await getParcels(currentFarmId!)
+    if (!mountedRef.current) return
     const active = data.filter((p) => p.status === 'active')
     const lastId = await getLastParcelId()
     const sorted = [...active].sort((a, b) => {
@@ -46,20 +66,31 @@ export default function AddCooperativeSheet({ visible, onClose }: AddCooperative
       return 0
     })
     setParcels(sorted)
-    if (!parcelId && sorted.length > 0) {
+    if (!prefilledRef.current && !isEditing && sorted.length > 0) {
+      prefilledRef.current = true
       setParcelId(sorted[0].id)
     }
-  }, [parcelId, user, currentFarmId])
+  }, [user, currentFarmId, isEditing])
 
   useEffect(() => {
     if (visible) {
+      prefilledRef.current = false
       loadParcels()
-      setAmount('')
-      setInvoiceNumber('')
-      setNotes('')
-      setSupportType('other')
+      if (editingSupport) {
+        setSupportType(editingSupport.supportType)
+        setAmount(editingSupport.amount?.toString() || '')
+        setParcelId(editingSupport.parcelId || '')
+        setInvoiceNumber(editingSupport.invoiceNumber || '')
+        setNotes(editingSupport.notes || '')
+      } else {
+        setSupportType('other')
+        setAmount('')
+        setParcelId('')
+        setInvoiceNumber('')
+        setNotes('')
+      }
     }
-  }, [visible, loadParcels])
+  }, [visible, loadParcels, editingSupport])
 
   const supportTypeLabel = (type: CooperativeSupportType) => t.supportTypes[type] || type
 
@@ -67,16 +98,21 @@ export default function AddCooperativeSheet({ visible, onClose }: AddCooperative
     if (!user || !amount) return
     setSaving(true)
     try {
-      if (parcelId) await setLastParcelId(parcelId)
-      await createCooperativeSupport(currentFarmId!, user.uid, {
+      const payload = {
         parcelId: parcelId || null,
         invoiceNumber: invoiceNumber.trim() || null,
         supportType,
         description: null,
         amount: parseFloat(amount),
-        date: new Date().toISOString().split('T')[0],
+        date: editingSupport?.date || new Date().toISOString().split('T')[0],
         notes: notes.trim() || null,
-      })
+      }
+      if (isEditing && editingSupport) {
+        await updateCooperativeSupport(currentFarmId!, editingSupport.id, payload)
+      } else {
+        if (parcelId) await setLastParcelId(parcelId)
+        await createCooperativeSupport(currentFarmId!, user.uid, payload)
+      }
       onClose()
       Toast.show({ type: 'success', text1: t.cooperative + ' ✓' })
     } catch (e: any) {
@@ -89,7 +125,7 @@ export default function AddCooperativeSheet({ visible, onClose }: AddCooperative
   return (
     <BottomSheet visible={visible} onClose={onClose}>
       <View className="px-5 pt-1 pb-2.5">
-        <Text className="text-[17px] font-bold text-violet-500 dark:text-violet-500 mb-4">{t.addCooperative}</Text>
+        <Text className="text-[17px] font-bold text-violet-500 dark:text-violet-500 mb-4">{isEditing ? t.editCooperative : t.addCooperative}</Text>
 
         <Text className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[1px] mb-2">{t.supportType}</Text>
         <View className="flex-row flex-wrap gap-1.5 mb-4">
@@ -111,11 +147,11 @@ export default function AddCooperativeSheet({ visible, onClose }: AddCooperative
         </View>
 
         <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.amount} (MAD)</Text>
-        <BottomSheetTextInput value={amount} onChangeText={v => setAmount(filterNumeric(v))} keyboardType="decimal-pad" placeholder="0" placeholderTextColor="#9CA3AF"
+        <SheetTextInput value={amount} onChangeText={v => setAmount(filterNumeric(v))} keyboardType="decimal-pad" placeholder="0" placeholderTextColor="#9CA3AF"
           className="h-16 border-2 border-violet-300 dark:border-violet-700 rounded-xl text-[30px] font-bold text-violet-500 text-center mt-4 mb-3" />
 
         <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.invoiceNumber}</Text>
-        <BottomSheetTextInput value={invoiceNumber} onChangeText={setInvoiceNumber} placeholder="FAC-2024-001" placeholderTextColor="#9CA3AF"
+        <SheetTextInput value={invoiceNumber} onChangeText={setInvoiceNumber} placeholder="FAC-2024-001" placeholderTextColor="#9CA3AF"
           className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground mb-3" />
 
         <Text className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[1px] mb-2">{t.parcel}</Text>
@@ -133,7 +169,7 @@ export default function AddCooperativeSheet({ visible, onClose }: AddCooperative
         />
 
         <Text className="text-[13px] font-medium text-foreground mb-1.5">{t.notes} ({t.optional})</Text>
-        <BottomSheetTextInput value={notes} onChangeText={setNotes} placeholderTextColor="#9CA3AF"
+        <SheetTextInput value={notes} onChangeText={setNotes} placeholderTextColor="#9CA3AF"
           className="h-12 border border-border rounded-[10px] px-4 text-[15px] text-foreground mb-4" />
 
         <TouchableOpacity onPress={handleSave} disabled={!amount || saving}

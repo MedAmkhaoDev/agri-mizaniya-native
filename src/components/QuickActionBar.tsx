@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { View, Text, TouchableOpacity, Animated } from 'react-native'
+import { View, Text, TouchableOpacity, Animated, Platform, useWindowDimensions } from 'react-native'
 import { useI18n } from '@/lib/i18n-context'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { TrendingDown, TrendingUp, Flame, HandCoins, Plus } from 'lucide-react-native'
@@ -15,6 +15,8 @@ interface QuickActionBarProps {
 export function QuickActionBar({ onAddExpense, onAddIncome, onAddGas, onAddCooperative, canWrite = true }: QuickActionBarProps) {
   const { t } = useI18n()
   const { bottom } = useSafeAreaInsets()
+  const { width } = useWindowDimensions()
+  const isDesktop = Platform.OS === 'web' && width >= 1024
   const [open, setOpen] = useState(false)
   const anim = useRef(new Animated.Value(0)).current
 
@@ -28,6 +30,7 @@ export function QuickActionBar({ onAddExpense, onAddIncome, onAddGas, onAddCoope
   }, [open])
 
   if (!canWrite) return null
+  if (isDesktop) return null
 
   const plusRotation = anim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '45deg'] })
 
@@ -39,9 +42,10 @@ export function QuickActionBar({ onAddExpense, onAddIncome, onAddGas, onAddCoope
   ]
 
   const tabBarHeight = 64 + bottom
+  const fabBottom = isDesktop ? 24 : tabBarHeight + 8
 
   return (
-    <View pointerEvents="box-none" style={{ position: 'absolute', bottom: tabBarHeight + 8, right: 20, alignItems: 'flex-end', gap: 14, zIndex: 50 }}>
+    <View pointerEvents="box-none" style={{ position: 'absolute', bottom: fabBottom, right: 20, alignItems: 'flex-end', gap: 14, zIndex: 50 }}>
       {actions.map((action, i) => {
         const delay = (actions.length - 1 - i) * 0.04
         const opacity = anim.interpolate({
